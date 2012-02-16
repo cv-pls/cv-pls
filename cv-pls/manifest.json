@@ -2,6 +2,8 @@
   "name": "[cv-pls]",
   "version": "0.0.1",
   "description": "Helps to close questions on SO",
+  "options_page": "options.html",
+  "background_page": "background.html",
   "page_action": {
     "default_title ": "[cv-pls]",
     "default_icon": "icon.png",

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script>
+      chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
+        if (request.method == 'getLocalStorage') {
+          sendResponse({data: localStorage[request.key]});
+        } else if (request.method == 'showIcon') {
+          chrome.pageAction.show(sender.tab.id);
+        } else {
+          sendResponse({}); // snub them.
+        }
+      });
+    </script>
+  </head>
+</html>

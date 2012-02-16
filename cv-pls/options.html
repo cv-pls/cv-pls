@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>cv-pls Extension Settings</title>
+  </head>
+
+  <script type="text/javascript">
+
+  function save_options() {
+    var tags = document.getElementById("tags");
+    var tags_array = tags.value.split(' ');
+
+    for (var i = 0; i < tags_array.length; i++) {
+        tags_array[i] = 't-' + tags_array[i];
+    }
+
+    localStorage["tags"] = tags_array.join(' ');
+
+    var status = document.getElementById("status");
+    status.innerHTML = "Options Saved.";
+    setTimeout(function() {
+      status.innerHTML = "";
+    }, 750);
+  }
+
+  function restore_options() {
+    var tags_value = localStorage["tags"];
+    if (!tags_value) {
+      return;
+    }
+    var tags = document.getElementById("tags");
+    var tags_array = tags_value.split(' ');
+
+    for (var i = 0; i < tags_array.length; i++) {
+        tags_array[i] = tags_array[i].substr(2);
+    }
+
+    tags.value = tags_array.join(' ');
+  }
+
+  </script>
+
+  <body onload="restore_options()">
+
+  Tags:
+  <input type="text" name="tags" id="tags" placeholder="Add the tags you want to follow here (separated by a space). E.g.: php html css">
+  <br>
+
+  Filters:
+  <input type="text" name="filters" id="filters" placeholder="Add the regex patterns to match in the selected tags">
+  <br>
+
+  <button onclick="save_options()">Save</button>
+  </body>
+</html>
