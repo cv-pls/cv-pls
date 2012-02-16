@@ -1,3 +1,7 @@
 Just playing with creating Chrome extensions.
 
-This extension will [cv-pls] question on Stack Overflow.
+This extension will [cv-pls] questions on Stack Overflow.
+
+Currently it replaces ALL PHP question with [cv-pls] http://stackoverflow.com/question/id/title. Useful isn't it :-)
+
+This is only version 0.0.1, more functionality will be implemented in the future (like connection with chat).
