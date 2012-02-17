@@ -7,6 +7,7 @@
   <script type="text/javascript">
 
   function save_options() {
+    // tags
     var tags = document.getElementById("tags");
     var tags_array = tags.value.split(' ');
 
@@ -16,6 +17,10 @@
 
     localStorage["tags"] = tags_array.join(' ');
 
+    // filters
+    localStorage["filters"] = document.getElementById("filters").value;
+
+    // update status
     var status = document.getElementById("status");
     status.innerHTML = "Options Saved.";
     setTimeout(function() {
@@ -24,6 +29,7 @@
   }
 
   function restore_options() {
+    // tags
     var tags_value = localStorage["tags"];
     if (!tags_value) {
       return;
@@ -36,20 +42,25 @@
     }
 
     tags.value = tags_array.join(' ');
+
+    // filters
+    document.getElementById("filters").value = localStorage["filters"];
   }
 
   </script>
 
   <body onload="restore_options()">
+    <table>
+      <tr>
+        <th>Tags:</th>
+        <td><input type="text" name="tags" id="tags" placeholder="Add the tags you want to follow here (separated by a space). E.g.: php html css"></td>
+      </tr>
+      <tr>
+        <th>Filters:</th>
+        <td><textarea name="filters" id="filters" placeholder="Add the regex patterns to match in the selected tags (separated by a return). E.g.: /text in title/" cols="100" rows="15"></textarea></td>
+      </tr>
+    </table>
 
-  Tags:
-  <input type="text" name="tags" id="tags" placeholder="Add the tags you want to follow here (separated by a space). E.g.: php html css">
-  <br>
-
-  Filters:
-  <input type="text" name="filters" id="filters" placeholder="Add the regex patterns to match in the selected tags">
-  <br>
-
-  <button onclick="save_options()">Save</button>
+    <button onclick="save_options()">Save</button>
   </body>
 </html>
