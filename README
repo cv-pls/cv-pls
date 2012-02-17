@@ -1,7 +1,5 @@
-Just playing with creating Chrome extensions.
+This Google Chrome extension will help you close voting questions on Stack Overflow.
 
-This extension will [cv-pls] questions on Stack Overflow.
+You can define a (regex) filter and tags and this extension will mark the close vote suspects for you in the questions overview.
 
-Currently it replaces ALL PHP question with [cv-pls] http://stackoverflow.com/question/id/title. Useful isn't it :-)
-
-This is only version 0.0.1, more functionality will be implemented in the future (like connection with chat).
+This is only the experimental version 0.1.0, more functionality will be implemented in the future (like connection with chat and automatic detection of duplicates).
