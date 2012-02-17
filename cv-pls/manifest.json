@@ -1,6 +1,6 @@
 {
   "name": "[cv-pls]",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Helps to close questions on SO",
   "options_page": "options.html",
   "background_page": "background.html",
