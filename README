@@ -1,5 +1,5 @@
 This Google Chrome extension will help you close voting questions on Stack Overflow.
 
-You can define a (regex) filter and tags and this extension will mark the close vote suspects for you in the questions overview.
+It is still very beta-ish and more features will be added soon.
 
-This is only the experimental version 0.1.0, more functionality will be implemented in the future (like connection with chat and automatic detection of duplicates).
+The first goal is to convert cv-pls requests into nice oneboxes in the StackOverflow chatrooms to make it easier to review and close questions.
