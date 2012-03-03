@@ -1,66 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>cv-pls Extension Settings</title>
+    <title>cv-pls Helper Extension Settings</title>
+    <style>
+    </style>
   </head>
 
-  <script type="text/javascript">
-
-  function save_options() {
-    // tags
-    var tags = document.getElementById("tags");
-    var tags_array = tags.value.split(' ');
-
-    for (var i = 0; i < tags_array.length; i++) {
-        tags_array[i] = 't-' + tags_array[i];
-    }
-
-    localStorage["tags"] = tags_array.join(' ');
-
-    // filters
-    localStorage["filters"] = document.getElementById("filters").value;
-
-    // update status
-    var status = document.getElementById("status");
-    status.innerHTML = "Options Saved.";
-    setTimeout(function() {
-      status.innerHTML = "";
-    }, 750);
-  }
-
-  function restore_options() {
-    // tags
-    var tags_value = localStorage["tags"];
-    if (!tags_value) {
-      return;
-    }
-    var tags = document.getElementById("tags");
-    var tags_array = tags_value.split(' ');
-
-    for (var i = 0; i < tags_array.length; i++) {
-        tags_array[i] = tags_array[i].substr(2);
-    }
-
-    tags.value = tags_array.join(' ');
-
-    // filters
-    document.getElementById("filters").value = localStorage["filters"];
-  }
-
-  </script>
-
-  <body onload="restore_options()">
-    <table>
-      <tr>
-        <th>Tags:</th>
-        <td><input type="text" name="tags" id="tags" placeholder="Add the tags you want to follow here (separated by a space). E.g.: php html css"></td>
-      </tr>
-      <tr>
-        <th>Filters:</th>
-        <td><textarea name="filters" id="filters" placeholder="Add the regex patterns to match in the selected tags (separated by a return). E.g.: /text in title/" cols="100" rows="15"></textarea></td>
-      </tr>
-    </table>
-
-    <button onclick="save_options()">Save</button>
+  <body>
+    <script src="jquery-1.7.1.min.js"></script>
+    <script src="settings.js"></script>
   </body>
 </html>

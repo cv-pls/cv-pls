@@ -7,6 +7,7 @@
           sendResponse({data: localStorage[request.key]});
         } else if (request.method == 'showIcon') {
           chrome.pageAction.show(sender.tab.id);
+          sendResponse({});
         } else {
           sendResponse({}); // snub them.
         }

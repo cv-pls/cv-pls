@@ -1,71 +1,135 @@
-function does_match(needle, haystack) {
-  var end_pos = needle.lastIndexOf('/')
+/*
+  TODO
 
-  var pattern = needle.substr(1, end_pos-1);
+  Add an optional beep notification (need to look for SO beep file on page) and integrate it with the chatroom sound settings
+  Check if questions already closed
+*/
 
-  if (end_pos == needle.length-1) {
-    var regex = new RegExp(pattern);
-  } else {
-    var modifiers = needle.substr(end_pos+1);
-    var regex = new RegExp(pattern, modifiers);
+function CvHelper(stackApi) {
+
+  this.stackApi = stackApi;
+
+  // check if room is finished loading
+  this.init = function() {
+    if ($('#loading').length) {
+      setTimeout(this.init, 1000);
+    } else {
+      $('div.user-container div.messages div.message div.content').each(function() {
+        $post = $(this);
+        if (that.isCloseRequest($post)) {
+          that.formatCloseRequest($post);
+        }
+      });
+    }
   }
 
-  if (regex.test(haystack)) {
+  var that = this;
+
+  // find out whether post contains a close request
+  this.isCloseRequest = function ($post) {
+    if ($('a .ob-post-tag:contains("cv-pls")', $post).length && $('a:contains("stackoverflow.com/questions/")', $post).length) {
       return true;
+    }
+    return false;
   }
 
-  return false;
+  // create nice cv-pls box
+  this.formatCloseRequest = function ($post) {
+    that.stackApi.getQuestion(that.getPostInfo(that.getQuestionId($post)), $post);
+  }
+
+  // retrieve question id form the url
+  this.getQuestionId = function ($post) {
+    return $('a:contains("stackoverflow.com/questions/")', $post).attr('href').split('/')[4];
+  }
+
+  // create a nice object containing all the needed info for the request
+  this.getPostInfo = function (questionId) {
+    return {id: questionId, host: 'stackoverflow.com'};
+  }
+}
+
+function StackApi() {
+    var apiUrl = 'https://api.stackexchange.com/2.0/';
+
+    var that = this;
+
+    // get the URL of question
+    this.getQuestionUrl = function (request) {
+      return apiUrl + 'questions/' + request.id;
+    }
+
+    // request the info of the question
+    this.getQuestion = function (request, $post) {
+        var url = that.getQuestionUrl(request);
+        var apiData = {
+            site: request.host,
+            filter: '!6LE4b5o5yvdNA',
+            pagesize: 1,
+            page: 1,
+            body: 'true'
+        };
+        var ajaxSettings = {
+            url: url,
+            data: apiData,
+            error: function(jqHr, status, error) {
+              // request error
+            },
+            success: function(data, status, jqHr) {
+                if (data.items == undefined || data.items.length == 0) {
+                    // recordset error
+                    return;
+                }
+                that.renderCvRequest(data.items[0], $post);
+            }
+        }
+        $.ajax(ajaxSettings);
+    };
+
+    // render the cv request as onebox
+    this.renderCvRequest = function (item, $post) {
+      $post.append(that.oneBox(item));
+    }
+
+    // the html of the cv onebox
+    this.oneBox = function (questionInfo) {
+      var html = '';
+      html+= '<div class="onebox ob-post">';
+      html+= '  <div class="ob-post-votes" title="This question has a score of ' + questionInfo.score + '.">' + questionInfo.score + '</div>';
+      html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
+      html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + questionInfo.link + '">' + questionInfo.title + '</a></div>';
+      html+= '  <p class="ob-post-body">';
+      html+= '    <img width="32" height="32" class="user-gravatar32" src="' + questionInfo.owner.profile_image + '" title="' + questionInfo.owner.display_name + '" alt="' + questionInfo.owner.display_name + '">' + questionInfo.body;
+      html+= '  </p>';
+      html+= '  <div class="ob-post-tags">';
+
+      var length = questionInfo.tags.length;
+      for (var i = 0; i < length; i++) {
+        html+= '    <a href="http://stackoverflow.com/questions/tagged/' + questionInfo.tags[i] + '">';
+        html+= '      <span class="ob-post-tag" style="background-color: #E0EAF1; color: #3E6D8E; border-color: #3E6D8E; border-style: solid;">' + questionInfo.tags[i] + '</span>';
+        html+= '    </a>';
+      }
+
+      html+= '  </div>';
+      html+= '  <button style="position: absolute; right: 10px; bottom: 16px;" class="close-question" data-questionid="' + questionInfo.question_id + '">close</button>';
+      html+= '  <div class="clear-both"></div>';
+      html+= '</div>';
+
+      return html;
+    }
 }
 
 (function() {
-  chrome.extension.sendRequest({method: "getLocalStorage", key: "tags"}, function(response) {
-    var tags_string = response.data;
+  var stackApi = new StackApi();
+  var cvHelper = new CvHelper(stackApi);
+  cvHelper.init();
 
-    chrome.extension.sendRequest({method: "getLocalStorage", key: "filters"}, function(response) {
-      var tags_array = tags_string.split(' ');
+  // show icon when we are in a chatroom
+  chrome.extension.sendRequest({method: "showIcon"}, function(response) { });
 
-      var filters_string = response.data;
-      var filters_array = filters_string.split('\n');
+  console.log('run??');
 
-      // page with questions overview
-      if ($('body.questions-page, body.home-page, body.search-page').length) {
-        chrome.extension.sendRequest({method: "showIcon"}, function(response) {});
-
-        $('.question-summary').each(function() {
-          if ($('.tags', this).is('.' + tags_array.join(', .'))) {
-            var question = $(this);
-            var url = $('h3 a', question).attr('href');
-            var question_summary = question.children('.summary');
-
-            var title = $('h3 a', question_summary).text();
-
-            var length = filters_array.length;
-            for(var i = 0; i < length; i++) {
-              if (does_match(filters_array[i], title)) {
-                $('h3 a', question_summary).html($('h3 a', question_summary).html() + ' {CV SUSPECT}');
-                break;
-              }
-            }
-          }
-        });
-      }
-
-      // page of question
-      if ($('body.question-page').length) {
-        chrome.extension.sendRequest({method: "showIcon"}, function(response) {});
-
-        var question = $('#question');
-        $('.post-taglist .post-tag', question).each(function() {
-          var normalized_tag = 't-' + $(this).html();
-          var length = tags_array.length;
-
-          for(var i = 0; i < length; i++) {
-            if (normalized_tag == tags_array[i]) {
-              $('.post-menu', question).append('<span class="lsep">|</span><a href="#">cv-pls in chat</a>');
-            }
-          }
-        });
-      }
-    });
+  $('.close-question').on('click', function() {
+    console.log('Test!');
   });
 })(jQuery);
