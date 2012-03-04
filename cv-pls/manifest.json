@@ -1,6 +1,6 @@
 {
   "name": "[cv-pls] Helper",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Helps to close questions on SO",
   "options_page": "options.html",
   "background_page": "background.html",
