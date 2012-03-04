@@ -9,10 +9,12 @@ function CvHelper(stackApi) {
 
   this.stackApi = stackApi;
 
+  var that = this;
+
   // check if room is finished loading
   this.init = function() {
     if ($('#loading').length) {
-      setTimeout(this.init, 1000);
+      setTimeout(that.init, 1000);
     } else {
       $('div.user-container div.messages div.message div.content').each(function() {
         $post = $(this);
@@ -22,8 +24,6 @@ function CvHelper(stackApi) {
       });
     }
   }
-
-  var that = this;
 
   // find out whether post contains a close request
   this.isCloseRequest = function ($post) {
@@ -111,7 +111,21 @@ function StackApi() {
       }
 
       html+= '  </div>';
-      html+= '  <button style="position: absolute; right: 10px; bottom: 16px;" class="close-question" data-questionid="' + questionInfo.question_id + '">close</button>';
+      /*
+        Temporary disabled close button until SO implements the write API
+      */
+      /*
+      html+= '  <form action="" style="position: absolute; right: 10px; bottom: 16px;">';
+      html+= '    <select name="cvpls-close-reason">';
+      html+= '      <option value="dupe">exact duplicate (n/a)</option>';
+      html+= '      <option value="offtopic">off topic (n/a)</option>';
+      html+= '      <option value="notconstructive">not constructive (n/a)</option>';
+      html+= '      <option value="noquestion">not a real question (n/a)</option>';
+      html+= '      <option value="toolocalized">too localized (n/a)</option>';
+      html+= '    <select>';
+      html+= '    <button class="cvpls-close-question" data-questionid="' + questionInfo.question_id + '">close (n/a)</button>';
+      html+= '  </form>';
+      */
       html+= '  <div class="clear-both"></div>';
       html+= '</div>';
 
@@ -127,9 +141,25 @@ function StackApi() {
   // show icon when we are in a chatroom
   chrome.extension.sendRequest({method: "showIcon"}, function(response) { });
 
-  console.log('run??');
+  // handle close question
+  $('#chat').on('click', '.cvpls-close-question', function() {
+    var $button = $(this);
+    //http://stackoverflow.com/posts/popup/close/9545683?_=1330791992338
+    var url = 'http://stackoverflow.com/posts/popup/close/' + $(this).data('questionid');
+    var ajaxSettings = {
+        url: url,
+        dataType: 'html',
+        error: function(jqHr, status, error) {
+          // request error
+        },
+        success: function(data, status, jqHr) {
+          // prevent error because the StackExchaneg api isn't available
+          data = data.replace('if (StackExchange.options.isMobile) {', 'if (1==2) {');
+          $button.closest('.message').prepend(data);
+        }
+    }
+    $.ajax(ajaxSettings);
 
-  $('.close-question').on('click', function() {
-    console.log('Test!');
+    return false;
   });
 })(jQuery);
