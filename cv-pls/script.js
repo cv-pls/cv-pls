@@ -9,6 +9,8 @@ function CvHelper(stackApi) {
 
   this.stackApi = stackApi;
 
+  this.lastMessageId = 0;
+
   var that = this;
 
   // check if room is finished loading
@@ -17,12 +19,60 @@ function CvHelper(stackApi) {
       setTimeout(that.init, 1000);
     } else {
       $('div.user-container div.messages div.message div.content').each(function() {
-        $post = $(this);
+        var $post = $(this);
+
+        that.lastMessageId = that.getMessageId($post.closest('div.message').attr('id'));
+
         if (that.isCloseRequest($post)) {
           that.formatCloseRequest($post);
         }
       });
+
+      that.postListener();
     }
+  }
+
+  // get the message id from chat (e.g. id="message-12345678")
+  this.getMessageId = function (id) {
+    return id.substr(8);
+  }
+
+  // check if message is still pending
+  this.isMessagePending = function (id) {
+    if (id.substr(0, 7) == 'pending') {
+      return true;
+    }
+
+    return false;
+  }
+
+  // sets the last message id
+  this.setLastMessageId = function (id) {
+    that.lastMessageId = id;
+  }
+
+  // adds a listener for new chat-messages
+  this.postListener = function () {
+    var $currentMessage = $('div.user-container div.messages div.message:last');
+    var rawId = $currentMessage.attr('id');
+    var currentMessageId = that.getMessageId(rawId);
+
+    // only try to format when post is finished loading
+    if (!that.isMessagePending(rawId)) {
+      var $post = $('div.content', $currentMessage);
+
+      if (currentMessageId > that.lastMessageId && $post.length) {
+        that.lastMessageId = currentMessageId;
+
+        if (that.isCloseRequest($post)) {
+          that.lastMessageId = currentMessageId;
+
+          that.formatCloseRequest($post);
+        }
+      }
+    }
+
+    setTimeout(that.postListener, 1000);
   }
 
   // find out whether post contains a close request
@@ -94,7 +144,7 @@ function StackApi() {
     // the html of the cv onebox
     this.oneBox = function (questionInfo) {
       var html = '';
-      html+= '<div class="onebox ob-post">';
+      html+= '<div class="onebox ob-post" style="overflow: hidden;">';
       html+= '  <div class="ob-post-votes" title="This question has a score of ' + questionInfo.score + '.">' + questionInfo.score + '</div>';
       html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
       html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + questionInfo.link + '">' + questionInfo.title + '</a></div>';
