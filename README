@@ -1,5 +1,5 @@
 This Google Chrome extension will help you close voting questions on Stack Overflow.
 
-It is still very beta-ish and more features will be added soon.
+It will convert all [cv-pls] requests into nice oneboxes in the SO chat.
 
-The first goal is to convert cv-pls requests into nice oneboxes in the StackOverflow chatrooms to make it easier to review and close questions.
+Some features that will be added soon: optional beep on new cv requests (integrate with chat sound options), closing directly from onebox.
