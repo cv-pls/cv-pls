@@ -2,6 +2,7 @@
   "name": "[cv-pls] Helper",
   "version": "0.6.0",
   "description": "Helps to close questions on SO",
+  "update_url": "https://github.com/downloads/PeeHaa/cv-pls/updates.xml",
   "options_page": "options.html",
   "background_page": "background.html",
   "page_action": {
