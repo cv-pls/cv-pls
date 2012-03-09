@@ -1,44 +1,46 @@
 /*
   TODO
 
-  Add an optional beep notification (need to look for SO beep file on page) and integrate it with the chatroom sound settings
+  Also make the sound options available through the extension options
   Check if questions already closed
 */
 
-function CvHelper(stackApi) {
+function CvHelper(stackApi, settings, soundPlayer) {
 
   this.stackApi = stackApi;
+  this.settings = settings;
+  this.soundPlayer = soundPlayer;
 
   this.lastMessageId = 0;
 
-  var that = this;
+  var self = this;
 
   // check if room is finished loading
   this.init = function() {
     if ($('#loading').length) {
-      setTimeout(that.init, 1000);
+      setTimeout(self.init, 1000);
     } else {
       $('div.user-container div.messages div.message div.content').each(function() {
         var $post = $(this);
 
-        that.lastMessageId = that.getMessageId($post.closest('div.message').attr('id'));
+        self.lastMessageId = self.getMessageId($post.closest('div.message').attr('id'));
 
-        if (that.isCloseRequest($post)) {
-          that.formatCloseRequest($post);
+        if (self.isCloseRequest($post)) {
+          self.formatCloseRequest($post);
         }
       });
 
-      that.postListener();
+      self.postListener();
     }
   }
 
   // get the message id from chat (e.g. id="message-12345678")
-  this.getMessageId = function (id) {
+  this.getMessageId = function(id) {
     return id.substr(8);
   }
 
   // check if message is still pending
-  this.isMessagePending = function (id) {
+  this.isMessagePending = function(id) {
     if (id.substr(0, 7) == 'pending') {
       return true;
     }
@@ -47,36 +49,40 @@ function CvHelper(stackApi) {
   }
 
   // sets the last message id
-  this.setLastMessageId = function (id) {
-    that.lastMessageId = id;
+  this.setLastMessageId = function(id) {
+    self.lastMessageId = id;
   }
 
   // adds a listener for new chat-messages
-  this.postListener = function () {
+  this.postListener = function() {
     var $currentMessage = $('div.user-container div.messages div.message:last');
     var rawId = $currentMessage.attr('id');
-    var currentMessageId = that.getMessageId(rawId);
+    var currentMessageId = self.getMessageId(rawId);
 
     // only try to format when post is finished loading
-    if (!that.isMessagePending(rawId)) {
+    if (!self.isMessagePending(rawId)) {
       var $post = $('div.content', $currentMessage);
 
-      if (currentMessageId > that.lastMessageId && $post.length) {
-        that.lastMessageId = currentMessageId;
+      if (currentMessageId > self.lastMessageId && $post.length) {
+        self.lastMessageId = currentMessageId;
 
-        if (that.isCloseRequest($post)) {
-          that.lastMessageId = currentMessageId;
+        if (self.isCloseRequest($post)) {
+          self.lastMessageId = currentMessageId;
 
-          that.formatCloseRequest($post);
+          self.formatCloseRequest($post);
+
+          if (self.settings.isSoundEnabled()) {
+            self.soundPlayer.playNotification();
+          }
         }
       }
     }
 
-    setTimeout(that.postListener, 1000);
+    setTimeout(self.postListener, 1000);
   }
 
   // find out whether post contains a close request
-  this.isCloseRequest = function ($post) {
+  this.isCloseRequest = function($post) {
     if ($('a .ob-post-tag:contains("cv-pls")', $post).length && $('a:contains("stackoverflow.com/questions/")', $post).length) {
       return true;
     }
@@ -84,17 +90,17 @@ function CvHelper(stackApi) {
   }
 
   // create nice cv-pls box
-  this.formatCloseRequest = function ($post) {
-    that.stackApi.getQuestion(that.getPostInfo(that.getQuestionId($post)), $post);
+  this.formatCloseRequest = function($post) {
+    self.stackApi.getQuestion(self.getPostInfo(self.getQuestionId($post)), $post);
   }
 
   // retrieve question id form the url
-  this.getQuestionId = function ($post) {
+  this.getQuestionId = function($post) {
     return $('a:contains("stackoverflow.com/questions/")', $post).attr('href').split('/')[4];
   }
 
   // create a nice object containing all the needed info for the request
-  this.getPostInfo = function (questionId) {
+  this.getPostInfo = function(questionId) {
     return {id: questionId, host: 'stackoverflow.com'};
   }
 }
@@ -102,16 +108,16 @@ function CvHelper(stackApi) {
 function StackApi() {
     var apiUrl = 'https://api.stackexchange.com/2.0/';
 
-    var that = this;
+    var self = this;
 
     // get the URL of question
-    this.getQuestionUrl = function (request) {
+    this.getQuestionUrl = function(request) {
       return apiUrl + 'questions/' + request.id;
     }
 
     // request the info of the question
-    this.getQuestion = function (request, $post) {
-        var url = that.getQuestionUrl(request);
+    this.getQuestion = function(request, $post) {
+        var url = self.getQuestionUrl(request);
         var apiData = {
             site: request.host,
             filter: '!6LE4b5o5yvdNA',
@@ -130,19 +136,19 @@ function StackApi() {
                     // recordset error
                     return;
                 }
-                that.renderCvRequest(data.items[0], $post);
+                self.renderCvRequest(data.items[0], $post);
             }
         }
         $.ajax(ajaxSettings);
     };
 
     // render the cv request as onebox
-    this.renderCvRequest = function (item, $post) {
-      $post.append(that.oneBox(item));
+    this.renderCvRequest = function(item, $post) {
+      $post.append(self.oneBox(item));
     }
 
     // the html of the cv onebox
-    this.oneBox = function (questionInfo) {
+    this.oneBox = function(questionInfo) {
       var html = '';
       html+= '<div class="onebox ob-post" style="overflow: hidden;">';
       html+= '  <div class="ob-post-votes" title="This question has a score of ' + questionInfo.score + '.">' + questionInfo.score + '</div>';
@@ -183,13 +189,103 @@ function StackApi() {
     }
 }
 
+function NotificationManager(settings) {
+
+  this.settings = settings;
+
+  var self = this;
+
+  // sound settings popup listener
+  this.watchPopup = function() {
+    var $popup = $('#chat-body > .popup');
+
+    if ($popup.length) {
+      var status = 'disabled';
+      if (self.settings.isSoundEnabled()) {
+        status = 'enabled';
+      }
+
+      $('ul.no-bullets', $popup).after('<hr><ul class="no-bullet" id="cvpls-sound"><li><a href="#">cv-pls (' + status + ')</a></li></ul>');
+    } else {
+      self.watchPopup();
+    }
+  }
+
+  // toggle sound setting
+  this.toggleSound = function() {
+    var $option = $('#cvpls-sound a');
+    if (self.settings.isSoundEnabled()) {
+      self.settings.saveSetting('sound-notification', false);
+      $option.text('cv-pls (disabled)');
+    } else {
+      self.settings.saveSetting('sound-notification', true);
+      $option.text('cv-pls (enabled)');
+    }
+  }
+}
+
+// database class to get and save settings
+function Settings() {
+  var self = this;
+
+  this.saveSetting = function(key, value) {
+    localStorage.setItem(key, value);
+  }
+
+  this.getSetting = function(key) {
+    return localStorage.getItem(key);
+  }
+
+  this.deleteSetting = function(key) {
+    localStorage.remove(key);
+  }
+
+  this.truncate = function() {
+    localStorage.clear();
+  }
+
+  this.isSoundEnabled = function() {
+    if (self.getSetting('sound-notification') == 'true') {
+      return true;
+    }
+
+    return false;
+  }
+}
+
+function SoundPlayer() {
+  this.beep = new Audio('http://or.cdn.sstatic.net/chat/so.mp3');
+
+  var self = this;
+
+  this.playNotification = function() {
+    self.beep.play();
+  }
+}
+
 (function() {
+  var settings = new Settings();
   var stackApi = new StackApi();
-  var cvHelper = new CvHelper(stackApi);
+  var soundPlayer = new SoundPlayer();
+  var cvHelper = new CvHelper(stackApi, settings, soundPlayer);
   cvHelper.init();
+
+  var notificationManager =  new NotificationManager(settings);
 
   // show icon when we are in a chatroom
   chrome.extension.sendRequest({method: "showIcon"}, function(response) { });
+
+  // sound options
+  $('#sound').click(function() {
+    notificationManager.watchPopup();
+  });
+
+  // save sound setting
+  $('body').on('click', '#cvpls-sound li', function() {
+    notificationManager.toggleSound();
+
+    return false;
+  });
 
   // handle close question
   $('#chat').on('click', '.cvpls-close-question', function() {
@@ -203,7 +299,7 @@ function StackApi() {
           // request error
         },
         success: function(data, status, jqHr) {
-          // prevent error because the StackExchaneg api isn't available
+          // prevent error because the StackExchange js isn't available in chat
           data = data.replace('if (StackExchange.options.isMobile) {', 'if (1==2) {');
           $button.closest('.message').prepend(data);
         }
