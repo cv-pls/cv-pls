@@ -13,9 +13,10 @@ Simply install the plugin and all [cv-pls] request will automatically be convert
 
 Settings:
 
+- Enable/disable addressbar icon
 - Enable/disable @mention beep notification
 - Enable/disable formatting in oneboxes
 
-[1]:https://github.com/downloads/PeeHaa/cv-pls/cv-pls.0.7.0.crx
+[1]:https://github.com/downloads/PeeHaa/cv-pls/cv-pls.0.7.1.crx
 
 Some features that will be added soon: closing directly from onebox, formatting of [delv-pls] requests.
