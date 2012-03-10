@@ -3,11 +3,14 @@
   <head>
     <script>
       chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
-        if (request.method == 'getLocalStorage') {
-          sendResponse({data: localStorage[request.key]});
-        } else if (request.method == 'showIcon') {
+        if (request.method == 'showIcon') {
           chrome.pageAction.show(sender.tab.id);
           sendResponse({});
+        } else if (request.method == 'saveSetting') {
+          localStorage.setItem(request.key, request.value);
+          sendResponse({});
+        } else if (request.method == 'getSetting') {
+          sendResponse({value: localStorage.getItem(request.key)});
         } else {
           sendResponse({}); // snub them.
         }
