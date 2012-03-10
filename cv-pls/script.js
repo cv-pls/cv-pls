@@ -1,19 +1,18 @@
 /*
   TODO
 
-  Also make the sound options available through the extension options
-  Check if questions already closed
+  Check if questions are already closed
+  Format delv requests
 */
 
 function CvHelper(stackApi, settings, soundPlayer) {
+  var self = this;
 
   this.stackApi = stackApi;
   this.settings = settings;
   this.soundPlayer = soundPlayer;
 
   this.lastMessageId = 0;
-
-  var self = this;
 
   // check if room is finished loading
   this.init = function() {
@@ -91,7 +90,11 @@ function CvHelper(stackApi, settings, soundPlayer) {
 
   // create nice cv-pls box
   this.formatCloseRequest = function($post) {
-    self.stackApi.getQuestion(self.getPostInfo(self.getQuestionId($post)), $post);
+    chrome.extension.sendRequest({method: 'getSetting', key: 'cv-onebox'}, function(response) {
+      if (response.value == null || response.value == 'true') {
+        self.stackApi.getQuestion(self.getPostInfo(self.getQuestionId($post)), $post);
+      }
+    });
   }
 
   // retrieve question id form the url
@@ -101,7 +104,12 @@ function CvHelper(stackApi, settings, soundPlayer) {
 
   // create a nice object containing all the needed info for the request
   this.getPostInfo = function(questionId) {
-    return {id: questionId, host: 'stackoverflow.com'};
+    return {
+      id: questionId,
+      host: 'stackoverflow.com',
+      path: 'questions/',
+      filter: '!6LE4b5o5yvdNA'
+    };
   }
 }
 
@@ -112,7 +120,7 @@ function StackApi() {
 
     // get the URL of question
     this.getQuestionUrl = function(request) {
-      return apiUrl + 'questions/' + request.id;
+      return apiUrl + request.path + request.id;
     }
 
     // request the info of the question
@@ -120,7 +128,7 @@ function StackApi() {
         var url = self.getQuestionUrl(request);
         var apiData = {
             site: request.host,
-            filter: '!6LE4b5o5yvdNA',
+            filter: request.filter,
             pagesize: 1,
             page: 1,
             body: 'true'
@@ -200,12 +208,16 @@ function NotificationManager(settings) {
     var $popup = $('#chat-body > .popup');
 
     if ($popup.length) {
-      var status = 'disabled';
-      if (self.settings.isSoundEnabled()) {
-        status = 'enabled';
-      }
+      chrome.extension.sendRequest({method: 'getSetting', key: 'sound-notification'}, function(response) {
+        settings.saveSetting('sound-notification', response.value);
 
-      $('ul.no-bullets', $popup).after('<hr><ul class="no-bullet" id="cvpls-sound"><li><a href="#">cv-pls (' + status + ')</a></li></ul>');
+        var status = 'disabled';
+        if (self.settings.isSoundEnabled()) {
+          status = 'enabled';
+        }
+
+        $('ul.no-bullets', $popup).after('<hr><ul class="no-bullet" id="cvpls-sound"><li><a href="#">cv-pls (' + status + ')</a></li></ul>');
+      });
     } else {
       self.watchPopup();
     }
@@ -217,9 +229,11 @@ function NotificationManager(settings) {
     if (self.settings.isSoundEnabled()) {
       self.settings.saveSetting('sound-notification', false);
       $option.text('cv-pls (disabled)');
+      chrome.extension.sendRequest({method: 'saveSetting', key: 'sound-notification', value: false}, function(response) { });
     } else {
       self.settings.saveSetting('sound-notification', true);
       $option.text('cv-pls (enabled)');
+      chrome.extension.sendRequest({method: 'saveSetting', key: 'sound-notification', value: true}, function(response) { });
     }
   }
 }
