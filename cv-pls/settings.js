@@ -12,6 +12,10 @@ function SettingsManager(settings) {
       $('input[name="beep"]').prop('checked', 'checked');
     }
 
+    if (settings.isIconEnabled()) {
+      $('input[name="icon"]').prop('checked', 'checked');
+    }
+
     if (settings.isCvOneboxEnabled()) {
       $('input[name="oneboxcv"]').prop('checked', 'checked');
     }
@@ -54,6 +58,15 @@ function Settings() {
     return false;
   }
 
+  this.isIconEnabled = function() {
+    var value = self.getSetting('icon-enabled');
+    if (value == 'true' || value === null) {
+      return true;
+    }
+
+    return false;
+  }
+
   this.isCvOneboxEnabled = function() {
     var value = self.getSetting('cv-onebox');
     if (value == 'true' || value === null) {
@@ -80,6 +93,10 @@ function Settings() {
 
   $('input[name="beep"]').change(function() {
     settingsManager.saveSetting('sound-notification', $(this).prop('checked'));
+  });
+
+  $('input[name="icon"]').change(function() {
+    settingsManager.saveSetting('icon-enabled', $(this).prop('checked'));
   });
 
   $('input[name="oneboxcv"]').change(function() {

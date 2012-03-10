@@ -4,7 +4,10 @@
     <script>
       chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
         if (request.method == 'showIcon') {
-          chrome.pageAction.show(sender.tab.id);
+          var enabled = localStorage.getItem('icon-enabled');
+          if (enabled == 'true' || enabled === null) {
+            chrome.pageAction.show(sender.tab.id);
+          }
           sendResponse({});
         } else if (request.method == 'saveSetting') {
           localStorage.setItem(request.key, request.value);
