@@ -1,5 +1,5 @@
-[cv-pls] Helper
-===============
+cv-pls
+======
 
 This Google Chrome extension will help you close voting questions on Stack Overflow.
 
