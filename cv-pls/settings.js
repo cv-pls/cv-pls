@@ -12,6 +12,10 @@ function SettingsManager(settings) {
       $('input[name="beep"]').prop('checked', 'checked');
     }
 
+    if (settings.isAvatarEnabled()) {
+      $('input[name="avatar"]').prop('checked', 'checked');
+    }
+
     if (settings.isIconEnabled()) {
       $('input[name="icon"]').prop('checked', 'checked');
     }
@@ -58,6 +62,14 @@ function Settings() {
     return false;
   }
 
+  this.isAvatarEnabled = function() {
+    if (self.getSetting('avatar-notification') == 'true') {
+      return true;
+    }
+
+    return false;
+  }
+
   this.isIconEnabled = function() {
     var value = self.getSetting('icon-enabled');
     if (value == 'true' || value === null) {
@@ -93,6 +105,10 @@ function Settings() {
 
   $('input[name="beep"]').change(function() {
     settingsManager.saveSetting('sound-notification', $(this).prop('checked'));
+  });
+
+  $('input[name="avatar"]').change(function() {
+    settingsManager.saveSetting('avatar-notification', $(this).prop('checked'));
   });
 
   $('input[name="icon"]').change(function() {
