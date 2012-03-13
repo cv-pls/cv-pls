@@ -3,6 +3,8 @@
 
   Check if questions are already closed
   Format delv requests
+  Implement pagetitle mention (*)
+  Remove local storage and only use settings of plugin
 */
 
 function CvHelper(stackApi, settings, soundPlayer) {
@@ -25,13 +27,14 @@ function CvHelper(stackApi, settings, soundPlayer) {
         self.lastMessageId = self.getMessageId($post.closest('div.message').attr('id'));
 
         if (self.isCloseRequest($post)) {
+          self.displayCvCount();
           self.formatCloseRequest($post);
         }
       });
 
       self.postListener();
     }
-  }
+  };
 
   // get the message id from chat (e.g. id="message-12345678")
   this.getMessageId = function(id) {
@@ -45,12 +48,12 @@ function CvHelper(stackApi, settings, soundPlayer) {
     }
 
     return false;
-  }
+  };
 
   // sets the last message id
   this.setLastMessageId = function(id) {
     self.lastMessageId = id;
-  }
+  };
 
   // adds a listener for new chat-messages
   this.postListener = function() {
@@ -78,7 +81,59 @@ function CvHelper(stackApi, settings, soundPlayer) {
     }
 
     setTimeout(self.postListener, 1000);
-  }
+  };
+
+  // onclick scroll to and highlight yellow oldest / latest and substract one cv requests from counter
+  this.displayCvCount = function() {
+    chrome.extension.sendRequest({method: 'getSetting', key: 'avatar-notification'}, function(response) {
+      if (response.value == 'true') {
+        var $cvCount = $('#cv-count');
+        if (!$cvCount.length) {
+          var css = 'position:absolute; z-index:4; top:7px; left:24px; color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417)); border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer; font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px; min-width: 12px; padding: 0 4px; text-align: center;';
+          var html = '<div title="Cv request waiting for review" id="cv-count" style="' + css + '">1</div>';
+
+          $('#reply-count').after(html);
+        } else {
+          $cvCount.text(parseInt($cvCount.text(), 10)+1);
+        }
+
+        $cvCount.show();
+      }
+    });
+  };
+
+  // handle displaying the last cv request and update the notification count
+  this.displayLastCvRequest = function() {
+    var lastCvRequestPost = $('.cvpls-new').last().removeClass('cvpls-new');
+    var lastCvRequestContainer = lastCvRequestPost.parent();
+    var originalBackgroundColor = lastCvRequestContainer.parents('.messages').css('backgroundColor');
+    var $cvCount = $('#cv-count');
+
+    lastCvRequestContainer.css('background', 'yellow');
+    $('html, body').animate({scrollTop: lastCvRequestContainer.offset().top}, 500, function() {
+      lastCvRequestContainer.animate({
+        backgroundColor: originalBackgroundColor
+      }, 5000);
+    });
+
+    if ($cvCount.length) {
+      var newCvCount = (parseInt($cvCount.text(), 10)-1);
+      $cvCount.text(newCvCount);
+
+      if (newCvCount == 0) {
+        $cvCount.animate({
+          opacity: 0
+        }, 1000, function() {
+          $cvCount.remove();
+        });
+      }
+    }
+  };
+
+  // possible values: Nameroom | chat.stack... or (*) Nameroom | chat.stack... or (2) Nameroom | chat.stack... or (2*) Nameroom | chat.stack...
+  this.notifyInTitlebar = function() {
+    var currentTitle = document.title;
+  };
 
   // find out whether post contains a close request
   this.isCloseRequest = function($post) {
@@ -86,7 +141,7 @@ function CvHelper(stackApi, settings, soundPlayer) {
       return true;
     }
     return false;
-  }
+  };
 
   // create nice cv-pls box
   this.formatCloseRequest = function($post) {
@@ -95,12 +150,12 @@ function CvHelper(stackApi, settings, soundPlayer) {
         self.stackApi.getQuestion(self.getPostInfo(self.getQuestionId($post)), $post);
       }
     });
-  }
+  };
 
   // retrieve question id form the url
   this.getQuestionId = function($post) {
     return $('a:contains("stackoverflow.com/questions/")', $post).attr('href').split('/')[4];
-  }
+  };
 
   // create a nice object containing all the needed info for the request
   this.getPostInfo = function(questionId) {
@@ -110,7 +165,7 @@ function CvHelper(stackApi, settings, soundPlayer) {
       path: 'questions/',
       filter: '!6LE4b5o5yvdNA'
     };
-  }
+  };
 }
 
 function StackApi() {
@@ -121,7 +176,7 @@ function StackApi() {
     // get the URL of question
     this.getQuestionUrl = function(request) {
       return apiUrl + request.path + request.id;
-    }
+    };
 
     // request the info of the question
     this.getQuestion = function(request, $post) {
@@ -153,7 +208,8 @@ function StackApi() {
     // render the cv request as onebox
     this.renderCvRequest = function(item, $post) {
       $post.append(self.oneBox(item));
-    }
+      $post.addClass('cvpls-new');
+    };
 
     // the html of the cv onebox
     this.oneBox = function(questionInfo) {
@@ -194,7 +250,7 @@ function StackApi() {
       html+= '</div>';
 
       return html;
-    }
+    };
 }
 
 function NotificationManager(settings) {
@@ -221,7 +277,7 @@ function NotificationManager(settings) {
     } else {
       self.watchPopup();
     }
-  }
+  };
 
   // toggle sound setting
   this.toggleSound = function() {
@@ -235,7 +291,7 @@ function NotificationManager(settings) {
       $option.text('cv-pls (enabled)');
       chrome.extension.sendRequest({method: 'saveSetting', key: 'sound-notification', value: true}, function(response) { });
     }
-  }
+  };
 }
 
 // database class to get and save settings
@@ -260,6 +316,14 @@ function Settings() {
 
   this.isSoundEnabled = function() {
     if (self.getSetting('sound-notification') == 'true') {
+      return true;
+    }
+
+    return false;
+  }
+
+  this.isAvatarEnabled = function() {
+    if (self.getSetting('avatar-notification') == 'true') {
       return true;
     }
 
@@ -297,6 +361,13 @@ function SoundPlayer() {
   // save sound setting
   $('body').on('click', '#cvpls-sound li', function() {
     notificationManager.toggleSound();
+
+    return false;
+  });
+
+  // handle click on notification on avatar
+  $('body').on('click', '#cv-count', function() {
+    cvHelper.displayLastCvRequest();
 
     return false;
   });
