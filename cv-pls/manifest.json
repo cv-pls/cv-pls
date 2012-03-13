@@ -13,7 +13,7 @@
   "content_scripts" : [
     {
       "matches": ["http://chat.stackoverflow.com/rooms/*"],
-      "js" : ["jquery-1.7.1.min.js", "script.js"],
+      "js" : ["jquery-1.7.1.min.js", "jquery-ui-1.8.18.custom.min.js", "script.js"],
       "run_at" : "document_idle",
       "all_frames" : false
     }
