@@ -71,6 +71,7 @@ function CvHelper(stackApi, settings, soundPlayer) {
         if (self.isCloseRequest($post)) {
           self.lastMessageId = currentMessageId;
 
+          self.displayCvCount();
           self.formatCloseRequest($post);
 
           if (self.settings.isSoundEnabled()) {
