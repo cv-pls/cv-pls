@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <style>
+      a.button { border: 1px solid lightGrey; border-radius: 4px; background: #e6e6e6; color: #555555; font-size: 12px; text-decoration: none; padding: 2px 5px; }
+    </style>
     <script>
+      function setOptionsUrl() {
+        document.getElementById('settings').setAttribute('href', chrome.extension.getURL('options.html'));
+      }
     </script>
   </head>
+  <body onload="setOptionsUrl()">
+    <a href="#" class="button" id="settings" target="_blank">Settings</a>
+  </body>
 </html>
