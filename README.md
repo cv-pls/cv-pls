@@ -9,14 +9,15 @@ It will convert all [cv-pls] requests into nice oneboxes in the SO chat.
 
 Usage:
 
-Simply install the plugin and all [cv-pls] request will automatically be converted into oneboxes.
+Simply install the plugin and all [cv-pls] request will automatically be converted into formatted oneboxes.
 
 Settings:
 
 - Enable/disable addressbar icon
 - Enable/disable @mention beep notification
+- Enable/disable avatar notifications (like mentions and flags)
 - Enable/disable formatting in oneboxes
 
-[1]:https://github.com/downloads/PeeHaa/cv-pls/cv-pls.0.7.1.crx
+[1]:https://github.com/downloads/PeeHaa/cv-pls/cv-pls.0.8.0.crx
 
 Some features that will be added soon: closing directly from onebox, formatting of [delv-pls] requests.
