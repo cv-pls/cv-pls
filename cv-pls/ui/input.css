@@ -1,0 +1,39 @@
+/*
+ * cv-pls Helper Extension input element styles
+ */
+
+input[type="checkbox"]:not(:disabled):not(:active):hover {
+    background: -webkit-linear-gradient(white, #E6E6E6);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+input[type="checkbox"] {
+    -webkit-box-shadow: inset 0 1px 2px white, 0 1px 2px rgba(0, 0, 0, .2);
+    -webkit-appearance: none;
+    -webkit-margin-start: 0;
+    -webkit-margin-end: 3px;
+    background: -webkit-linear-gradient(#FAFAFA, gainsboro);
+    border-radius: 3px;
+    border: 1px solid #A0A0A0;
+    display: inline-block;
+    height: 16px;
+    margin-bottom: 0;
+    margin-top: 0;
+    position: relative;
+    top: 3px;
+    vertical-align: baseline;
+    width: 16px;
+}
+
+input[type="checkbox"]:checked::before {
+    color: gray;
+    content: url('checkmark.png');
+    font-size: 13px;
+    height: 16px;
+    left: 2px;
+    position: absolute;
+}
+
+input[type="radio"] ~ span, input[type="checkbox"] ~ span {
+    color: #444;
+}
