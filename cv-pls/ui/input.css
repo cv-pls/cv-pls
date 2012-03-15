@@ -2,6 +2,10 @@
  * cv-pls Helper Extension input element styles
  */
 
+/**
+ * @section checkbox and radio
+ */
+
 input[type="checkbox"]:not(:disabled):not(:active):hover {
     background: -webkit-linear-gradient(white, #E6E6E6);
     text-shadow: 0 1px 0 rgba(255, 255, 255, 1);
@@ -36,4 +40,51 @@ input[type="checkbox"]:checked::before {
 
 input[type="radio"] ~ span, input[type="checkbox"] ~ span {
     color: #444;
+}
+
+/**
+ * @section text
+ */
+
+input[type="password"], input[type="text"], input[type="url"], input:not([type]) {
+    -webkit-border-radius: 2px;
+    border: 1px solid #AAA;
+    font-size: inherit;
+    padding: 3px;
+}
+
+/**
+ * @section select
+ */
+
+select {
+    -webkit-appearance: button;
+    -webkit-border-radius: 3px;
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    -webkit-padding-end: 20px;
+    -webkit-padding-start: 8px;
+    -webkit-user-select: none;
+    background-image: url("select.png"), -webkit-linear-gradient(#FAFAFA, #F4F4F4 40%, #E5E5E5);
+    background-position: center right;
+    background-repeat: no-repeat;
+    border: 1px solid #AAA;
+    color: #555;
+    font-size: inherit;
+    margin: 0;
+    overflow: hidden;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+select:disabled {
+    color: graytext;
+    background-image: url("disabled_select.png"), -webkit-linear-gradient(#FEFEFE, #F8F8F8 40%, #E9E9E9);
+}
+
+select:enabled:hover {
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    background-image: url("select.png"), -webkit-linear-gradient(#FEFEFE, #F8F8F8 40%, #E9E9E9);
+    color: #333;
 }

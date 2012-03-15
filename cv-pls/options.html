@@ -1,81 +1,93 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>cv-pls Helper Extension Settings</title>
     <link rel="stylesheet" type="text/css" href="ui/default.css">
     <link rel="stylesheet" type="text/css" href="ui/input.css">
     <link rel="stylesheet" type="text/css" href="ui/options.css">
     <style>
-      input[name=oneboxheight] { width: 40px; text-align: right; }
+
+        #customOneBoxGroup {
+            display: -webkit-box;
+            -webkit-box-orient: horizontal;
+        }
+
+        #customOneBoxGroup > :last-child {
+            -webkit-margin-start: 1ex;
+            -webkit-box-flex: 1;
+            position: relative;
+        }
+
+        input[name=oneboxheight] {
+            box-sizing: border-box;
+            padding-top: 3px;
+            text-align: right;
+            width: 40px;
+        }
+
+        input[name=oneboxheightunits] {
+            display: block;
+            -webkit-box-flex: 1;
+            max-width: 200px;
+        }
     </style>
-  </head>
-  <body>
-    <div id="page-container">
-        <div class="page">
-            <h1>cv-pls Helper Extension Settings</h1>
-            <div class="displaytable">
-                <section>
-                    <h3>Appearance</h3>
-                    <div>
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="icon">
-                                <span>Enable addressbar icon</span>
-                            </label>
-                        </div>
+</head>
+<body>
+<div id="page-container">
+    <div class="page">
+        <h1>cv-pls Helper Extension Settings</h1>
+
+        <div class="displaytable">
+            <section>
+                <h3>Appearance</h3>
+
+                <div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="icon">
+                            <span>Enable addressbar icon</span>
+                        </label>
+                    </div>
+                    <div id="customOneBoxGroup">
                         <div class="checkbox">
                             <label>
                                 <input type="checkbox" name="oneboxcv">
                                 <span>OneBox cv requests</span>
                             </label>
                         </div>
-                    </div>
-                </section>
-                <section>
-                    <h3>Notification</h3>
-                    <div>
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="beep">
-                                <span>Enable sound notification (@mention beep)</span>
-                            </label>
-                        </div>
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="avatar">
-                                <span>Enable avatar notifications</span>
-                            </label>
+                        <div>
+                            <input type="text" data-type="number" name="oneboxheight" placeholder="Height" pattern="[0-9]*" maxlength="4">
+                            <select name="oneboxheightunits">
+                                <option value="px">px</option>
+                                <option value="pt">pt</option>
+                            </select>
                         </div>
                     </div>
-                </section>
-            </div>
+                </div>
+            </section>
+            <section>
+                <h3>Notification</h3>
+
+                <div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="beep">
+                            <span>Enable sound notification (@mention beep)</span>
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="avatar">
+                            <span>Enable avatar notifications</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
-
-    <h1>Settings</h1>
-    <table>
-      <tr>
-        <td colspan="2"><label><input type="checkbox" name="icon"> Enable addressbar icon</label></td>
-      </tr>
-      <tr>
-        <td colspan="2"><label><input type="checkbox" name="beep"> Enable sound notification (@mention beep)</label></td>
-      </tr>
-      <tr>
-        <td colspan="2"><label><input type="checkbox" name="avatar"> Enable avatar notifications</label></td>
-      </tr>
-      <tr>
-        <td><label><input type="checkbox" name="oneboxcv"> OneBox cv requests</label></td>
-        <td>
-          <input type="text" name="oneboxheight" placeholder="Height">
-          <select name="oneboxheightunits">
-            <option value="px">px</option>
-            <option value="pt">pt</option>
-          </select>
-        </td>
-      </tr>
-    </table>
-    <script src="jquery-1.7.1.min.js"></script>
-    <script src="settings.js"></script>
-  </body>
+</div>
+<script src="jquery-1.7.1.min.js"></script>
+<script src="settings.js"></script>
+</body>
 </html>
