@@ -4,10 +4,6 @@ function SettingsManager(settings) {
   this.settings = settings;
 
   this.init = function() {
-    this.initSoundSettings();
-  }
-
-  this.initSoundSettings = function() {
     if (settings.isSoundEnabled()) {
       $('input[name="beep"]').prop('checked', 'checked');
     }
@@ -27,6 +23,10 @@ function SettingsManager(settings) {
     if (settings.isDelvOneboxEnabled()) {
       $('input[name="oneboxdelv"]').prop('checked', 'checked');
     }
+
+    $('input[name="oneboxheight"]').val(settings.getOneboxHeight());
+
+    $('select[name="oneboxheightunits"]').val(settings.getOneboxHeightUnit());
   }
 
   this.saveSetting = function(key, value) {
@@ -96,6 +96,18 @@ function Settings() {
 
     return false;
   }
+
+  this.getOneboxHeight = function() {
+    var value = self.getSetting('onebox-height');
+
+    return value;
+  }
+
+  this.getOneboxHeightUnit = function() {
+    var value = self.getSetting('onebox-heightunit');
+
+    return value;
+  }
 }
 
 (function($) {
@@ -121,5 +133,13 @@ function Settings() {
 
   $('input[name="oneboxdelv"]').change(function() {
     settingsManager.saveSetting('delv-onebox', $(this).prop('checked'));
+  });
+
+  $('input[name="oneboxheight"]').keyup(function() {
+    settingsManager.saveSetting('onebox-height', $(this).val());
+  });
+
+  $('select[name="oneboxheightunits"]').change(function() {
+    settingsManager.saveSetting('onebox-heightunit', $(this).val());
   });
 })(jQuery);

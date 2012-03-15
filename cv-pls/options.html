@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <title>cv-pls Helper Extension Settings</title>
     <style>
+      input[name=oneboxheight] { width: 40px; text-align: right; }
+
         body {
             font-size: 13px;
             font-family: Arial, sans-serif;
@@ -140,6 +142,29 @@
             </div>
         </div>
     </div>
+
+    <h1>Settings</h1>
+    <table>
+      <tr>
+        <td colspan="2"><label><input type="checkbox" name="icon"> Enable addressbar icon</label></td>
+      </tr>
+      <tr>
+        <td colspan="2"><label><input type="checkbox" name="beep"> Enable sound notification (@mention beep)</label></td>
+      </tr>
+      <tr>
+        <td colspan="2"><label><input type="checkbox" name="avatar"> Enable avatar notifications</label></td>
+      </tr>
+      <tr>
+        <td><label><input type="checkbox" name="oneboxcv"> OneBox cv requests</label></td>
+        <td>
+          <input type="text" name="oneboxheight" placeholder="Height">
+          <select name="oneboxheightunits">
+            <option value="px">px</option>
+            <option value="pt">pt</option>
+          </select>
+        </td>
+      </tr>
+    </table>
     <script src="jquery-1.7.1.min.js"></script>
     <script src="settings.js"></script>
   </body>

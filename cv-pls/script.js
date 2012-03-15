@@ -5,6 +5,7 @@
   Format delv requests
   Implement pagetitle mention (*)
   Remove local storage and only use settings of plugin
+  Add setting to show avatar notification on chatroom load
 */
 
 function CvHelper(stackApi, settings, soundPlayer) {
@@ -208,14 +209,26 @@ function StackApi() {
 
     // render the cv request as onebox
     this.renderCvRequest = function(item, $post) {
-      $post.append(self.oneBox(item));
-      $post.addClass('cvpls-new');
+      chrome.extension.sendRequest({method: 'getHeight'}, function(response) {
+        $post.append(self.oneBox(item, response));
+        $post.addClass('cvpls-new');
+      });
     };
 
     // the html of the cv onebox
-    this.oneBox = function(questionInfo) {
+    this.oneBox = function(questionInfo, response) {
       var html = '';
-      html+= '<div class="onebox ob-post" style="overflow: hidden;">';
+      var height = '';
+      if (response.height) {
+        var unit = 'px';
+        if (response.unit) {
+          unit = response.unit;
+        }
+        height = ' height: ' + response.height + unit + ';';
+      }
+
+
+      html+= '<div class="onebox ob-post" style="overflow: hidden;' + height + '">';
       html+= '  <div class="ob-post-votes" title="This question has a score of ' + questionInfo.score + '.">' + questionInfo.score + '</div>';
       html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
       html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + questionInfo.link + '">' + questionInfo.title + '</a></div>';
