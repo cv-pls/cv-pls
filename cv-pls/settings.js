@@ -128,8 +128,15 @@ function Settings() {
   });
 
   $('input[name="oneboxcv"]').change(function() {
-    settingsManager.saveSetting('cv-onebox', $(this).prop('checked'));
+    var checked = $(this).prop('checked');
+    settingsManager.saveSetting('cv-onebox', checked);
+    if (checked) {
+        $(':input[name^="oneboxheight"]').removeAttr('disabled');
+    } else {
+        $(':input[name^="oneboxheight"]').attr('disabled', true);
+    }
   });
+    $('input[name="oneboxcv"]').change();
 
   $('input[name="oneboxdelv"]').change(function() {
     settingsManager.saveSetting('delv-onebox', $(this).prop('checked'));

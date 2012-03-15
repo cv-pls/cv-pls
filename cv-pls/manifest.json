@@ -2,12 +2,15 @@
   "name": "[cv-pls] Helper",
   "version": "0.8.1",
   "description": "Helps to close questions on SO",
+  "icons": { "16": "img/icon16.png",
+             "48": "img/icon48.png",
+            "128": "img/icon128.png" },
   "update_url": "https://github.com/downloads/PeeHaa/cv-pls/updates.xml",
   "options_page": "options.html",
   "background_page": "background.html",
   "page_action": {
     "default_title ": "[cv-pls]",
-    "default_icon": "icon.png",
+    "default_icon": "img/icon19.png",
     "popup": "setup.html"
   },
   "content_scripts" : [

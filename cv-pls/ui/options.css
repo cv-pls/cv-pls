@@ -1,0 +1,71 @@
+/*
+ * cv-pls Helper Extension options style
+ */
+
+#page-container {
+    box-sizing: border-box;
+    max-width: 888px;
+    min-width: 600px;
+    padding: 0 24px;
+}
+
+.page h1 {
+    -webkit-padding-end: 24px;
+    -webkit-user-select: none;
+    border-bottom: 1px solid #EEE;
+    color: #53637D;
+    font-size: 200%;
+    font-weight: normal;
+    margin: 0;
+    padding-bottom: 4px;
+    padding-top: 13px;
+    text-shadow: white 0 1px 2px;
+}
+
+h3 {
+    font-size: 105%;
+    font-weight: bold;
+    margin: 20px 0 10px 0;
+}
+
+.displaytable {
+    display: table;
+    width: 100%;
+}
+
+.displaytable > section {
+    display: table-row;
+}
+
+.displaytable > section > * {
+    display: table-cell;
+    vertical-align: baseline;
+    border-bottom: 1px solid #EEE;
+}
+
+.displaytable > section > h3 {
+    padding-top: 17px;
+}
+
+.displaytable > section > h3 + div, .displaytable > section > h3 + table {
+    padding-bottom: 20px;
+}
+
+section > div:only-of-type {
+    -webkit-box-flex: 1;
+}
+
+div.checkbox, div.radio {
+    margin: 5px 0;
+}
+
+section > h3 {
+    margin: 0;
+    vertical-align: middle;
+    width: 130px;
+    -webkit-padding-end: 10px;
+}
+
+section > h3 + * > :first-child {
+    margin-top: 0;
+}
