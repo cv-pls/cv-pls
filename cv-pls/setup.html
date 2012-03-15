@@ -1,16 +1,38 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>cv-pls Helper Extension Menu</title>
+    <link rel="stylesheet" type="text/css" href="ui/default.css">
     <style>
-      a.button { border: 1px solid lightGrey; border-radius: 4px; background: #e6e6e6; color: #555555; font-size: 12px; text-decoration: none; padding: 2px 5px; }
+      a.button { border: 1px solid lightGrey; border-radius: 4px; background: #e6e6e6; color: #555555; font-size: 12px; text-decoration: none; padding: 2px 5px; display:inline-block;}
+      .version { padding: 4px 0 0; font-size: 8px; color: #555555; text-align: right;}
     </style>
     <script>
       function setOptionsUrl() {
         document.getElementById('settings').setAttribute('href', chrome.extension.getURL('options.html'));
       }
+      function setVersionNumber() {
+          try {
+              var xhr = new XMLHttpRequest();
+              xhr.open("GET", chrome.extension.getURL('manifest.json'), true);
+              xhr.onreadystatechange = function() {
+                  if(this.readyState == 4) {
+                      var theManifest = JSON.parse(this.responseText);
+                      document.getElementById('version_number').innerText = theManifest.version;
+                  }
+              };
+              xhr.send();
+          } catch (ex) {} // silently fail
+      }
     </script>
   </head>
-  <body onload="setOptionsUrl()">
-    <a href="#" class="button" id="settings" target="_blank">Settings</a>
+  <body onload="setOptionsUrl(); setVersionNumber()">
+    <div>
+      <a href="#" class="button" id="settings" target="_blank">Settings</a>
+    </div>
+    <div class="version">
+        <img src="img/icon16.png" valign="middle" title="cv-pls Helper Extension"> <span id="version_number">test</span>
+    </div>
   </body>
 </html>
