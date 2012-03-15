@@ -2,6 +2,7 @@
 <html>
   <head>
     <script>
+      // we should really do a switch statement here
       chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
         if (request.method == 'showIcon') {
           var enabled = localStorage.getItem('icon-enabled');
@@ -14,6 +15,11 @@
           sendResponse({});
         } else if (request.method == 'getSetting') {
           sendResponse({value: localStorage.getItem(request.key)});
+        } else if (request.method == 'getHeight') {
+          sendResponse({
+            height: localStorage.getItem('onebox-height'),
+            unit: localStorage.getItem('onebox-heightunit')
+          });
         } else {
           sendResponse({}); // snub them.
         }
