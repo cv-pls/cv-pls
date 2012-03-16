@@ -1,6 +1,6 @@
 {
   "name": "[cv-pls] Helper",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Helps to close questions on SO",
   "icons": { "16": "img/icon16.png",
              "48": "img/icon48.png",
