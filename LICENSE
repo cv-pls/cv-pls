@@ -1,0 +1,14 @@
+All rights reserved.
+
+This software makes use of other software available under the following terms and conditions:
+
+Chromium: (The LICENSE file should have shipped with your copy of Chromium)
+
+    Copyright (c) 2011 The Chromium Authors. All rights reserved.
+    Use of this source code is governed by a BSD-style license that can be
+    found in the LICENSE file.
+
+jQuery: (The license info is linked inside the .js files)
+
+    You may use any jQuery project under the terms of either the MIT License
+    or the GNU General Public License (GPL) Version 2.
