@@ -1,38 +1,177 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>cv-pls Helper Extension Menu</title>
-    <link rel="stylesheet" type="text/css" href="ui/default.css">
-    <style>
-      a.button { border: 1px solid lightGrey; border-radius: 4px; background: #e6e6e6; color: #555555; font-size: 12px; text-decoration: none; padding: 2px 5px; display:inline-block;}
-      .version { padding: 4px 0 0; font-size: 8px; color: #555555; text-align: right;}
-    </style>
-    <script>
-      function setOptionsUrl() {
-        document.getElementById('settings').setAttribute('href', chrome.extension.getURL('options.html'));
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>cv-pls Helper Extension Menu</title>
+  <link rel="stylesheet" type="text/css" href="ui/default.css">
+  <link rel="stylesheet" type="text/css" href="ui/input.css">
+  <script>
+    function CvPopUpMenu() {
+      var self = this;
+      this.manifest = null;
+
+      this.getOptionsUrl = function () {
+        return chrome.extension.getURL('options.html');
       }
-      function setVersionNumber() {
-          try {
-              var xhr = new XMLHttpRequest();
-              xhr.open("GET", chrome.extension.getURL('manifest.json'), true);
-              xhr.onreadystatechange = function() {
-                  if(this.readyState == 4) {
-                      var theManifest = JSON.parse(this.responseText);
-                      document.getElementById('version_number').innerText = theManifest.version;
-                  }
-              };
-              xhr.send();
-          } catch (ex) {} // silently fail
+      this.getManifest = function () {
+        if (self.manifest) {
+          return self.manifest;
+        }
+        try {
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", chrome.extension.getURL('manifest.json'), false);
+          xhr.onreadystatechange = function () {
+            if (this.readyState == 4) {
+              self.manifest = JSON.parse(this.responseText);
+            }
+          };
+          xhr.send();
+          return self.manifest;
+        } catch (ex) {
+        } // silently fail
       }
-    </script>
-  </head>
-  <body onload="setOptionsUrl(); setVersionNumber()">
-    <div>
-      <a href="#" class="button" id="settings" target="_blank">Settings</a>
-    </div>
-    <div class="version">
-        <img src="img/icon16.png" valign="middle" title="cv-pls Helper Extension"> <span id="version_number">test</span>
-    </div>
-  </body>
+      this.getVersionNumber = function () {
+        if (self.version) {
+          return self.version;
+        }
+        return self.version = self.getManifest().version;
+      }
+      this.onLoad = function () {
+        document.getElementById('moreSettings').onclick = function () {
+          if (chrome.extension.getExtensionTabs().length) {
+            chrome.extension.getExtensionTabs()[0].focus();
+          } else {
+            window.open(popUpMenu.getOptionsUrl(), 'cvplsHelperExtensionOptions');
+          }
+        };
+        document.getElementById('closeButton').onclick = function () {
+          window.close();
+          return true;
+        }
+        document.getElementById('versionNumber').innerText = popUpMenu.getVersionNumber();
+      }
+    }
+    var popUpMenu = new CvPopUpMenu();
+
+  </script>
+  <style>
+    body {
+      min-width: 260px;
+    }
+
+    .version {
+      margin: 16px 4px 4px;
+      padding: 4px 0 0;
+      font-size: 10px;
+      color: #555555;
+      text-align: right;
+    }
+
+    #versionTable {
+      border-spacing: 0;
+      border: 0;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+
+    h3 {
+      line-height: 2em;
+      font-size: 105%;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    #customOneBoxGroup {
+      display: -webkit-box;
+      -webkit-box-orient: horizontal;
+    }
+
+    #customOneBoxGroup > :last-child {
+      -webkit-margin-start: 1ex;
+      -webkit-box-flex: 1;
+      position: relative;
+    }
+
+    input[name=oneboxheight] {
+      box-sizing: border-box;
+      padding-top: 3px;
+      text-align: right;
+      width: 40px;
+    }
+
+    input[name=oneboxheightunits] {
+      display: block;
+      -webkit-box-flex: 1;
+      max-width: 200px;
+    }
+
+    div.checkbox, div.radio {
+      margin: 5px 0;
+    }
+
+    #closeButton {
+      background: url('ui/close-button.png') no-repeat 4px 0;
+      top: 2px;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      position: absolute;
+    }
+
+    #closeButton:hover {
+      background-position: 4px -28px;
+    }
+  </style>
+</head>
+<body onload="popUpMenu.onLoad()">
+<div id="closeButton" title="Close Popup"></div>
+<div>
+  <div class="displaytable">
+    <section>
+      <h3>Settings</h3>
+
+      <div>
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" name="icon">
+            <span>Enable addressbar icon</span>
+          </label>
+        </div>
+        <div id="customOneBoxGroup">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="oneboxcv">
+              <span>OneBox cv requests</span>
+            </label>
+          </div>
+          <div>
+            <input type="text" data-type="number" name="oneboxheight" placeholder="Height" pattern="[0-9]*"
+                   maxlength="4">
+            <select name="oneboxheightunits">
+              <option value="px">px</option>
+              <option value="pt">pt</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<table id="versionTable">
+  <tr>
+    <td>
+      <button id="moreSettings" title="cv-pls Helper Extension Settings Tab">more...</button>
+    </td>
+    <td>
+      <div class="version">
+        <img src="img/icon16.png" valign="bottom" title="cv-pls Helper Extension"> <span id="versionNumber">-/-</span>
+      </div>
+    </td>
+  </tr>
+</table>
+<script src="jquery-1.7.1.min.js"></script>
+<script src="settings.js"></script>
+</body>
 </html>
