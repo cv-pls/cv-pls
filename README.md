@@ -5,7 +5,7 @@ This Google Chrome extension will help you close voting questions on Stack Overf
 
 It will convert all [cv-pls] requests into nice oneboxes in the SO chat.
 
-[Download current stable version (0.10.0)][1]
+[Download current stable version (0.11.0)][1]
 
 Usage:
 
@@ -19,6 +19,6 @@ Settings:
 - Enable/disable formatting in oneboxes
 - Changing the (initial) height of the oneboxes
 
-[1]:https://github.com/downloads/PeeHaa/cv-pls/cv-pls.0.10.0.crx
+[1]:https://github.com/downloads/PeeHaa/cv-pls/cv-pls.0.11.0.crx
 
 Some features that will be added soon: closing directly from onebox, formatting of [delv-pls] requests.
