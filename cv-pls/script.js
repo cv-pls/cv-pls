@@ -1,13 +1,3 @@
-/*
-  TODO
-
-  Check if questions are already closed
-  Format delv requests
-  Implement pagetitle mention (*)
-  Remove local storage and only use settings of plugin
-  Add setting to show avatar notification on chatroom load
-*/
-
 function CvHelper(stackApi, settings, soundPlayer) {
   var self = this;
 
