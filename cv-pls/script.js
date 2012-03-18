@@ -200,13 +200,15 @@ function StackApi() {
     // render the cv request as onebox
     this.renderCvRequest = function(item, $post) {
       chrome.extension.sendRequest({method: 'getHeight'}, function(response) {
-        $post.append(self.oneBox(item, response));
-        $post.addClass('cvpls-new');
+        chrome.extension.sendRequest({method: 'getStatus'}, function(statusSettings) {
+          $post.append(self.oneBox(item, response, statusSettings));
+          $post.addClass('cvpls-new');
+        });
       });
     };
 
     // the html of the cv onebox
-    this.oneBox = function(questionInfo, response) {
+    this.oneBox = function(questionInfo, response, statusSettings) {
       var html = '';
       var height = '';
       if (response.height) {
@@ -217,11 +219,19 @@ function StackApi() {
         height = ' height: ' + response.height + unit + ';';
       }
 
+      var closed = '';
+      var reason = '';
+      if (statusSettings.reason == 'true') {
+        reason = ' as ' + questionInfo.closed_reason;
+      }
+      if ((statusSettings.status == 'true' || statusSettings.status == null) && typeof questionInfo.closed_date != 'undefined') {
+        closed = ' [closed' + reason + ']';
+      }
 
       html+= '<div class="onebox ob-post" style="overflow: hidden;' + height + '">';
       html+= '  <div class="ob-post-votes" title="This question has a score of ' + questionInfo.score + '.">' + questionInfo.score + '</div>';
       html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
-      html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + questionInfo.link + '">' + questionInfo.title + '</a></div>';
+      html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + questionInfo.link + '">' + questionInfo.title + closed + '</a></div>';
       html+= '  <p class="ob-post-body">';
       html+= '    <img width="32" height="32" class="user-gravatar32" src="' + questionInfo.owner.profile_image + '" title="' + questionInfo.owner.display_name + '" alt="' + questionInfo.owner.display_name + '">' + questionInfo.body;
       html+= '  </p>';

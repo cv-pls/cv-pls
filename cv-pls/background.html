@@ -20,6 +20,11 @@
             height: localStorage.getItem('onebox-height'),
             unit: localStorage.getItem('onebox-heightunit')
           });
+        } else if (request.method == 'getStatus') {
+          sendResponse({
+            status: localStorage.getItem('cv-status'),
+            reason: localStorage.getItem('cv-reason')
+          });
         } else {
           sendResponse({}); // snub them.
         }

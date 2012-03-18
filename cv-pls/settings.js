@@ -27,6 +27,14 @@ function SettingsManager(settings) {
     $('input[name="oneboxheight"]').val(settings.getOneboxHeight());
 
     $('select[name="oneboxheightunits"]').val(settings.getOneboxHeightUnit());
+
+    if (settings.isCvStatusEnabled()) {
+      $('input[name="status"]').prop('checked', 'checked');
+    }
+
+    if (settings.isCvReasonEnabled()) {
+      $('input[name="reason"]').prop('checked', 'checked');
+    }
   }
 
   this.saveSetting = function(key, value) {
@@ -108,6 +116,24 @@ function Settings() {
 
     return value;
   }
+
+  this.isCvStatusEnabled = function() {
+    var value = self.getSetting('cv-status');
+    if (value == 'true' || value === null) {
+      return true;
+    }
+
+    return false;
+  }
+
+  this.isCvReasonEnabled = function() {
+    var value = self.getSetting('cv-reason');
+    if (value == 'true') {
+      return true;
+    }
+
+    return false;
+  }
 }
 
 (function($) {
@@ -148,5 +174,13 @@ function Settings() {
 
   $('select[name="oneboxheightunits"]').change(function() {
     settingsManager.saveSetting('onebox-heightunit', $(this).val());
+  });
+
+  $('input[name="status"]').change(function() {
+    settingsManager.saveSetting('cv-status', $(this).prop('checked'));
+  });
+
+  $('input[name="reason"]').change(function() {
+    settingsManager.saveSetting('cv-reason', $(this).prop('checked'));
   });
 })(jQuery);
