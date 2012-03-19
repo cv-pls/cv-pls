@@ -7,6 +7,8 @@ function CvHelper(stackApi, settings, soundPlayer) {
 
   this.lastMessageId = 0;
 
+  this.requests = [];
+
   // check if room is finished loading
   this.init = function() {
     if ($('#loading').length) {
@@ -18,6 +20,8 @@ function CvHelper(stackApi, settings, soundPlayer) {
         self.lastMessageId = self.getMessageId($post.closest('div.message').attr('id'));
 
         if (self.isCloseRequest($post)) {
+          self.requests.push($post.parent().attr('id'));
+
           self.displayCvCount();
           self.formatCloseRequest($post);
         }
@@ -97,16 +101,26 @@ function CvHelper(stackApi, settings, soundPlayer) {
   // handle displaying the last cv request and update the notification count
   this.displayLastCvRequest = function() {
     var lastCvRequestPost = $('.cvpls-new').last().removeClass('cvpls-new');
-    var lastCvRequestContainer = lastCvRequestPost.parent();
-    var originalBackgroundColor = lastCvRequestContainer.parents('.messages').css('backgroundColor');
+    var lastCvRequestId = self.requests.pop();
     var $cvCount = $('#cv-count');
 
-    lastCvRequestContainer.css('background', 'yellow');
-    $('html, body').animate({scrollTop: lastCvRequestContainer.offset().top}, 500, function() {
-      lastCvRequestContainer.animate({
-        backgroundColor: originalBackgroundColor
-      }, 5000);
-    });
+    // check if cv request is still on page. if not we need to open the transaction log with the question
+    if ($('#'+lastCvRequestId).length) {
+      var lastCvRequestContainer = lastCvRequestPost.parent();
+      var originalBackgroundColor = lastCvRequestContainer.parents('.messages').css('backgroundColor');
+
+      // check if question is deleted
+      if (lastCvRequestContainer.length) {
+        lastCvRequestContainer.css('background', 'yellow');
+        $('html, body').animate({scrollTop: lastCvRequestContainer.offset().top}, 500, function() {
+          lastCvRequestContainer.animate({
+            backgroundColor: originalBackgroundColor
+          }, 5000);
+        });
+      }
+    } else {
+      window.open('http://chat.stackoverflow.com/transcript/message/' + self.getMessageId(lastCvRequestId) + '#' + self.getMessageId(lastCvRequestId), '_blank');
+    }
 
     if ($cvCount.length) {
       var newCvCount = (parseInt($cvCount.text(), 10)-1);
