@@ -283,6 +283,7 @@ function StackApi() {
         chrome.extension.sendRequest({method: 'getStatus'}, function(statusSettings) {
           $post.append(self.oneBox(item, response, statusSettings));
           $post.addClass('cvpls-new');
+          $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
         });
       });
     };
