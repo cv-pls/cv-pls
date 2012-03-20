@@ -22,7 +22,7 @@ function CvHelper(stackApi, settings, soundPlayer) {
         if (self.isCloseRequest($post)) {
           self.requests.push($post.parent().attr('id'));
 
-          self.displayCvCount();
+          self.displayCvCount(true);
           self.formatCloseRequest($post);
         }
       });
@@ -37,20 +37,24 @@ function CvHelper(stackApi, settings, soundPlayer) {
     }
   };
 
-  this.pollStatus = function(pollingSettings) {
+  this.pollStatus = function() {
     $('div.cv-request:not(.closed)').each(function() {
       var $post = $(this).closest('div.content');
 
       stackApi.pollStatus(self.getPostInfo(self.getQuestionId($post)), $post);
     });
 
-    var timeout = 5;
-    if (pollingSettings.interval) {
-      timeout = pollingSettings.interval;
-    }
-    setTimeout(function() {
-      self.pollStatus(pollingSettings);
-    }, timeout*60000);
+    chrome.extension.sendRequest({method: 'getPolling'}, function(pollingSettings) {
+      if (pollingSettings.poll) {
+        var timeout = 5;
+        if (pollingSettings.interval) {
+          timeout = pollingSettings.interval;
+        }
+        setTimeout(function() {
+          self.pollStatus();
+        }, timeout*60000);
+      }
+    });
   }
 
   // get the message id from chat (e.g. id="message-12345678")
@@ -103,12 +107,14 @@ function CvHelper(stackApi, settings, soundPlayer) {
   };
 
   // onclick scroll to and highlight yellow oldest / latest and substract one cv requests from counter
-  this.displayCvCount = function() {
-    chrome.extension.sendRequest({method: 'getSetting', key: 'avatar-notification'}, function(response) {
-      if (response.value == 'true') {
+  this.displayCvCount = function(onload) {
+    onload = typeof onload !== 'undefined' ? onload : false;
+
+    chrome.extension.sendRequest({method: 'getAvatarNotification'}, function(avatarSettings) {
+      if (avatarSettings.enabled == 'true') {
         var $cvCount = $('#cv-count');
         if (!$cvCount.length) {
-          var css = 'position:absolute; z-index:4; top:7px; left:24px; color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417)); border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer; font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px; min-width: 12px; padding: 0 4px; text-align: center;';
+          var css = 'position:absolute; z-index:4; top:7px; left:24px; color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417)); border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer; font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px; min-width: 12px; padding: 0 4px; text-align: center; display: none;';
           var html = '<div title="Cv request waiting for review" id="cv-count" style="' + css + '">1</div>';
 
           $('#reply-count').after(html);
@@ -116,7 +122,9 @@ function CvHelper(stackApi, settings, soundPlayer) {
           $cvCount.text(parseInt($cvCount.text(), 10)+1);
         }
 
-        $cvCount.show();
+        if (!onload || (onload && avatarSettings.onload == 'true')) {
+          $cvCount.show();
+        }
       }
     });
   };

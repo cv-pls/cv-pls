@@ -3,6 +3,7 @@
   <head>
     <script>
       // we should really do a switch statement here
+      // we should also normalize the returned settings when we are going to refactor everything
       chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
         if (request.method == 'showIcon') {
           var enabled = localStorage.getItem('icon-enabled');
@@ -15,6 +16,11 @@
           sendResponse({});
         } else if (request.method == 'getSetting') {
           sendResponse({value: localStorage.getItem(request.key)});
+        } else if (request.method == 'getAvatarNotification') {
+          sendResponse({
+            enabled: localStorage.getItem('avatar-notification'),
+            onload: localStorage.getItem('avatar-onloadnotification')
+          });
         } else if (request.method == 'getHeight') {
           sendResponse({
             height: localStorage.getItem('onebox-height'),

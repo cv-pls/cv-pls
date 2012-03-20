@@ -12,6 +12,10 @@ function SettingsManager(settings) {
       $('input[name="avatar"]').prop('checked', 'checked');
     }
 
+    if (settings.isAvatarOnloadEnabled()) {
+      $('input[name="avataronload"]').prop('checked', 'checked');
+    }
+
     if (settings.isIconEnabled()) {
       $('input[name="icon"]').prop('checked', 'checked');
     }
@@ -78,6 +82,14 @@ function Settings() {
 
   this.isAvatarEnabled = function() {
     if (self.getSetting('avatar-notification') == 'true') {
+      return true;
+    }
+
+    return false;
+  }
+
+  this.isAvatarOnloadEnabled = function() {
+    if (self.getSetting('avatar-onloadnotification') == 'true') {
       return true;
     }
 
@@ -171,7 +183,17 @@ function Settings() {
   });
 
   $('input[name="avatar"]').change(function() {
-    settingsManager.saveSetting('avatar-notification', $(this).prop('checked'));
+    var checked = $(this).prop('checked');
+    settingsManager.saveSetting('avatar-notification', checked);
+    if (checked) {
+        $(':input[name="avataronload"]').removeAttr('disabled');
+    } else {
+        $(':input[name="avataronload"]').attr('disabled', true);
+    }
+  });
+
+  $('input[name="avataronload"]').change(function() {
+    settingsManager.saveSetting('avatar-onloadnotification', $(this).prop('checked'));
   });
 
   $('input[name="icon"]').change(function() {
