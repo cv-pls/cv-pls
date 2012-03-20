@@ -7,12 +7,12 @@
   <link rel="stylesheet" type="text/css" href="ui/input.css">
   <link rel="stylesheet" type="text/css" href="ui/options.css">
   <style>
-    #customOneBoxGroup {
+    .customOneBoxGroup {
       display: -webkit-box;
       -webkit-box-orient: horizontal;
     }
 
-    #customOneBoxGroup > :last-child {
+    .customOneBoxGroup > :last-child {
       -webkit-margin-start: 1ex;
       -webkit-box-flex: 1;
       position: relative;
@@ -29,6 +29,13 @@
       display: block;
       -webkit-box-flex: 1;
       max-width: 200px;
+    }
+
+    input[name=pollinterval] {
+      box-sizing: border-box;
+      padding-top: 3px;
+      text-align: right;
+      width: 30px;
     }
   </style>
 </head>
@@ -48,7 +55,7 @@
               <span>Enable addressbar icon</span>
             </label>
           </div>
-          <div id="customOneBoxGroup">
+          <div class="customOneBoxGroup">
             <div class="checkbox">
               <label>
                 <input type="checkbox" name="oneboxcv">
@@ -99,6 +106,18 @@
               <input type="checkbox" name="reason">
               <span>Show close reason</span>
             </label>
+          </div>
+          <div class="customOneBoxGroup">
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" name="poll">
+                <span>Poll server for closed questions every </span>
+              </label>
+            </div>
+            <div>
+              <input type="text" data-type="number" name="pollinterval" pattern="[0-9]*"
+                     maxlength="4"> minutes
+            </div>
           </div>
         </div>
       </section>

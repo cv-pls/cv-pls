@@ -28,8 +28,30 @@ function CvHelper(stackApi, settings, soundPlayer) {
       });
 
       self.postListener();
+
+      chrome.extension.sendRequest({method: 'getPolling'}, function(pollingSettings) {
+        if (pollingSettings.poll) {
+          self.pollStatus(pollingSettings);
+        }
+      });
     }
   };
+
+  this.pollStatus = function(pollingSettings) {
+    $('div.cv-request:not(.closed)').each(function() {
+      var $post = $(this).closest('div.content');
+
+      stackApi.pollStatus(self.getPostInfo(self.getQuestionId($post)), $post);
+    });
+
+    var timeout = 5;
+    if (pollingSettings.interval) {
+      timeout = pollingSettings.interval;
+    }
+    setTimeout(function() {
+      self.pollStatus(pollingSettings);
+    }, timeout*60000);
+  }
 
   // get the message id from chat (e.g. id="message-12345678")
   this.getMessageId = function(id) {
@@ -64,6 +86,7 @@ function CvHelper(stackApi, settings, soundPlayer) {
         self.lastMessageId = currentMessageId;
 
         if (self.isCloseRequest($post)) {
+          self.requests.push($post.parent().attr('id'));
           self.lastMessageId = currentMessageId;
 
           self.displayCvCount();
@@ -211,6 +234,49 @@ function StackApi() {
         $.ajax(ajaxSettings);
     };
 
+    this.pollStatus = function(request, post) {
+        var url = self.getQuestionUrl(request);
+        var apiData = {
+            site: request.host,
+            filter: request.filter,
+            pagesize: 1,
+            page: 1,
+            body: 'false'
+        };
+        var ajaxSettings = {
+            url: url,
+            data: apiData,
+            error: function(jqHr, status, error) {
+              // request error
+            },
+            success: function(data, status, jqHr) {
+                if (data.items == undefined || data.items.length == 0) {
+                    // recordset error
+                    return;
+                }
+                if (typeof data.items[0].closed_date != 'undefined') {
+                  var $onebox = $('.cv-request', $post);
+                  var $title = $('.ob-post-title a', $onebox);
+
+                  $onebox.addClass('closed');
+
+                  chrome.extension.sendRequest({method: 'getStatus'}, function(statusSettings) {
+                    var closed = '';
+                    var reason = '';
+                    if (statusSettings.reason == 'true') {
+                      reason = ' as ' + questionInfo.closed_reason;
+                    }
+                    if ((statusSettings.status == 'true' || statusSettings.status == null) && typeof questionInfo.closed_date != 'undefined') {
+                      closed = ' [closed' + reason + ']';
+                    }
+                    $title.text($title.text() + closed);
+                  });
+                }
+            }
+        }
+        $.ajax(ajaxSettings);
+    }
+
     // render the cv request as onebox
     this.renderCvRequest = function(item, $post) {
       chrome.extension.sendRequest({method: 'getHeight'}, function(response) {
@@ -242,7 +308,12 @@ function StackApi() {
         closed = ' [closed' + reason + ']';
       }
 
-      html+= '<div class="onebox ob-post" style="overflow: hidden;' + height + '">';
+      var closedClass = '';
+      if (typeof questionInfo.closed_date != 'undefined') {
+        closedClass = ' closed';
+      }
+
+      html+= '<div class="onebox ob-post cv-request' + closedClass + '" style="overflow: hidden;' + height + '">';
       html+= '  <div class="ob-post-votes" title="This question has a score of ' + questionInfo.score + '.">' + questionInfo.score + '</div>';
       html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
       html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + questionInfo.link + '">' + questionInfo.title + closed + '</a></div>';

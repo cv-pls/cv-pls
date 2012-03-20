@@ -35,6 +35,12 @@ function SettingsManager(settings) {
     if (settings.isCvReasonEnabled()) {
       $('input[name="reason"]').prop('checked', 'checked');
     }
+
+    if (settings.isPollEnabled()) {
+      $('input[name="poll"]').prop('checked', 'checked');
+    }
+
+    $('input[name="pollinterval"]').val(settings.getPollInterval());
   }
 
   this.saveSetting = function(key, value) {
@@ -134,6 +140,25 @@ function Settings() {
 
     return false;
   }
+
+  this.isPollEnabled = function() {
+    var value = self.getSetting('poll');
+    if (value == 'true') {
+      return true;
+    }
+
+    return false;
+  }
+
+  this.getPollInterval = function() {
+    var value = self.getSetting('pollinterval');
+
+    if (value == null) {
+      return 5;
+    }
+
+    return value;
+  }
 }
 
 (function($) {
@@ -162,7 +187,7 @@ function Settings() {
         $(':input[name^="oneboxheight"]').attr('disabled', true);
     }
   });
-    $('input[name="oneboxcv"]').change();
+  $('input[name="oneboxcv"]').change();
 
   $('input[name="oneboxdelv"]').change(function() {
     settingsManager.saveSetting('delv-onebox', $(this).prop('checked'));
@@ -177,10 +202,37 @@ function Settings() {
   });
 
   $('input[name="status"]').change(function() {
+    var checked = $(this).prop('checked');
     settingsManager.saveSetting('cv-status', $(this).prop('checked'));
+    if (checked) {
+        $(':input[name^="reason"]').removeAttr('disabled');
+        $(':input[name="poll"]').removeAttr('disabled');
+        if ($('input[name="poll"]').prop('checked')) {
+          $(':input[name="pollinterval"]').removeAttr('disabled');
+        }
+    } else {
+        $(':input[name^="reason"]').attr('disabled', true);
+        $(':input[name="poll"]').attr('disabled', true);
+        $(':input[name="pollinterval"]').attr('disabled', true);
+    }
   });
 
   $('input[name="reason"]').change(function() {
     settingsManager.saveSetting('cv-reason', $(this).prop('checked'));
+  });
+
+  $('input[name="poll"]').change(function() {
+    var checked = $(this).prop('checked');
+    settingsManager.saveSetting('poll', checked);
+    if (checked) {
+        $(':input[name^="pollinterval"]').removeAttr('disabled');
+    } else {
+        $(':input[name^="pollinterval"]').attr('disabled', true);
+    }
+  });
+  $('input[name="poll"]').change();
+
+  $('input[name="pollinterval"]').keyup(function() {
+    settingsManager.saveSetting('pollinterval', $(this).val());
   });
 })(jQuery);

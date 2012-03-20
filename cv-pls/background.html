@@ -25,6 +25,11 @@
             status: localStorage.getItem('cv-status'),
             reason: localStorage.getItem('cv-reason')
           });
+        } else if (request.method == 'getPolling') {
+          sendResponse({
+            poll: localStorage.getItem('poll'),
+            interval: localStorage.getItem('pollinterval')
+          });
         } else {
           sendResponse({}); // snub them.
         }
