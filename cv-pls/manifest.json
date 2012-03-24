@@ -1,6 +1,6 @@
 {
   "name": "[cv-pls] Helper",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Helps to close questions on SO",
   "icons": { "16": "img/icon16.png",
              "48": "img/icon48.png",
@@ -16,7 +16,7 @@
   "content_scripts" : [
     {
       "matches": ["http://chat.stackoverflow.com/rooms/*", "http://chat.stackoverflow.com/transcript/*"],
-      "js" : ["jquery-1.7.1.min.js", "jquery-ui-1.8.18.custom.min.js", "script.js"],
+      "js" : ["jquery-1.7.1.min.js", "jquery-ui-1.8.18.custom.min.js", "js/griphandler-0.9.0.min.js", "script.js"],
       "run_at" : "document_idle",
       "all_frames" : false
     }

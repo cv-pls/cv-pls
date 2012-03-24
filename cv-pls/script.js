@@ -111,7 +111,7 @@ function CvHelper(stackApi, settings, soundPlayer) {
     onload = typeof onload !== 'undefined' ? onload : false;
 
     chrome.extension.sendRequest({method: 'getAvatarNotification'}, function(avatarSettings) {
-      if (avatarSettings.enabled == 'true') {
+      if (avatarSettings.enabled == 'true' && (!onload || (onload && avatarSettings.onload == 'true'))) {
         var $cvCount = $('#cv-count');
         if (!$cvCount.length) {
           var css = 'position:absolute; z-index:4; top:7px; left:24px; color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417)); border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer; font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px; min-width: 12px; padding: 0 4px; text-align: center; display: none;';
@@ -287,10 +287,18 @@ function StackApi() {
 
     // render the cv request as onebox
     this.renderCvRequest = function(item, $post) {
-      chrome.extension.sendRequest({method: 'getHeight'}, function(response) {
+      chrome.extension.sendRequest({method: 'getHeight'}, function(heightSettings) {
         chrome.extension.sendRequest({method: 'getStatus'}, function(statusSettings) {
-          $post.append(self.oneBox(item, response, statusSettings));
+          $post.append(self.oneBox(item, heightSettings, statusSettings));
           $post.addClass('cvpls-new');
+          if (heightSettings.height < $('.onebox', $post)[0].scrollHeight) {
+            $('.onebox', $post).css('padding-bottom', '10px');
+            $('.onebox .grippie', $post).width($('.onebox', $post).width()).show();
+            $('.onebox', $post).gripHandler({
+              cursor: 'n-resize',
+              gripClass: 'grippie'
+            });
+          }
           $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
         });
       });
@@ -322,7 +330,7 @@ function StackApi() {
         closedClass = ' closed';
       }
 
-      html+= '<div class="onebox ob-post cv-request' + closedClass + '" style="overflow: hidden;' + height + '">';
+      html+= '<div class="onebox ob-post cv-request' + closedClass + '" style="overflow: hidden; position: relative;' + height + '">';
       html+= '  <div class="ob-post-votes" title="This question has a score of ' + questionInfo.score + '.">' + questionInfo.score + '</div>';
       html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
       html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + questionInfo.link + '">' + questionInfo.title + closed + '</a></div>';
@@ -338,6 +346,7 @@ function StackApi() {
         html+= '    </a>';
       }
 
+      html+= '    <div class="grippie" style="margin-right: 0px; background-position: 321px -823px; border: 1px solid #DDD; border-width: 0pt 1px 1px; cursor: s-resize; height: 9px; overflow: hidden; background-color: #EEE; margin-right: -8px; background-image: url(\'http://cdn.sstatic.net/stackoverflow/img/sprites.png?v=5\'); background-repeat: no-repeat; margin-top: 10px; display: none; position: absolute; bottom: 0; width: 250px;"></div>';
       html+= '  </div>';
       /*
         Temporary disabled close button until SO implements the write API
