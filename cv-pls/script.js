@@ -448,7 +448,7 @@ function Settings() {
   }
 }
 
-function SoundPlayer() {
+function SoundPlayerOld() {
   this.beep = new Audio('http://or.cdn.sstatic.net/chat/so.mp3');
 
   var self = this;
@@ -461,8 +461,8 @@ function SoundPlayer() {
 (function() {
   var settings = new Settings();
   var stackApi = new StackApi();
-  var soundPlayer = new SoundPlayer();
-  var cvHelper = new CvHelper(stackApi, settings, soundPlayer);
+  var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
+  var cvHelper = new CvHelper(stackApi, settings, audioPlayer);
   cvHelper.init();
 
   var notificationManager =  new NotificationManager(settings);
