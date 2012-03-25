@@ -448,16 +448,6 @@ function Settings() {
   }
 }
 
-function SoundPlayerOld() {
-  this.beep = new Audio('http://or.cdn.sstatic.net/chat/so.mp3');
-
-  var self = this;
-
-  this.playNotification = function() {
-    self.beep.play();
-  }
-}
-
 (function() {
   var settings = new Settings();
   var stackApi = new StackApi();
