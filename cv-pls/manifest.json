@@ -17,10 +17,10 @@
     {
       "matches": ["http://chat.stackoverflow.com/rooms/*", "http://chat.stackoverflow.com/transcript/*"],
       "js" : [
-        "jquery-1.7.1.min.js",
-        "jquery-ui-1.8.18.custom.min.js",
+        "js/jquery-1.7.1.min.js",
+        "js/jquery-ui-1.8.18.custom.min.js",
         "js/griphandler-0.10.0.min.js",
-        "audioPlayer.js",
+        "js/audioPlayer.js",
         "script.js"
       ],
       "run_at" : "document_idle",
