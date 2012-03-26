@@ -1,17 +1,66 @@
-function CvHelper(stackApi, settings, soundPlayer) {
+function ChatRoom() {
   var self = this;
 
-  this.stackApi = stackApi;
-  this.settings = settings;
-  this.soundPlayer = soundPlayer;
+  this.setRoomStatus(false);
 
-  this.lastMessageId = 0;
+  this.checkRoomStatus = function() {
+    if ($('#loading').length) {
+      setTimeout(self.checkRoomStatus, 1000);
+    } else {
+      self.setRoomStatus(true);
+    }
+  };
 
-  this.requests = [];
+  this.setRoomStatus = function(status) {
+    self.status = status;
+  };
+
+  this.isRoomLoaded = function() {
+    return self.status;
+  };
+
+  this.checkRoomStatus();
+}
+
+function VoteRequestQueue() {
+  var self = this;
+
+  this.queue = [];
+
+  this.enqueue = function(id, type) {
+    self.queue.push({
+      id: id,
+      type: type
+    });
+  };
+
+  this.dequeue = function() {
+    if (!self.queue.length) {
+      return null;
+    }
+
+    return self.queue.shift();
+  };
+}
+
+function CvHelper(chatRoom, voteRequestQueue, stackApi, settings, soundPlayer) {
+  var self = this;
+
+  this.chatRoom = chatRoom;
+
+
+
+  //this.stackApi = stackApi;
+  //this.settings = settings;
+  //this.soundPlayer = soundPlayer;
+
+  //this.lastMessageId = 0;
+
+  //this.requests = [];
 
   // check if room is finished loading
   this.init = function() {
-    if ($('#loading').length) {
+    if (!self.chatRoom.isRoomLoaded) {
       setTimeout(self.init, 1000);
     } else {
       $('div.user-container div.messages div.message div.content').each(function() {
@@ -449,10 +498,13 @@ function Settings() {
 }
 
 (function() {
+  var chatRoom = new ChatRoom();
+  var voteRequestQueue = new VoteRequestQueue();
+
   var settings = new Settings();
   var stackApi = new StackApi();
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
-  var cvHelper = new CvHelper(stackApi, settings, audioPlayer);
+  var cvHelper = new CvHelper(chatRoom, voteRequestQueue, stackApi, settings, audioPlayer);
   cvHelper.init();
 
   var notificationManager =  new NotificationManager(settings);
