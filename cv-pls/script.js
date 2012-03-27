@@ -1,7 +1,8 @@
+// chatroom class
 function ChatRoom() {
   var self = this;
 
-  this.setRoomStatus(false);
+  this.status = false;
 
   this.checkRoomStatus = function() {
     if ($('#loading').length) {
@@ -22,16 +23,14 @@ function ChatRoom() {
   this.checkRoomStatus();
 }
 
+// queue with all active close votes
 function VoteRequestQueue() {
   var self = this;
 
   this.queue = [];
 
-  this.enqueue = function(id, type) {
-    self.queue.push({
-      id: id,
-      type: type
-    });
+  this.enqueue = function(post) {
+    self.queue.push(post);
   };
 
   this.dequeue = function() {
@@ -43,10 +42,106 @@ function VoteRequestQueue() {
   };
 }
 
+// post class
+function Post($post) {
+  var self = this;
+
+  this.$post = $post.addClass('vote-request');
+  this.id = null;
+  this.isVoteRequest = false;
+  this.voteType = null;
+
+  this.setMessageId = function() {
+    self.id = self.$post.closest('div.message').attr('id').substr(8);
+  }
+  this.setMessageId();
+
+  this.postContainsQuestion = function() {
+    if ($('a:contains("stackoverflow.com/questions/")', self.$post).length) {
+      return true;
+    }
+
+    return false;
+  };
+
+  this.parseQuestionPost = function() {
+    $('a .ob-post-tag', self.$post).each(function() {
+      switch($(this).text()) {
+        case 'cv-pls':
+        case 'cv-maybe':
+          self.isVoteRequest = true;
+          self.voteType = 'cv';
+          break;
+
+        case 'delv-pls':
+        case 'delv-maybe':
+          self.isVoteRequest = true;
+          self.voteType = 'delv';
+          break;
+
+        default:
+          break;
+      }
+    });
+  };
+
+  if (this.postContainsQuestion()) {
+    this.parseQuestionPost();
+  }
+}
+
+function VoteQueueHandler() {
+  var self = this;
+
+  this.handleQueue = function(queue) {
+    var post = queue.dequeue();
+    while(post !== null) {
+      console.log(post);
+
+      post = queue.dequeue();
+    }
+  }
+}
+
+function VoteRequestListener(chatRoom, voteRequestQueue, voteQueueHandler) {
+  var self = this;
+
+  this.chatRoom = chatRoom;
+  this.voteRequestQueue = voteRequestQueue;
+
+  this.init = function() {
+    if (!self.chatRoom.isRoomLoaded()) {
+      setTimeout(self.init, 1000);
+    } else {
+      self.postListener();
+    }
+  };
+
+  this.postListener = function() {
+    // we should do something smarter here. e.g. only loop through new posts
+    $('div.user-container div.messages div.message div.content').each(function() {
+      var $post = $(this);
+      if ($post.hasClass('vote-request')) {
+        return false;
+      }
+      var post = new Post($post);
+
+      if (post.isVoteRequest) {
+        self.voteRequestQueue.enqueue(post);
+      }
+    });
+
+    voteQueueHandler.handleQueue(self.voteRequestQueue);
+
+    setTimeout(self.postListener, 1000);
+  };
+}
+
 function CvHelper(chatRoom, voteRequestQueue, stackApi, settings, soundPlayer) {
   var self = this;
 
   this.chatRoom = chatRoom;
+  this.voteRequestQueue = voteRequestQueue;
 
 
 
@@ -60,27 +155,25 @@ function CvHelper(chatRoom, voteRequestQueue, stackApi, settings, soundPlayer) {
 
   // check if room is finished loading
   this.init = function() {
-    if (!self.chatRoom.isRoomLoaded) {
+    if (!self.chatRoom.isRoomLoaded()) {
       setTimeout(self.init, 1000);
     } else {
       $('div.user-container div.messages div.message div.content').each(function() {
-        var $post = $(this);
+        var post = new Post($(this));
 
-        self.lastMessageId = self.getMessageId($post.closest('div.message').attr('id'));
+        if (post.isVoteRequest) {
+          self.voteRequestQueue.enqueue(post);
 
-        if (self.isCloseRequest($post)) {
-          self.requests.push($post.parent().attr('id'));
-
-          self.displayCvCount(true);
-          self.formatCloseRequest($post);
+          //self.displayCvCount(true);
+          //self.formatCloseRequest($post);
         }
       });
-
-      self.postListener();
+console.log(self.voteRequestQueue.queue);
+      //self.postListener();
 
       chrome.extension.sendRequest({method: 'getPolling'}, function(pollingSettings) {
         if (pollingSettings.poll) {
-          self.pollStatus(pollingSettings);
+          //self.pollStatus(pollingSettings);
         }
       });
     }
@@ -104,11 +197,6 @@ function CvHelper(chatRoom, voteRequestQueue, stackApi, settings, soundPlayer) {
         }, timeout*60000);
       }
     });
-  }
-
-  // get the message id from chat (e.g. id="message-12345678")
-  this.getMessageId = function(id) {
-    return id.substr(8);
   }
 
   // check if message is still pending
@@ -500,12 +588,15 @@ function Settings() {
 (function() {
   var chatRoom = new ChatRoom();
   var voteRequestQueue = new VoteRequestQueue();
+  var voteQueueHandler = new VoteQueueHandler();
+  var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestQueue, voteQueueHandler);
+  voteRequestListener.init();
 
   var settings = new Settings();
   var stackApi = new StackApi();
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
   var cvHelper = new CvHelper(chatRoom, voteRequestQueue, stackApi, settings, audioPlayer);
-  cvHelper.init();
+  //cvHelper.init();
 
   var notificationManager =  new NotificationManager(settings);
 
