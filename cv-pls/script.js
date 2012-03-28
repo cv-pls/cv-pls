@@ -48,6 +48,7 @@ function Post($post) {
 
   this.$post = $post.addClass('vote-request');
   this.id = null;
+  this.questionId = null;
   this.isVoteRequest = false;
   this.voteType = null;
 
@@ -84,7 +85,12 @@ function Post($post) {
     });
   };
 
+  this.setQuestionId = function() {
+    self.questionId = $('a:contains("stackoverflow.com/questions/")', self.$post).attr('href').split('/')[4];
+  };
+
   if (this.postContainsQuestion()) {
+    this.setQuestionId();
     this.parseQuestionPost();
   }
 }
@@ -96,6 +102,7 @@ function VoteRequestBuffer(voteRequestMessageQueue) {
   this.items = 0;
   this.buffer = [];
   this.bufferIds = [];
+  this.bufferQuestionIds = [];
 
   this.createBuffer = function(queue) {
     self.buffer = [];
@@ -106,15 +113,17 @@ function VoteRequestBuffer(voteRequestMessageQueue) {
       post = queue.dequeue();
     }
 
-    self.getBufferIds();
+    self.setIds();
   };
 
-  this.getBufferIds = function() {
+  this.setIds = function() {
     self.bufferIds = [];
+    self.bufferQuestionIds = [];
 
     self.items = self.buffer.length;
     for (var i = 0; i < self.items; i++) {
       self.bufferIds.push(self.buffer[i].id);
+      self.bufferQuestionIds.push(self.buffer[i].questionId);
     }
   };
 
@@ -122,10 +131,10 @@ function VoteRequestBuffer(voteRequestMessageQueue) {
 }
 
 // this is where all the items in the queue get processed
-function VoteQueueProcessor() {
+function VoteQueueProcessor(stackApi, voteRequestFormatter) {
   var self = this;
 
-  this.voteRequestBuffer = {};
+  this.stackApi = stackApi;
 
   this.processQueue = function(voteRequestBuffer) {
     // no vote requests ready to be processed, so end here
@@ -133,10 +142,19 @@ function VoteQueueProcessor() {
       return null;
     }
 
-    self.voteRequestBuffer = voteRequestBuffer;
+    self.makeRequest(voteRequestBuffer);
   };
 
-  this.formatVoteRequests = function() {
+  this.makeRequest = function(voteRequestBuffer) {
+console.log(voteRequestBuffer);
+    stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', voteRequestFormatter);
+  };
+}
+
+function VoteRequestFormatter() {
+  this.process = function(buffer, items) {
+    console.log(buffer);
+    console.log(items);
   };
 }
 
@@ -184,12 +202,12 @@ function StackApi() {
     }
   };
 
-  this.makeRequest = function(type, ids, site, filter, responseProcessor) {
-    var url = self.baseUrl + self.requestMethods[type] + self.parseIds(ids);
+  this.makeRequest = function(type, buffer, site, filter, responseProcessor) {
+    var url = self.baseUrl + self.requestMethods[type].urlPath + self.parseIds(buffer.bufferQuestionIds);
     var requestData = {
       site: site,
       filter: filter,
-      pagesize: ids.length,
+      pagesize: buffer.bufferQuestionIds.length,
     };
     var requestSettings = {
         url: url,
@@ -203,7 +221,7 @@ function StackApi() {
                 // questions deleted?
                 return;
             }
-            responseProcessor.process(data.items);;
+            responseProcessor.process(buffer, data.items);
         }
     }
     $.ajax(requestSettings);
@@ -665,7 +683,9 @@ function Settings() {
 (function() {
   var chatRoom = new ChatRoom();
   var voteRequestMessageQueue = new VoteRequestQueue();
-  var voteQueueProcessor = new VoteQueueProcessor();
+  var stackApi = new StackApi();
+  var voteRequestFormatter = new VoteRequestFormatter();
+  var voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestFormatter);
   var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor);
   voteRequestListener.init();
 
