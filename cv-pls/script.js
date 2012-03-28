@@ -174,6 +174,46 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
   };
 }
 
+function StackApi() {
+  var self = this;
+
+  this.baseUrl = 'https://api.stackexchange.com/2.0/';
+  this.requestMethods = {
+    questions: {
+      urlPath: 'questions/'
+    }
+  };
+
+  this.makeRequest = function(type, ids, site, filter, responseProcessor) {
+    var url = self.baseUrl + self.requestMethods[type] + self.parseIds(ids);
+    var requestData = {
+      site: site,
+      filter: filter,
+      pagesize: ids.length,
+    };
+    var requestSettings = {
+        url: url,
+        data: requestData,
+        error: function(jqHr, status, error) {
+          // request error, this should be taken care of :)
+          // e.g. request quota reached
+        },
+        success: function(data, status, jqHr) {
+            if (data.items == undefined || data.items.length == 0) {
+                // questions deleted?
+                return;
+            }
+            responseProcessor.process(data.items);;
+        }
+    }
+    $.ajax(requestSettings);
+  };
+
+  this.parseIds = function(ids) {
+    return ids.join(';');
+  };
+}
+
 function CvHelper(chatRoom, voteRequestQueue, stackApi, settings, soundPlayer) {
   var self = this;
 
