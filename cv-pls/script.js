@@ -100,15 +100,15 @@ function VoteRequestBuffer(voteRequestMessageQueue) {
   var self = this;
 
   this.items = 0;
-  this.buffer = [];
-  this.bufferIds = [];
-  this.bufferQuestionIds = [];
+  this.posts = [];
+  this.postsIds = [];
+  this.questionIds = [];
 
   this.createBuffer = function(queue) {
-    self.buffer = [];
+    self.posts = [];
     var post = queue.dequeue();
-    while(post !== null && self.buffer.length <= 100) {
-      self.buffer.push(post);
+    while(post !== null && self.posts.length <= 100) {
+      self.posts.push(post);
 
       post = queue.dequeue();
     }
@@ -117,13 +117,13 @@ function VoteRequestBuffer(voteRequestMessageQueue) {
   };
 
   this.setIds = function() {
-    self.bufferIds = [];
-    self.bufferQuestionIds = [];
+    self.postsIds = [];
+    self.questionIds = [];
 
-    self.items = self.buffer.length;
+    self.items = self.posts.length;
     for (var i = 0; i < self.items; i++) {
-      self.bufferIds.push(self.buffer[i].id);
-      self.bufferQuestionIds.push(self.buffer[i].questionId);
+      self.postsIds.push(self.posts[i].id);
+      self.questionIds.push(self.posts[i].questionId);
     }
   };
 
@@ -146,15 +146,36 @@ function VoteQueueProcessor(stackApi, voteRequestFormatter) {
   };
 
   this.makeRequest = function(voteRequestBuffer) {
-console.log(voteRequestBuffer);
     stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', voteRequestFormatter);
   };
 }
 
 function VoteRequestFormatter() {
+  var self = this;
+
   this.process = function(buffer, items) {
-    console.log(buffer);
-    console.log(items);
+    for (var i = 0; i < buffer.items; i++) {
+      self.addOnebox(buffer.posts[i].$post, self.getQuestionById(items, buffer.questionIds[i]));
+    }
+  };
+
+  this.getQuestionById = function(items, questionId) {
+    var length = items.length;
+    for (var i = 0; i < length; i++) {
+      if (items[i].question_id == questionId) {
+        return items[i];
+      }
+    }
+
+    return null;
+  };
+
+  this.addOnebox = function($post, question) {
+    if (question === null) {
+      return null;
+    }
+
+    $post.html($post.html() + question.view_count);
   };
 }
 
@@ -203,11 +224,11 @@ function StackApi() {
   };
 
   this.makeRequest = function(type, buffer, site, filter, responseProcessor) {
-    var url = self.baseUrl + self.requestMethods[type].urlPath + self.parseIds(buffer.bufferQuestionIds);
+    var url = self.baseUrl + self.requestMethods[type].urlPath + self.parseIds(buffer.questionIds);
     var requestData = {
       site: site,
       filter: filter,
-      pagesize: buffer.bufferQuestionIds.length,
+      pagesize: buffer.items,
     };
     var requestSettings = {
         url: url,
