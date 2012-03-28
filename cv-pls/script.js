@@ -53,8 +53,7 @@ function Post($post) {
 
   this.setMessageId = function() {
     self.id = self.$post.closest('div.message').attr('id').substr(8);
-  }
-  this.setMessageId();
+  }();
 
   this.postContainsQuestion = function() {
     if ($('a:contains("stackoverflow.com/questions/")', self.$post).length) {
@@ -90,24 +89,62 @@ function Post($post) {
   }
 }
 
-function VoteQueueHandler() {
+// buffers up to 100 (maximum per API request) vote requests
+function VoteRequestBuffer(voteRequestMessageQueue) {
   var self = this;
 
-  this.handleQueue = function(queue) {
+  this.items = 0;
+  this.buffer = [];
+  this.bufferIds = [];
+
+  this.createBuffer = function(queue) {
+    self.buffer = [];
     var post = queue.dequeue();
-    while(post !== null) {
-      console.log(post);
+    while(post !== null && self.buffer.length <= 100) {
+      self.buffer.push(post);
 
       post = queue.dequeue();
     }
-  }
+
+    self.getBufferIds();
+  };
+
+  this.getBufferIds = function() {
+    self.bufferIds = [];
+
+    self.items = self.buffer.length;
+    for (var i = 0; i < self.items; i++) {
+      self.bufferIds.push(self.buffer[i].id);
+    }
+  };
+
+  this.createBuffer(voteRequestMessageQueue);
 }
 
-function VoteRequestListener(chatRoom, voteRequestQueue, voteQueueHandler) {
+// this is where all the items in the queue get processed
+function VoteQueueProcessor() {
+  var self = this;
+
+  this.voteRequestBuffer = {};
+
+  this.processQueue = function(voteRequestBuffer) {
+    // no vote requests ready to be processed, so end here
+    if (voteRequestBuffer.items == 0) {
+      return null;
+    }
+
+    self.voteRequestBuffer = voteRequestBuffer;
+  };
+
+  this.formatVoteRequests = function() {
+  };
+}
+
+function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor) {
   var self = this;
 
   this.chatRoom = chatRoom;
-  this.voteRequestQueue = voteRequestQueue;
+  this.voteRequestMessageQueue = voteRequestMessageQueue;
 
   this.init = function() {
     if (!self.chatRoom.isRoomLoaded()) {
@@ -127,11 +164,11 @@ function VoteRequestListener(chatRoom, voteRequestQueue, voteQueueHandler) {
       var post = new Post($post);
 
       if (post.isVoteRequest) {
-        self.voteRequestQueue.enqueue(post);
+        self.voteRequestMessageQueue.enqueue(post);
       }
     });
 
-    voteQueueHandler.handleQueue(self.voteRequestQueue);
+    voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
 
     setTimeout(self.postListener, 1000);
   };
@@ -342,7 +379,7 @@ console.log(self.voteRequestQueue.queue);
   };
 }
 
-function StackApi() {
+function StackApiOld() {
     var apiUrl = 'https://api.stackexchange.com/2.0/';
 
     var self = this;
@@ -587,15 +624,15 @@ function Settings() {
 
 (function() {
   var chatRoom = new ChatRoom();
-  var voteRequestQueue = new VoteRequestQueue();
-  var voteQueueHandler = new VoteQueueHandler();
-  var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestQueue, voteQueueHandler);
+  var voteRequestMessageQueue = new VoteRequestQueue();
+  var voteQueueProcessor = new VoteQueueProcessor();
+  var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor);
   voteRequestListener.init();
 
   var settings = new Settings();
   var stackApi = new StackApi();
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
-  var cvHelper = new CvHelper(chatRoom, voteRequestQueue, stackApi, settings, audioPlayer);
+  //var cvHelper = new CvHelper(chatRoom, voteRequestMessageQueue, stackApi, settings, audioPlayer);
   //cvHelper.init();
 
   var notificationManager =  new NotificationManager(settings);
