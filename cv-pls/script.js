@@ -150,13 +150,13 @@ function VoteQueueProcessor(stackApi, voteRequestFormatter) {
   };
 }
 
-function VoteRequestFormatter(pluginSettings) {
+function VoteRequestProcessor(pluginSettings, voteRequestFormatter) {
   var self = this;
 
   this.process = function(buffer, items) {
     for (var i = 0; i < buffer.items; i++) {
       if (pluginSettings.oneBox()) {
-        self.addOnebox(buffer.posts[i].$post, self.getQuestionById(items, buffer.questionIds[i]));
+        voteRequestFormatter.addOnebox(buffer.posts[i].$post, self.getQuestionById(items, buffer.questionIds[i]));
       }
     }
   };
@@ -171,6 +171,10 @@ function VoteRequestFormatter(pluginSettings) {
 
     return null;
   };
+}
+
+function VoteRequestFormatter(pluginSettings) {
+  var self = this;
 
   this.addOnebox = function($post, question) {
     // question is deleted?
@@ -739,11 +743,14 @@ function NotificationManager(settings) {
   var settings = new Settings();
   var pluginSettings = new PluginSettings(settings);
 
+  var voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
+  var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter);
+
+  var stackApi = new StackApi();
+  var voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestProcessor);
+
   var chatRoom = new ChatRoom();
   var voteRequestMessageQueue = new VoteRequestQueue();
-  var stackApi = new StackApi();
-  var voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
-  var voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestFormatter);
   var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor);
 
   chrome.extension.sendRequest({method: 'getSettings'}, function(settingsJsonString) {
