@@ -15,6 +15,14 @@ function Settings() {
     return true;
   };
 
+  this.normalizeDefaultNumeric = function(value, defaultValue) {
+    if (value === null || isNaN(value)) {
+      return defaultValue;
+    }
+
+    return value;
+  }
+
   this.getSetting = function(key) {
     return localStorage.getItem(key);
   };
