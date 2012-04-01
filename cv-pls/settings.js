@@ -14,6 +14,10 @@ function SettingsManager(pluginSettings) {
       $('input[name="oneboxheight"]').val(pluginSettings.oneBoxHeight());
     }
 
+    if (pluginSettings.soundNotification()) {
+      $('input[name="beep"]').prop('checked', 'checked');
+    }
+
     if (pluginSettings.showCloseStatus()) {
       $('input[name="status"]').prop('checked', 'checked');
     } else {
@@ -54,6 +58,10 @@ function SettingsManager(pluginSettings) {
 
   $('input[name="oneboxheight"]').keyup(function() {
     settings.saveSetting('oneBoxHeight', $(this).val());
+  });
+
+  $('input[name="beep"]').change(function() {
+    settings.saveSetting('soundNotification', $(this).prop('checked'));
   });
 
   $('input[name="status"]').change(function() {
