@@ -1,6 +1,6 @@
 function Settings() {
   this.normalizeDefaultTrue = function(value) {
-    if (value == 'true' || value === null) {
+    if (value == 'true' || value === true || value === null) {
       return true;
     }
 
@@ -8,7 +8,7 @@ function Settings() {
   };
 
   this.normalizeDefaultFalse = function(value) {
-    if (value == 'false' || value === null) {
+    if (value == 'false' || value === false || value === null) {
       return false;
     }
 
