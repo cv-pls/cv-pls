@@ -150,12 +150,14 @@ function VoteQueueProcessor(stackApi, voteRequestFormatter) {
   };
 }
 
-function VoteRequestFormatter() {
+function VoteRequestFormatter(pluginSettings) {
   var self = this;
 
   this.process = function(buffer, items) {
     for (var i = 0; i < buffer.items; i++) {
-      self.addOnebox(buffer.posts[i].$post, self.getQuestionById(items, buffer.questionIds[i]));
+      if (pluginSettings.oneBox()) {
+        self.addOnebox(buffer.posts[i].$post, self.getQuestionById(items, buffer.questionIds[i]));
+      }
     }
   };
 
@@ -171,11 +173,80 @@ function VoteRequestFormatter() {
   };
 
   this.addOnebox = function($post, question) {
+    // question is deleted?
     if (question === null) {
       return null;
     }
 
-    $post.html($post.html() + question.view_count);
+    $post.append(self.getOneboxHtml(question));
+    self.processOneboxFormatting($post, question);
+  };
+
+  this.getOneboxHtml = function(question) {
+    var html = '';
+
+    html+= '<div class="onebox ob-post cv-request" style="overflow: hidden; position: relative;">';
+    html+= '  <div class="ob-post-votes" title="This question has a score of ' + question.score + '.">' + question.score + '</div>';
+    html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
+    html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + question.link + '">' + question.title + '</a></div>';
+    html+= '  <p class="ob-post-body">';
+    html+= '    <img width="32" height="32" class="user-gravatar32" src="' + question.owner.profile_image + '" title="' + question.owner.display_name + '" alt="' + question.owner.display_name + '">' + question.body;
+    html+= '  </p>';
+    html+= '  <div class="ob-post-tags">';
+    html+= self.getTagsHtml(question.tags);
+    html+= '    <div class="grippie" style="margin-right: 0px; background-position: 321px -823px; border: 1px solid #DDD; border-width: 0pt 1px 1px; cursor: s-resize; height: 9px; overflow: hidden; background-color: #EEE; margin-right: -8px; background-image: url(\'http://cdn.sstatic.net/stackoverflow/img/sprites.png?v=5\'); background-repeat: no-repeat; margin-top: 10px; display: none; position: absolute; bottom: 0; width: 250px;"></div>';
+    html+= '  </div>';
+    html+= '  <div class="clear-both"></div>';
+    html+= '</div>';
+
+    return html;
+  };
+
+  this.getTagsHtml = function(tags) {
+    var html = '';
+
+    var length = tags.length;
+    for (var i = 0; i < length; i++) {
+      html+= '    <a href="http://stackoverflow.com/questions/tagged/' + tags[i] + '">';
+      html+= '      <span class="ob-post-tag" style="background-color: #E0EAF1; color: #3E6D8E; border-color: #3E6D8E; border-style: solid;">' + tags[i] + '</span>';
+      html+= '    </a>';
+    }
+
+    return html;
+  };
+
+  this.processOneboxFormatting = function($post, question) {
+    var $onebox = $('.onebox', $post);
+
+    self.processHeight($onebox);
+    self.processStatus($onebox, question);
+
+    $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
+  };
+
+  this.processHeight = function($onebox) {
+    var $grippie = $('.grippie', $onebox);
+
+    $grippie.width($onebox.width());
+
+    if (pluginSettings.oneBoxHeight() !== null && pluginSettings.oneBoxHeight() < $onebox[0].scrollHeight) {
+      $onebox.height(pluginSettings.oneBoxHeight());
+      $onebox.css('padding-bottom', '10px');
+      $onebox.gripHandler({
+        cursor: 'n-resize',
+        gripClass: 'grippie'
+      });
+      $grippie.show();
+    }
+  };
+
+  this.processStatus = function($onebox, question) {
+    if (!pluginSettings.showCloseStatus() || typeof question.closed_date == 'undefined') {
+      return null;
+    }
+
+    var $title = $('.ob-post-title a', $onebox);
+    $title.html($title.html() + ' [closed]');
   };
 }
 
@@ -664,80 +735,49 @@ function NotificationManager(settings) {
   };
 }
 
-// database class to get and save settings
-function Settings() {
-  var self = this;
+(function($) {
+  var settings = new Settings();
+  var pluginSettings = new PluginSettings(settings);
 
-  this.saveSetting = function(key, value) {
-    localStorage.setItem(key, value);
-  }
-
-  this.getSetting = function(key) {
-    return localStorage.getItem(key);
-  }
-
-  this.deleteSetting = function(key) {
-    localStorage.remove(key);
-  }
-
-  this.truncate = function() {
-    localStorage.clear();
-  }
-
-  this.isSoundEnabled = function() {
-    if (self.getSetting('sound-notification') == 'true') {
-      return true;
-    }
-
-    return false;
-  }
-
-  this.isAvatarEnabled = function() {
-    if (self.getSetting('avatar-notification') == 'true') {
-      return true;
-    }
-
-    return false;
-  }
-}
-
-(function() {
   var chatRoom = new ChatRoom();
   var voteRequestMessageQueue = new VoteRequestQueue();
   var stackApi = new StackApi();
-  var voteRequestFormatter = new VoteRequestFormatter();
+  var voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
   var voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestFormatter);
   var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor);
-  voteRequestListener.init();
 
-  var settings = new Settings();
-  var stackApi = new StackApi();
-  var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
-  //var cvHelper = new CvHelper(chatRoom, voteRequestMessageQueue, stackApi, settings, audioPlayer);
-  //cvHelper.init();
+  chrome.extension.sendRequest({method: 'getSettings'}, function(settingsJsonString) {
+    pluginSettings.saveAllSettings(settingsJsonString);
+    voteRequestListener.init();
 
-  var notificationManager =  new NotificationManager(settings);
+    //var settings = new Settings();
+    //var stackApi = new StackApi();
+    //var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
+    //var cvHelper = new CvHelper(chatRoom, voteRequestMessageQueue, stackApi, settings, audioPlayer);
+    //cvHelper.init();
 
-  // show icon when we are in a chatroom
-  chrome.extension.sendRequest({method: "showIcon"}, function(response) { });
+    var notificationManager =  new NotificationManager(settings);
 
-  // sound options
-  $('#sound').click(function() {
-    notificationManager.watchPopup();
-  });
+    chrome.extension.sendRequest({method: "showIcon"}, function(response) { });
 
-  // save sound setting
-  $('body').on('click', '#cvpls-sound li', function() {
-    notificationManager.toggleSound();
+    // sound options
+    $('#sound').click(function() {
+      notificationManager.watchPopup();
+    });
 
-    return false;
-  });
+    // save sound setting
+    $('body').on('click', '#cvpls-sound li', function() {
+      notificationManager.toggleSound();
 
-  // handle click on notification on avatar
-  $('body').on('click', '#cv-count', function() {
-    cvHelper.displayLastCvRequest();
+      return false;
+    });
 
-    return false;
+    // handle click on notification on avatar
+    $('body').on('click', '#cv-count', function() {
+      cvHelper.displayLastCvRequest();
+
+      return false;
+    });
   });
 
   // handle close question
