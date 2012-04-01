@@ -21,6 +21,8 @@
         "js/jquery-ui-1.8.18.custom.min.js",
         "js/griphandler-0.10.0.min.js",
         "js/audioPlayer.js",
+        "js/Settings.js",
+        "js/PluginSettings.js",
         "script.js"
       ],
       "run_at" : "document_idle",
