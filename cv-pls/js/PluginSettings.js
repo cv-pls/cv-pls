@@ -34,7 +34,7 @@ function PluginSettings(settings) {
   };
 
   this.pollInterval = function() {
-    return settings.getSetting('pollInterval');
+    return settings.normalizeDefaultNumeric(settings.getSetting('pollInterval'), 5);
   };
 
   this.getAllSettings = function() {
