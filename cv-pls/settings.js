@@ -27,11 +27,7 @@ function SettingsManager(pluginSettings) {
       $('input[name="pollinterval"]').attr('disabled', true);
     }
 
-    if (pluginSettings.pollInterval() === null) {
-      $('input[name="pollinterval"]').val('5');
-    } else {
-      $('input[name="pollinterval"]').val(pluginSettings.pollInterval());
-    }
+    $('input[name="pollinterval"]').val(pluginSettings.pollInterval());
   }
 }
 
