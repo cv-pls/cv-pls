@@ -18,6 +18,10 @@ function SettingsManager(pluginSettings) {
       $('input[name="beep"]').prop('checked', 'checked');
     }
 
+    if (pluginSettings.avatarNotification()) {
+      $('input[name="avatar"]').prop('checked', 'checked');
+    }
+
     if (pluginSettings.showCloseStatus()) {
       $('input[name="status"]').prop('checked', 'checked');
     } else {
@@ -62,6 +66,10 @@ function SettingsManager(pluginSettings) {
 
   $('input[name="beep"]').change(function() {
     settings.saveSetting('soundNotification', $(this).prop('checked'));
+  });
+
+  $('input[name="avatar"]').change(function() {
+    settings.saveSetting('avatarNotification', $(this).prop('checked'));
   });
 
   $('input[name="status"]').change(function() {
