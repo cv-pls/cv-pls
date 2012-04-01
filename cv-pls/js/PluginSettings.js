@@ -21,10 +21,6 @@ function PluginSettings(settings) {
     return settings.normalizeDefaultFalse(settings.getSetting('avatarNotification'));
   };
 
-  this.avatarNotificationOnLoad = function() {
-    return settings.normalizeDefaultFalse(settings.getSetting('avatarNotificationOnLoad'));
-  };
-
   this.showCloseStatus = function() {
     return settings.normalizeDefaultTrue(settings.getSetting('showCloseStatus'));
   };
@@ -44,7 +40,6 @@ function PluginSettings(settings) {
       oneBoxHeight: self.oneBoxHeight(),
       soundNotification: self.soundNotification(),
       avatarNotification: self.avatarNotification(),
-      avatarNotificationOnLoad: self.avatarNotificationOnLoad(),
       showCloseStatus: self.showCloseStatus(),
       pollCloseStatus: self.pollCloseStatus(),
       pollInterval: self.pollInterval()
@@ -57,7 +52,6 @@ function PluginSettings(settings) {
     settings.saveSetting('oneBoxHeight', settingsJsonString.oneBoxHeight);
     settings.saveSetting('soundNotification', settingsJsonString.soundNotification);
     settings.saveSetting('avatarNotification', settingsJsonString.avatarNotification);
-    settings.saveSetting('avatarNotificationOnLoad', settingsJsonString.avatarNotificationOnLoad);
     settings.saveSetting('showCloseStatus', settingsJsonString.showCloseStatus);
     settings.saveSetting('pollCloseStatus', settingsJsonString.pollCloseStatus);
     settings.saveSetting('pollInterval', settingsJsonString.pollInterval);
