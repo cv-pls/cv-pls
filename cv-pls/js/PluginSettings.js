@@ -58,6 +58,7 @@ function PluginSettings(settings) {
 
   this.saveAllSettings = function(settingsJsonString) {
     settings.saveSetting('showIcon', settingsJsonString.showIcon);
+    settings.saveSetting('oneBox', settingsJsonString.oneBox);
     settings.saveSetting('oneBoxHeight', settingsJsonString.oneBoxHeight);
     settings.saveSetting('soundNotification', settingsJsonString.soundNotification);
     settings.saveSetting('avatarNotification', settingsJsonString.avatarNotification);
