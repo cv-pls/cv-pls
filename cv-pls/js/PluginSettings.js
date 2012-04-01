@@ -55,4 +55,16 @@ function PluginSettings(settings) {
       pollInterval: self.pollInterval()
     };
   };
+
+  this.saveAllSettings = function(settingsJsonString) {
+    settings.saveSetting('showIcon', settingsJsonString.showIcon);
+    settings.saveSetting('oneBoxHeight', settingsJsonString.oneBoxHeight);
+    settings.saveSetting('soundNotification', settingsJsonString.soundNotification);
+    settings.saveSetting('avatarNotification', settingsJsonString.avatarNotification);
+    settings.saveSetting('avatarNotificationOnLoad', settingsJsonString.avatarNotificationOnLoad);
+    settings.saveSetting('showCloseStatus', settingsJsonString.showCloseStatus);
+    settings.saveSetting('showCloseReason', settingsJsonString.showCloseReason);
+    settings.saveSetting('pollCloseStatus', settingsJsonString.pollCloseStatus);
+    settings.saveSetting('pollInterval', settingsJsonString.pollInterval);
+  };
 }
