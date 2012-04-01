@@ -2,6 +2,7 @@ function AudioPlayer(audioFile) {
   var self = this;
   this.audioFile = audioFile;
   this.audioPlayers = {
+    enabled: false,
     nativeAudioSupported: false,
     nativeAudioPlayer: null,
     jPlayerSupported: false,
