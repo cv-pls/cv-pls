@@ -150,7 +150,7 @@ function VoteQueueProcessor(stackApi, voteRequestFormatter) {
   };
 }
 
-function VoteRequestProcessor(pluginSettings, voteRequestFormatter) {
+function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer) {
   var self = this;
 
   this.process = function(buffer, items) {
@@ -159,6 +159,12 @@ function VoteRequestProcessor(pluginSettings, voteRequestFormatter) {
         voteRequestFormatter.addOnebox(buffer.posts[i].$post, self.getQuestionById(items, buffer.questionIds[i]));
       }
     }
+
+    if (pluginSettings.soundNotification() && audioPlayer.enabled) {
+      audioPlayer.playNotification();
+    }
+    // enable audioplayer after initial load
+    audioPlayer.enabled = true;
   };
 
   this.getQuestionById = function(items, questionId) {
@@ -744,7 +750,8 @@ function NotificationManager(settings) {
   var pluginSettings = new PluginSettings(settings);
 
   var voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
-  var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter);
+  var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
+  var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer);
 
   var stackApi = new StackApi();
   var voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestProcessor);
