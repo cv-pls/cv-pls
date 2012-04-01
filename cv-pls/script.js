@@ -150,17 +150,28 @@ function VoteQueueProcessor(stackApi, voteRequestFormatter) {
   };
 }
 
-function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer) {
+function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification) {
   var self = this;
 
   this.process = function(buffer, items) {
+    var newQuestions = false;
     for (var i = 0; i < buffer.items; i++) {
+      var question = self.getQuestionById(items, buffer.questionIds[i]);
+
+      // question is deleted?
+      if (question === null) {
+        continue;
+      }
+
+      newQuestions = true;
+      avatarNotification.enqueue(new Post(buffer.posts[i].$post));
+
       if (pluginSettings.oneBox()) {
-        voteRequestFormatter.addOnebox(buffer.posts[i].$post, self.getQuestionById(items, buffer.questionIds[i]));
+        voteRequestFormatter.addOnebox(buffer.posts[i].$post, question);
       }
     }
 
-    if (pluginSettings.soundNotification() && audioPlayer.enabled) {
+    if (pluginSettings.soundNotification() && audioPlayer.enabled && newQuestions) {
       audioPlayer.playNotification();
     }
     // enable audioplayer after initial load
@@ -183,11 +194,6 @@ function VoteRequestFormatter(pluginSettings) {
   var self = this;
 
   this.addOnebox = function($post, question) {
-    // question is deleted?
-    if (question === null) {
-      return null;
-    }
-
     $post.append(self.getOneboxHtml(question));
     self.processOneboxFormatting($post, question);
   };
@@ -331,6 +337,36 @@ function StackApi() {
 
   this.parseIds = function(ids) {
     return ids.join(';');
+  };
+}
+
+function AvatarNotification(avatarNotificationQueue, pluginSettings) {
+  var self = this;
+
+  this.enqueue = function($post) {
+    avatarNotificationQueue.enqueue($post);
+    self.displayNotitication();
+  }
+
+  this.displayNotitication = function() {
+    if (!pluginSettings.avatarNotification()) {
+      console.log('AvatarNotitications are disabled');
+      return null;
+    }
+
+    var $cvcount = $('#cv-count');
+
+    console.log('AvatarNotitications are enabled');
+    if (!$cvcount.length) {
+      var css = 'position:absolute; z-index:4; top:7px; left:24px; color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417)); border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer; font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px; min-width: 12px; padding: 0 4px; text-align: center; display: none;';
+      var html = '<div title="Cv request waiting for review" id="cv-count" style="' + css + '">' + avatarNotificationQueue.queue.length + '</div>';
+
+      $('#reply-count').after(html);
+    } else {
+      $cvcount.text(avatarNotificationQueue.queue.length);
+    }
+
+    $cvcount.show();
   };
 }
 
@@ -751,7 +787,10 @@ function NotificationManager(settings) {
 
   var voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
-  var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer);
+  var avatarNotificationQueue = new VoteRequestQueue();
+  var avatarNotification = new AvatarNotification(avatarNotificationQueue, pluginSettings);
+
+  var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
 
   var stackApi = new StackApi();
   var voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestProcessor);
