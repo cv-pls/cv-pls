@@ -26,11 +26,7 @@ function PluginSettings(settings) {
   };
 
   this.showCloseStatus = function() {
-    return settings.normalizeDefaultFalse(settings.getSetting('showCloseStatus'));
-  };
-
-  this.showCloseReason = function() {
-    return settings.normalizeDefaultFalse(settings.getSetting('showCloseReason'));
+    return settings.normalizeDefaultTrue(settings.getSetting('showCloseStatus'));
   };
 
   this.pollCloseStatus = function() {
@@ -50,7 +46,6 @@ function PluginSettings(settings) {
       avatarNotification: self.avatarNotification(),
       avatarNotificationOnLoad: self.avatarNotificationOnLoad(),
       showCloseStatus: self.showCloseStatus(),
-      showCloseReason: self.showCloseReason(),
       pollCloseStatus: self.pollCloseStatus(),
       pollInterval: self.pollInterval()
     };
@@ -64,7 +59,6 @@ function PluginSettings(settings) {
     settings.saveSetting('avatarNotification', settingsJsonString.avatarNotification);
     settings.saveSetting('avatarNotificationOnLoad', settingsJsonString.avatarNotificationOnLoad);
     settings.saveSetting('showCloseStatus', settingsJsonString.showCloseStatus);
-    settings.saveSetting('showCloseReason', settingsJsonString.showCloseReason);
     settings.saveSetting('pollCloseStatus', settingsJsonString.pollCloseStatus);
     settings.saveSetting('pollInterval', settingsJsonString.pollInterval);
   };
