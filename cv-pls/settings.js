@@ -9,6 +9,10 @@ function SettingsManager(pluginSettings) {
     } else {
       $('input[name="oneboxheight"]').attr('disabled', true);
     }
+
+    if (pluginSettings.oneBoxHeight() !== null) {
+      $('input[name="oneboxheight"]').val(pluginSettings.oneBoxHeight());
+    }
   }
 }
 
@@ -31,5 +35,9 @@ function SettingsManager(pluginSettings) {
     } else {
         $(':input[name="oneboxheight"]').attr('disabled', true);
     }
+  });
+
+  $('input[name="oneboxheight"]').keyup(function() {
+    settings.saveSetting('oneBoxHeight', $(this).val());
   });
 })(jQuery);
