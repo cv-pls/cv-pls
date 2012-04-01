@@ -693,12 +693,6 @@ function NotificationManager(settings) {
     pluginSettings.saveAllSettings(settingsJsonString);
     voteRequestListener.init();
 
-    //var settings = new Settings();
-    //var stackApi = new StackApi();
-    //var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
-    //var cvHelper = new CvHelper(chatRoom, voteRequestMessageQueue, stackApi, settings, audioPlayer);
-    //cvHelper.init();
-
     var notificationManager =  new NotificationManager(settings);
 
     chrome.extension.sendRequest({method: "showIcon"}, function(response) { });
