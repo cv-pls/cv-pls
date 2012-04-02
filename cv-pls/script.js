@@ -128,6 +128,11 @@ function Post($post) {
           break;
       }
     });
+
+    if (self.isVoteRequest) {
+      self.$post.addClass('cvhelper-vote-request');
+      $('a[href^="http://stackoverflow.com/questions/' + self.questionId + '"]', self.$post).addClass('cvhelper-question-link');
+    }
   };
 
   this.setQuestionId = function() {
@@ -251,7 +256,7 @@ function VoteRequestFormatter(pluginSettings) {
     html+= '<div class="onebox ob-post cv-request" style="overflow: hidden; position: relative;">';
     html+= '  <div class="ob-post-votes" title="This question has a score of ' + question.score + '.">' + question.score + '</div>';
     html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
-    html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + question.link + '">' + question.title + '</a></div>';
+    html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + question.link + '" class="cvhelper-question-link">' + question.title + '</a></div>';
     html+= '  <p class="ob-post-body">';
     html+= '    <img width="32" height="32" class="user-gravatar32" src="' + question.owner.profile_image + '" title="' + question.owner.display_name + '" alt="' + question.owner.display_name + '">' + question.body;
     html+= '  </p>';
@@ -413,6 +418,26 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
       window.open('http://chat.stackoverflow.com/transcript/message/' + lastRequest.id + '#' + lastRequest.id, '_blank');
     }
 
+    self.updateSubtractedNotification();
+  };
+
+  this.manualDeleteFromStack = function(id) {
+    var foundInStack = false;
+
+    for (var i = avatarNotificationStack.queue.length-1; i >= 0; i--) {
+      if (avatarNotificationStack.queue[i].id == id) {
+        avatarNotificationStack.queue.splice(i, 1);
+        foundInStack = true;
+        break;
+      }
+    }
+
+    if (foundInStack) {
+      self.updateSubtractedNotification();
+    }
+  };
+
+  this.updateSubtractedNotification = function() {
     var $cvCount = $('#cv-count');
     if ($cvCount.length) {
       $cvCount.text(avatarNotificationStack.queue.length);
@@ -505,13 +530,19 @@ function NotificationManager(settings) {
 
       return false;
     });
+  });
 
-    // handle click on avatar notification
-    $('body').on('click', '#cv-count', function() {
-      avatarNotification.navigateToLastRequest();
+  // handle click on avatar notification
+  $('body').on('click', '#cv-count', function() {
+    avatarNotification.navigateToLastRequest();
 
-      return false;
-    });
+    return false;
+  });
+
+  // handle click on link of a request
+  $('body').on('click', '.cvhelper-question-link', function() {
+    var id = $(this).closest('.message').attr('id').split('-')[1];
+    avatarNotification.manualDeleteFromStack(id);
   });
 
   // handle close question
