@@ -23,44 +23,6 @@ function ChatRoom() {
   this.checkRoomStatus();
 }
 
-// queue with all active close requests
-function VoteRequestQueue() {
-  var self = this;
-
-  this.queue = [];
-
-  this.enqueue = function(post) {
-    self.queue.push(post);
-  };
-
-  this.dequeue = function() {
-    if (!self.queue.length) {
-      return null;
-    }
-
-    return self.queue.shift();
-  };
-}
-
-// stack with all actoive close requests
-function VoteRequestStack() {
-  var self = this;
-
-  this.queue = [];
-
-  this.push = function(post) {
-    self.queue.push(post);
-  };
-
-  this.pop = function() {
-    if (!self.queue.length) {
-      return null;
-    }
-
-    return self.queue.pop();
-  };
-}
-
 // post class
 function Post($post) {
   var self = this;
@@ -507,7 +469,7 @@ function NotificationManager(settings) {
 
   var voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
-  var avatarNotificationStack = new VoteRequestStack();
+  var avatarNotificationStack = new RequestStack();
   var avatarNotification = new AvatarNotification(avatarNotificationStack, pluginSettings);
 //var activeUser = $('active-user');
   var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
@@ -516,7 +478,7 @@ function NotificationManager(settings) {
   var voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestProcessor);
 
   var chatRoom = new ChatRoom();
-  var voteRequestMessageQueue = new VoteRequestQueue();
+  var voteRequestMessageQueue = new RequestQueue();
   var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor);
 
   chrome.extension.sendRequest({method: 'getSettings'}, function(settingsJsonString) {

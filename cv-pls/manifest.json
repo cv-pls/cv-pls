@@ -23,6 +23,8 @@
         "js/audioPlayer.js",
         "js/Settings.js",
         "js/PluginSettings.js",
+        "js/RequestQueue.js",
+        "js/RequestStack.js",
         "script.js"
       ],
       "run_at" : "document_idle",
