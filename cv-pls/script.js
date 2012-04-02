@@ -1,3 +1,67 @@
+// listens for new posts added to the DOM and queues them if they contain cv-pls / delv-pls requests
+function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor) {
+  var self = this;
+
+  this.chatRoom = chatRoom;
+  this.voteRequestMessageQueue = voteRequestMessageQueue;
+  self.activeUserClass = $('#active-user').attr('class').split(' ')[1];
+
+  this.init = function() {
+    if (!self.chatRoom.isRoomLoaded()) {
+      setTimeout(self.init, 1000);
+    } else {
+      self.postListener();
+    }
+  };
+
+  this.postListener = function() {
+    // we should do something smarter here. e.g. only loop through new posts
+    $('div.user-container div.messages div.message div.content').each(function() {
+      var $post = $(this);
+      if ($post.hasClass('vote-request')) {
+        return true;
+      }
+
+      if (self.isMessagePending($post)) {
+        return false;
+      }
+
+      var post = new Post($post);
+
+      if (self.isOwnPost($post)) {
+        return true;
+      }
+
+      if (post.isVoteRequest) {
+        self.voteRequestMessageQueue.enqueue(post);
+      }
+    });
+
+    voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
+
+    setTimeout(self.postListener, 1000);
+  };
+
+  // check if message is still pending
+  this.isMessagePending = function($post) {
+    if ($post.closest('div.message').attr('id').substr(0, 7) == 'pending') {
+      return true;
+    }
+
+    return false;
+  };
+
+  // check whether vote request is the user's
+  this.isOwnPost = function($post) {
+    var $userinfo = $post.closest('.messages').prev();
+    if ($userinfo.attr('class').split(' ')[1] == self.activeUserClass) {
+      return true;
+    }
+
+    return false;
+  };
+}
+
 // chatroom class
 function ChatRoom() {
   var self = this;
@@ -131,6 +195,7 @@ function VoteQueueProcessor(stackApi, voteRequestFormatter) {
   };
 }
 
+// callback function which handles the AJAX response from the stack-api
 function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification) {
   var self = this;
 
@@ -171,6 +236,7 @@ function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer,
   };
 }
 
+// turn cv / delv requests in nice oneboxes
 function VoteRequestFormatter(pluginSettings) {
   var self = this;
 
@@ -247,69 +313,8 @@ function VoteRequestFormatter(pluginSettings) {
   };
 }
 
-function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor) {
-  var self = this;
 
-  this.chatRoom = chatRoom;
-  this.voteRequestMessageQueue = voteRequestMessageQueue;
-  self.activeUserClass = $('#active-user').attr('class').split(' ')[1];
-
-  this.init = function() {
-    if (!self.chatRoom.isRoomLoaded()) {
-      setTimeout(self.init, 1000);
-    } else {
-      self.postListener();
-    }
-  };
-
-  this.postListener = function() {
-    // we should do something smarter here. e.g. only loop through new posts
-    $('div.user-container div.messages div.message div.content').each(function() {
-      var $post = $(this);
-      if ($post.hasClass('vote-request')) {
-        return true;
-      }
-
-      if (self.isMessagePending($post)) {
-        return false;
-      }
-
-      var post = new Post($post);
-
-      if (self.isOwnPost($post)) {
-        return true;
-      }
-
-      if (post.isVoteRequest) {
-        self.voteRequestMessageQueue.enqueue(post);
-      }
-    });
-
-    voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
-
-    setTimeout(self.postListener, 1000);
-  };
-
-  // check if message is still pending
-  this.isMessagePending = function($post) {
-    if ($post.closest('div.message').attr('id').substr(0, 7) == 'pending') {
-      return true;
-    }
-
-    return false;
-  };
-
-  // check whether vote request is the user's
-  this.isOwnPost = function($post) {
-    var $userinfo = $post.closest('.messages').prev();
-    if ($userinfo.attr('class').split(' ')[1] == self.activeUserClass) {
-      return true;
-    }
-
-    return false;
-  };
-}
-
+// stack api
 function StackApi() {
   var self = this;
 
@@ -350,6 +355,7 @@ function StackApi() {
   };
 }
 
+// handles the avatar notifications
 function AvatarNotification(avatarNotificationStack, pluginSettings) {
   var self = this;
 
@@ -471,7 +477,6 @@ function NotificationManager(settings) {
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
   var avatarNotificationStack = new RequestStack();
   var avatarNotification = new AvatarNotification(avatarNotificationStack, pluginSettings);
-//var activeUser = $('active-user');
   var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
 
   var stackApi = new StackApi();
