@@ -290,6 +290,7 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
 
   this.chatRoom = chatRoom;
   this.voteRequestMessageQueue = voteRequestMessageQueue;
+  self.activeUserClass = $('#active-user').attr('class').split(' ')[1];
 
   this.init = function() {
     if (!self.chatRoom.isRoomLoaded()) {
@@ -304,9 +305,18 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
     $('div.user-container div.messages div.message div.content').each(function() {
       var $post = $(this);
       if ($post.hasClass('vote-request')) {
+        return true;
+      }
+
+      if (self.isMessagePending($post)) {
         return false;
       }
+
       var post = new Post($post);
+
+      if (self.isOwnPost($post)) {
+        return true;
+      }
 
       if (post.isVoteRequest) {
         self.voteRequestMessageQueue.enqueue(post);
@@ -316,6 +326,25 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
     voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
 
     setTimeout(self.postListener, 1000);
+  };
+
+  // check if message is still pending
+  this.isMessagePending = function($post) {
+    if ($post.closest('div.message').attr('id').substr(0, 7) == 'pending') {
+      return true;
+    }
+
+    return false;
+  };
+
+  // check whether vote request is the user's
+  this.isOwnPost = function($post) {
+    var $userinfo = $post.closest('.messages').prev();
+    if ($userinfo.attr('class').split(' ')[1] == self.activeUserClass) {
+      return true;
+    }
+
+    return false;
   };
 }
 
@@ -375,10 +404,16 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
     var $cvCount = $('#cv-count');
 
     if (!$cvCount.length) {
-      var css = 'position:absolute; z-index:4; top:7px; left:24px; color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417)); border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer; font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px; min-width: 12px; padding: 0 4px; text-align: center; display: none;';
+      var css = '';
+      css+= 'position:absolute; z-index:4; top:7px; left:24px;';
+      css+= ' color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417));';
+      css+= ' border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer;';
+      css+= ' font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px;';
+      css+= ' min-width: 12px; padding: 0 4px; text-align: center; display: none;';
       var html = '<div title="Cv request waiting for review" id="cv-count" style="' + css + '">' + avatarNotificationStack.queue.length + '</div>';
 
       $('#reply-count').after(html);
+      $cvCount = $('#cv-count');
     } else {
       $cvCount.text(avatarNotificationStack.queue.length);
     }
@@ -507,7 +542,7 @@ function NotificationManager(settings) {
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
   var avatarNotificationStack = new VoteRequestStack();
   var avatarNotification = new AvatarNotification(avatarNotificationStack, pluginSettings);
-
+//var activeUser = $('active-user');
   var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
 
   var stackApi = new StackApi();
