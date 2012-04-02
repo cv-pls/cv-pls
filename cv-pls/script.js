@@ -460,39 +460,6 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
   };
 }
 
-function CvHelper(chatRoom, voteRequestQueue, stackApi, settings, soundPlayer) {
-  var self = this;
-
-  this.pollStatus = function() {
-    $('div.cv-request:not(.closed)').each(function() {
-      var $post = $(this).closest('div.content');
-
-      stackApi.pollStatus(self.getPostInfo(self.getQuestionId($post)), $post);
-    });
-
-    chrome.extension.sendRequest({method: 'getPolling'}, function(pollingSettings) {
-      if (pollingSettings.poll) {
-        var timeout = 5;
-        if (pollingSettings.interval) {
-          timeout = pollingSettings.interval;
-        }
-        setTimeout(function() {
-          self.pollStatus();
-        }, timeout*60000);
-      }
-    });
-  }
-
-  // check if message is still pending
-  this.isMessagePending = function(id) {
-    if (id.substr(0, 7) == 'pending') {
-      return true;
-    }
-
-    return false;
-  };
-}
-
 function NotificationManager(settings) {
 
   this.settings = settings;
