@@ -18,7 +18,7 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
     // we should do something smarter here. e.g. only loop through new posts
     $('div.user-container div.messages div.message div.content').each(function() {
       var $post = $(this);
-      if ($post.hasClass('vote-request')) {
+      if ($post.hasClass('cvhelper-processed')) {
         return true;
       }
 
@@ -91,7 +91,7 @@ function ChatRoom() {
 function Post($post) {
   var self = this;
 
-  this.$post = $post.addClass('vote-request');
+  this.$post = $post.addClass('cvhelper-processed');
   this.id = null;
   this.questionId = null;
   this.isVoteRequest = false;
