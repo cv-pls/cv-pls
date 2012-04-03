@@ -287,7 +287,7 @@ function VoteRequestFormatter(pluginSettings) {
     var $onebox = $('.onebox', $post);
 
     self.processHeight($onebox);
-    self.processStatus($onebox, question);
+    self.processStatus($onebox, question, $post);
 
     $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
   };
@@ -308,16 +308,16 @@ function VoteRequestFormatter(pluginSettings) {
     }
   };
 
-  this.processStatus = function($onebox, question) {
+  this.processStatus = function($onebox, question, $post) {
     if (!pluginSettings.showCloseStatus() || typeof question.closed_date == 'undefined') {
       return null;
     }
 
     var $title = $('.ob-post-title a', $onebox);
     $title.html($title.html() + ' [closed]');
+    $post.addClass('cvhelper-closed');
   };
 }
-
 
 // stack api
 function StackApi() {
@@ -453,6 +453,64 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
   };
 }
 
+// handles the polling of the status of requests
+function StatusPolling(pluginSettings, pollMessageQueue, pollQueueProcessor) {
+  var self = this;
+
+  this.pollStatus = function() {
+    if (!pluginSettings.pollCloseStatus()) {
+      return false;
+    }
+
+    // sorry for the tight coupling
+    $('.cvhelper-vote-request').each(function() {
+      var post = new Post($(this));
+
+      pollMessageQueue.enqueue(post);
+    });
+
+    pollQueueProcessor.processQueue(new VoteRequestBuffer(pollMessageQueue));
+
+    setTimeout(self.pollStatus, pluginSettings.pollInterval()*60000);
+  };
+}
+
+// callback function which handles the AJAX response from the stack-api
+function StatusRequestProcessor(pluginSettings) {
+  var self = this;
+
+  this.process = function(buffer, items) {
+    //var newQuestions = false;
+    for (var i = 0; i < buffer.items; i++) {
+      var question = self.getQuestionById(items, buffer.questionIds[i]);
+
+      // question is deleted?
+      if (question === null) {
+        continue;
+      }
+
+      if (pluginSettings.showCloseStatus() && typeof question.closed_date != 'undefined') {
+        if (!buffer.posts[i].$post.hasClass('cvhelper-closed')) {
+          var $title = $('.onebox .cvhelper-question-link', buffer.posts[i].$post);
+          $title.html($title.html() + ' [closed]');
+          buffer.posts[i].$post.addClass('cvhelper-closed')
+        }
+      }
+    }
+  };
+
+  this.getQuestionById = function(items, questionId) {
+    var length = items.length;
+    for (var i = 0; i < length; i++) {
+      if (items[i].question_id == questionId) {
+        return items[i];
+      }
+    }
+
+    return null;
+  };
+}
+
 function NotificationManager(settings) {
 
   this.settings = settings;
@@ -511,13 +569,22 @@ function NotificationManager(settings) {
   var voteRequestMessageQueue = new RequestQueue();
   var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor);
 
+  var pollMessageQueue = new RequestQueue();
+  var statusRequestProcessor = new StatusRequestProcessor(pluginSettings);
+  var pollQueueProcessor = new VoteQueueProcessor(stackApi, statusRequestProcessor);
+  var statusPolling = new StatusPolling(pluginSettings, pollMessageQueue, pollQueueProcessor);
+
   chrome.extension.sendRequest({method: 'getSettings'}, function(settingsJsonString) {
     pluginSettings.saveAllSettings(settingsJsonString);
     voteRequestListener.init();
+    // wait 1 minute before polling to prevent getting kicked from stack-api
+    console.log('before polling');
+    setTimeout(statusPolling.pollStatus, 60000);
+    console.log('after polling');
 
     var notificationManager =  new NotificationManager(settings);
 
-    chrome.extension.sendRequest({method: "showIcon"}, function(response) { });
+    chrome.extension.sendRequest({method: 'showIcon'}, function(response) { });
 
     // sound options
     $('#sound').click(function() {
