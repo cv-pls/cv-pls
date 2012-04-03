@@ -511,10 +511,7 @@ function StatusRequestProcessor(pluginSettings) {
   };
 }
 
-function NotificationManager(settings) {
-
-  this.settings = settings;
-
+function SoundManager(pluginSettings) {
   var self = this;
 
   // sound settings popup listener
@@ -522,16 +519,12 @@ function NotificationManager(settings) {
     var $popup = $('#chat-body > .popup');
 
     if ($popup.length) {
-      chrome.extension.sendRequest({method: 'getSetting', key: 'sound-notification'}, function(response) {
-        settings.saveSetting('sound-notification', response.value);
+      var status = 'disabled';
+      if (pluginSettings.soundNotification()) {
+        status = 'enabled';
+      }
 
-        var status = 'disabled';
-        if (self.settings.isSoundEnabled()) {
-          status = 'enabled';
-        }
-
-        $('ul.no-bullets', $popup).after('<hr><ul class="no-bullet" id="cvpls-sound"><li><a href="#">cv-pls (' + status + ')</a></li></ul>');
-      });
+      $('ul.no-bullets', $popup).after('<hr><ul class="no-bullet" id="cvpls-sound"><li><a href="#">cv-pls (' + status + ')</a></li></ul>');
     } else {
       self.watchPopup();
     }
@@ -540,14 +533,14 @@ function NotificationManager(settings) {
   // toggle sound setting
   this.toggleSound = function() {
     var $option = $('#cvpls-sound a');
-    if (self.settings.isSoundEnabled()) {
-      self.settings.saveSetting('sound-notification', false);
+    if (pluginSettings.soundNotification()) {
+      pluginSettings.settings.saveSetting('soundNotification', false);
       $option.text('cv-pls (disabled)');
-      chrome.extension.sendRequest({method: 'saveSetting', key: 'sound-notification', value: false}, function(response) { });
+      chrome.extension.sendRequest({method: 'saveSetting', key: 'soundNotification', value: false}, function(response) { });
     } else {
-      self.settings.saveSetting('sound-notification', true);
+      pluginSettings.settings.saveSetting('soundNotification', true);
       $option.text('cv-pls (enabled)');
-      chrome.extension.sendRequest({method: 'saveSetting', key: 'sound-notification', value: true}, function(response) { });
+      chrome.extension.sendRequest({method: 'saveSetting', key: 'soundNotification', value: true}, function(response) { });
     }
   };
 }
@@ -555,6 +548,8 @@ function NotificationManager(settings) {
 (function($) {
   var settings = new Settings();
   var pluginSettings = new PluginSettings(settings);
+
+  var soundManager = new SoundManager(pluginSettings);
 
   var voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
@@ -578,22 +573,18 @@ function NotificationManager(settings) {
     pluginSettings.saveAllSettings(settingsJsonString);
     voteRequestListener.init();
     // wait 1 minute before polling to prevent getting kicked from stack-api
-    console.log('before polling');
     setTimeout(statusPolling.pollStatus, 60000);
-    console.log('after polling');
-
-    var notificationManager =  new NotificationManager(settings);
 
     chrome.extension.sendRequest({method: 'showIcon'}, function(response) { });
 
     // sound options
     $('#sound').click(function() {
-      notificationManager.watchPopup();
+      soundManager.watchPopup();
     });
 
     // save sound setting
     $('body').on('click', '#cvpls-sound li', function() {
-      notificationManager.toggleSound();
+      soundManager.toggleSound();
 
       return false;
     });
