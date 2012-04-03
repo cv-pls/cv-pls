@@ -602,26 +602,4 @@ function SoundManager(pluginSettings) {
     var id = $(this).closest('.message').attr('id').split('-')[1];
     avatarNotification.manualDeleteFromStack(id);
   });
-
-  // handle close question
-  $('#chat').on('click', '.cvpls-close-question', function() {
-    var $button = $(this);
-    //http://stackoverflow.com/posts/popup/close/9545683?_=1330791992338
-    var url = 'http://stackoverflow.com/posts/popup/close/' + $(this).data('questionid');
-    var ajaxSettings = {
-        url: url,
-        dataType: 'html',
-        error: function(jqHr, status, error) {
-          // request error
-        },
-        success: function(data, status, jqHr) {
-          // prevent error because the StackExchange js isn't available in chat
-          data = data.replace('if (StackExchange.options.isMobile) {', 'if (1==2) {');
-          $button.closest('.message').prepend(data);
-        }
-    }
-    $.ajax(ajaxSettings);
-
-    return false;
-  });
 })(jQuery);
