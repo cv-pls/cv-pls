@@ -1,6 +1,8 @@
 function PluginSettings(settings) {
   var self = this;
 
+  this.settings = settings;
+
   this.showIcon = function() {
     return settings.normalizeDefaultTrue(settings.getSetting('showIcon'));
   };
