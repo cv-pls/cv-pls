@@ -28,7 +28,7 @@ function AudioPlayer(audioFile) {
   this.initializeJplayerSupport = function() {
     var script = document.createElement('script');
     script.setAttribute('type', 'application/javascript');
-    script.setAttribute('src', chrome.extension.getURL('custom-jplayer.js'));
+    script.setAttribute('src', chrome.extension.getURL('js/custom-jplayer.js'));
     document.head.appendChild(script);
 
     var customEvent = document.createEvent('Event');
