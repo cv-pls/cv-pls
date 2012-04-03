@@ -21,6 +21,11 @@
               sendResponse(pluginSettings.getAllSettings());
               break;
 
+            case 'saveSetting':
+              pluginSettings.settings.saveSetting(request.key, request.value);
+              sendResponse({});
+              break;
+
             default:
               sendResponse({});
               break;
