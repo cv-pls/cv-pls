@@ -1,11 +1,11 @@
 {
   "name": "[cv-pls] Helper",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Helps to close questions on SO",
   "icons": { "16": "img/icon16.png",
              "48": "img/icon48.png",
             "128": "img/icon128.png" },
-  "update_url": "https://github.com/downloads/PeeHaa/cv-pls/updates.xml",
+  "update_url": "https://cloud.github.com/downloads/PeeHaa/cv-pls/updates.xml",
   "options_page": "options.html",
   "background_page": "background.html",
   "page_action": {
