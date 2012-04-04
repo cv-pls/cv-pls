@@ -25,6 +25,7 @@
         "js/PluginSettings.js",
         "js/RequestQueue.js",
         "js/RequestStack.js",
+        "js/StackApi.js",
         "script.js"
       ],
       "run_at" : "document_idle",
