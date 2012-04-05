@@ -509,11 +509,39 @@ function SoundManager(pluginSettings) {
   };
 }
 
+function ButtonsManager(pluginSettings) {
+  var self = this;
+
+  this.init = function() {
+    if (pluginSettings.delvPlsButton()) {
+      self.addDelvButton();
+    }
+
+    if (pluginSettings.cvPlsButton()) {
+      self.addCvButton();
+    }
+  };
+
+  this.addCvButton = function() {
+    var html = '<button class="button" id="cv-pls-button" style="margin-left: 4px;">cv-pls</button>';
+
+    $('#upload-file').after(html);
+  };
+
+  this.addDelvButton = function() {
+    var html = '<button class="button" id="delv-pls-button" style="margin-left: 4px;">delv-pls</button>';
+
+    $('#upload-file').after(html);
+  };
+}
+
 (function($) {
   var settings = new Settings();
   var pluginSettings = new PluginSettings(settings);
 
   var soundManager = new SoundManager(pluginSettings);
+
+  var buttonsManager = new ButtonsManager(pluginSettings);
 
   var voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
   var audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
@@ -535,6 +563,7 @@ function SoundManager(pluginSettings) {
 
   chrome.extension.sendRequest({method: 'getSettings'}, function(settingsJsonString) {
     pluginSettings.saveAllSettings(settingsJsonString);
+    buttonsManager.init();
     voteRequestListener.init();
     // wait 1 minute before polling to prevent getting kicked from stack-api
     setTimeout(statusPolling.pollStatus, 60000);
@@ -559,6 +588,26 @@ function SoundManager(pluginSettings) {
     avatarNotification.navigateToLastRequest();
 
     return false;
+  });
+
+  // handle cvpls button click
+  $('body').on('click', '#cv-pls-button', function() {
+    var val = $('#input').val();
+    $('#input').val('[tag:cv-pls] ' + val).focus().putCursorAtEnd();
+
+    if (val != '') {
+      $('#sayit-button').click();
+    }
+  });
+
+  // handle delvpls button click
+  $('body').on('click', '#delv-pls-button', function() {
+    var val = $('#input').val();
+    $('#input').val('[tag:delv-pls] ' + val).focus().putCursorAtEnd();
+
+    if (val != '') {
+      $('#sayit-button').click();
+    }
   });
 
   // handle click on link of a request

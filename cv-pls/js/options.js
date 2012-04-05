@@ -14,6 +14,14 @@ function SettingsManager(pluginSettings) {
       $('input[name="oneboxheight"]').val(pluginSettings.oneBoxHeight());
     }
 
+    if (pluginSettings.cvPlsButton()) {
+      $('input[name="cvbutton"]').prop('checked', 'checked');
+    }
+
+    if (pluginSettings.delvPlsButton()) {
+      $('input[name="delvbutton"]').prop('checked', 'checked');
+    }
+
     if (pluginSettings.soundNotification()) {
       $('input[name="beep"]').prop('checked', 'checked');
     }
@@ -62,6 +70,14 @@ function SettingsManager(pluginSettings) {
 
   $('input[name="oneboxheight"]').keyup(function() {
     settings.saveSetting('oneBoxHeight', $(this).val());
+  });
+
+  $('input[name="cvbutton"]').change(function() {
+    settings.saveSetting('cvPlsButton', $(this).prop('checked'));
+  });
+
+  $('input[name="delvbutton"]').change(function() {
+    settings.saveSetting('delvPlsButton', $(this).prop('checked'));
   });
 
   $('input[name="beep"]').change(function() {

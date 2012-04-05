@@ -35,6 +35,14 @@ function PluginSettings(settings) {
     return settings.normalizeDefaultNumeric(settings.getSetting('pollInterval'), 5);
   };
 
+  this.cvPlsButton = function() {
+    return settings.normalizeDefaultTrue(settings.getSetting('cvPlsButton'));
+  };
+
+  this.delvPlsButton = function() {
+    return settings.normalizeDefaultFalse(settings.getSetting('delvPlsButton'));
+  };
+
   this.getAllSettings = function() {
     return {
       showIcon: self.showIcon(),
@@ -44,7 +52,9 @@ function PluginSettings(settings) {
       avatarNotification: self.avatarNotification(),
       showCloseStatus: self.showCloseStatus(),
       pollCloseStatus: self.pollCloseStatus(),
-      pollInterval: self.pollInterval()
+      pollInterval: self.pollInterval(),
+      cvPlsButton: self.cvPlsButton(),
+      delvPlsButton: self.delvPlsButton()
     };
   };
 
@@ -57,5 +67,7 @@ function PluginSettings(settings) {
     settings.saveSetting('showCloseStatus', settingsJsonString.showCloseStatus);
     settings.saveSetting('pollCloseStatus', settingsJsonString.pollCloseStatus);
     settings.saveSetting('pollInterval', settingsJsonString.pollInterval);
+    settings.saveSetting('cvPlsButton', settingsJsonString.cvPlsButton);
+    settings.saveSetting('delvPlsButton', settingsJsonString.delvPlsButton);
   };
 }
