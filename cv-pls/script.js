@@ -304,7 +304,12 @@ function VoteRequestFormatter(pluginSettings) {
         cursor: 'n-resize',
         gripClass: 'grippie'
       });
-      $grippie.show();
+
+      var totalWidth = $grippie.width();
+      // grippie width = 27px
+      var grippieX = Math.ceil((totalWidth-27) / 2);
+      var currentY = $grippie.css('backgroundPosition').split('px ')[1];
+      $grippie.css('backgroundPosition', grippieX + 'px ' + currentY).show();
     }
   };
 
