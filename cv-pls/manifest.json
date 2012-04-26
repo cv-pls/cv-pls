@@ -1,11 +1,11 @@
 {
   "name": "[cv-pls] Helper",
-  "version": "0.13.2",
+  "version": "0.16.1",
   "description": "Helps to close questions on SO",
   "icons": { "16": "img/icon16.png",
              "48": "img/icon48.png",
             "128": "img/icon128.png" },
-  "update_url": "https://github.com/downloads/PeeHaa/cv-pls/updates.xml",
+  "update_url": "https://cloud.github.com/downloads/PeeHaa/cv-pls/updates.xml",
   "options_page": "options.html",
   "background_page": "background.html",
   "page_action": {
@@ -17,10 +17,16 @@
     {
       "matches": ["http://chat.stackoverflow.com/rooms/*", "http://chat.stackoverflow.com/transcript/*"],
       "js" : [
-        "jquery-1.7.1.min.js",
-        "jquery-ui-1.8.18.custom.min.js",
-        "js/griphandler-0.10.0.min.js",
-        "audioPlayer.js",
+        "js/jquery-1.7.1.min.js",
+        "js/jquery-ui-1.8.18.custom.min.js",
+        "js/griphandler-0.10.1.min.js",
+        "js/audioPlayer.js",
+        "js/Settings.js",
+        "js/PluginSettings.js",
+        "js/RequestQueue.js",
+        "js/RequestStack.js",
+        "js/StackApi.js",
+        "js/putCursorAtEnd.js",
         "script.js"
       ],
       "run_at" : "document_idle",
@@ -28,6 +34,7 @@
     }
   ],
   "permissions": [
+    "notifications",
     "http://stackoverflow.com/*",
     "https://stackoverflow.com/*",
     "http://*.stackoverflow.com/*",

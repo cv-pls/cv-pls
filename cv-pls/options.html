@@ -64,12 +64,20 @@
             </div>
             <div>
               <input type="text" data-type="number" name="oneboxheight" placeholder="Height" pattern="[0-9]*"
-                     maxlength="4">
-              <select name="oneboxheightunits">
-                <option value="px">px</option>
-                <option value="pt">pt</option>
-              </select>
+                     maxlength="4"> px
             </div>
+          </div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="cvbutton">
+              <span>Add cv-pls button to chat</span>
+            </label>
+          </div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="delvbutton">
+              <span>Add delv-pls button to chat</span>
+            </label>
           </div>
         </div>
       </section>
@@ -91,8 +99,8 @@
           </div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="avataronload">
-              <span>Enable avatar notifications on load</span>
+              <input type="checkbox" name="desktop">
+              <span>Enable desktop notifications</span>
             </label>
           </div>
         </div>
@@ -105,12 +113,6 @@
             <label>
               <input type="checkbox" name="status">
               <span>Show status in onebox</span>
-            </label>
-          </div>
-          <div class="checkbox">
-            <label>
-              <input type="checkbox" name="reason">
-              <span>Show close reason</span>
             </label>
           </div>
           <div class="customOneBoxGroup">
@@ -132,7 +134,9 @@
     </div>
   </div>
 </div>
-<script src="jquery-1.7.1.min.js"></script>
-<script src="settings.js"></script>
+<script src="js/jquery-1.7.1.min.js"></script>
+<script src="js/Settings.js"></script>
+<script src="js/PluginSettings.js"></script>
+<script src="js/options.js"></script>
 </body>
 </html>

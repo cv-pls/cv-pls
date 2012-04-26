@@ -1,45 +1,37 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script src="js/Settings.js"></script>
+    <script src="js/PluginSettings.js"></script>
     <script>
-      // we should really do a switch statement here
-      // we should also normalize the returned settings when we are going to refactor everything
-      chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
-        if (request.method == 'showIcon') {
-          var enabled = localStorage.getItem('icon-enabled');
-          if (enabled == 'true' || enabled === null) {
-            chrome.pageAction.show(sender.tab.id);
+      (function() {
+        var settings = new Settings();
+        var pluginSettings = new PluginSettings(settings);
+
+        chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
+          switch(request.method) {
+            case 'showIcon':
+              if (pluginSettings.showIcon()) {
+                chrome.pageAction.show(sender.tab.id);
+              }
+              sendResponse({});
+              break;
+
+            case 'getSettings':
+              sendResponse(pluginSettings.getAllSettings());
+              break;
+
+            case 'saveSetting':
+              pluginSettings.settings.saveSetting(request.key, request.value);
+              sendResponse({});
+              break;
+
+            default:
+              sendResponse({});
+              break;
           }
-          sendResponse({});
-        } else if (request.method == 'saveSetting') {
-          localStorage.setItem(request.key, request.value);
-          sendResponse({});
-        } else if (request.method == 'getSetting') {
-          sendResponse({value: localStorage.getItem(request.key)});
-        } else if (request.method == 'getAvatarNotification') {
-          sendResponse({
-            enabled: localStorage.getItem('avatar-notification'),
-            onload: localStorage.getItem('avatar-onloadnotification')
-          });
-        } else if (request.method == 'getHeight') {
-          sendResponse({
-            height: localStorage.getItem('onebox-height'),
-            unit: localStorage.getItem('onebox-heightunit')
-          });
-        } else if (request.method == 'getStatus') {
-          sendResponse({
-            status: localStorage.getItem('cv-status'),
-            reason: localStorage.getItem('cv-reason')
-          });
-        } else if (request.method == 'getPolling') {
-          sendResponse({
-            poll: localStorage.getItem('poll'),
-            interval: localStorage.getItem('pollinterval')
-          });
-        } else {
-          sendResponse({}); // snub them.
-        }
-      });
+        });
+      })();
     </script>
   </head>
 </html>
