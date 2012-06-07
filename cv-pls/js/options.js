@@ -48,6 +48,23 @@ function SettingsManager(pluginSettings) {
     }
 
     $('input[name="pollinterval"]').val(pluginSettings.pollInterval());
+
+    if (pluginSettings.backlogEnabled()) {
+      $('input[name="backlog"]').prop('checked', 'checked');
+    } else {
+      $('input[name="backlogamount"]').attr('disabled', true);
+      $('input[name="backlogrefresh"]').attr('disabled', true);
+      $('input[name="backloginterval"]').attr('disabled', true);
+    }
+
+    $('input[name="backlogamount"]').val(pluginSettings.backlogAmount());
+    $('input[name="backloginterval"]').val(pluginSettings.backlogRefreshInterval());
+
+    if (pluginSettings.backlogRefresh()) {
+      $('input[name="backlogrefresh"]').prop('checked', 'checked');
+    } else {
+      $('input[name="backloginterval"]').attr('disabled', true);
+    }
   }
 }
 
@@ -127,5 +144,44 @@ function SettingsManager(pluginSettings) {
 
   $('input[name="pollinterval"]').keyup(function() {
     settings.saveSetting('pollInterval', $(this).val());
+  });
+
+  $('input[name="backlog"]').change(function() {
+    var checked = $(this).prop('checked');
+    settings.saveSetting('backlogEnabled', checked);
+
+    if (checked) {
+      $('input[name="backlogamount"]').removeAttr('disabled');
+      var $refresh = $('input[name="backlogrefresh"]');
+      $refresh.removeAttr('disabled');
+      if ($refresh.prop('checked')) {
+        $(':input[name="backloginterval"]').removeAttr('disabled');
+      } else {
+        $(':input[name="backloginterval"]').attr('disabled', true);
+      }
+    } else {
+      $(':input[name="backlogamount"]').attr('disabled', true);
+      $(':input[name="backlogrefresh"]').attr('disabled', true);
+      $(':input[name="backloginterval"]').attr('disabled', true);
+    }
+  });
+
+  $('input[name="backlogamount"]').keyup(function() {
+    settings.saveSetting('backlogAmount', $(this).val());
+  });
+
+  $('input[name="backlogrefresh"]').change(function() {
+    var checked = $(this).prop('checked');
+    settings.saveSetting('backlogRefresh', checked);
+
+    if (checked) {
+      $(':input[name="backloginterval"]').removeAttr('disabled');
+    } else {
+      $(':input[name="backloginterval"]').attr('disabled', true);
+    }
+  });
+
+  $('input[name="backloginterval"]').keyup(function() {
+    settings.saveSetting('backlogRefreshInterval', $(this).val());
   });
 })(jQuery);

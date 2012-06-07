@@ -103,7 +103,7 @@ input[type="checkbox"]:checked::before {
     position: absolute;
 }
 
-input[type="radio"] ~ span, input[type="checkbox"] ~ span, input[type="text"] ~ span {
+input[type="radio"] ~ span, input[type="checkbox"] ~ span, input[type="text"] ~ span, div.textbox span {
     color: #444;
 }
 

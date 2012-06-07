@@ -37,6 +37,20 @@
       text-align: right;
       width: 30px;
     }
+
+    input[name=backlogamount] {
+      box-sizing: border-box;
+      padding-top: 3px;
+      text-align: right;
+      width: 30px;
+    }
+
+    input[name=backloginterval] {
+      box-sizing: border-box;
+      padding-top: 3px;
+      text-align: right;
+      width: 30px;
+    }
   </style>
 </head>
 <body>
@@ -125,6 +139,38 @@
             <div>
               <label>
                 <input type="text" data-type="number" name="pollinterval" pattern="[0-9]*"
+                       maxlength="3"> <span>minutes</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <h3>Backlog</h3>
+
+        <div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="backlog">
+              <span>Change room description into the backlog</span>
+            </label>
+          </div>
+          <div class="textbox">
+            <label>
+              <span>Number of items in the list</span>
+              <input type="text" name="backlogamount">
+            </label>
+          </div>
+          <div class="customOneBoxGroup">
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" name="backlogrefresh">
+                <span>Refresh backlog every </span>
+              </label>
+            </div>
+            <div>
+              <label>
+                <input type="text" data-type="number" name="backloginterval" pattern="[0-9]*"
                        maxlength="3"> <span>minutes</span>
               </label>
             </div>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>cv-pls Helper Extension Update</title>
+  <link rel="stylesheet" type="text/css" href="ui/default.css">
+  <link rel="stylesheet" type="text/css" href="ui/input.css">
+  <link rel="stylesheet" type="text/css" href="ui/options.css">
+  <style>
+    .customOneBoxGroup {
+      display: -webkit-box;
+      -webkit-box-orient: horizontal;
+    }
+
+    .customOneBoxGroup > :last-child {
+      -webkit-margin-start: 1ex;
+      -webkit-box-flex: 1;
+      position: relative;
+    }
+
+    input[name=oneboxheight] {
+      box-sizing: border-box;
+      padding-top: 3px;
+      text-align: right;
+      width: 40px;
+    }
+
+    input[name=oneboxheightunits] {
+      display: block;
+      -webkit-box-flex: 1;
+      max-width: 200px;
+    }
+
+    input[name=pollinterval] {
+      box-sizing: border-box;
+      padding-top: 3px;
+      text-align: right;
+      width: 30px;
+    }
+
+    input[name=backlogamount] {
+      box-sizing: border-box;
+      padding-top: 3px;
+      text-align: right;
+      width: 30px;
+    }
+
+    input[name=backloginterval] {
+      box-sizing: border-box;
+      padding-top: 3px;
+      text-align: right;
+      width: 30px;
+    }
+  </style>
+</head>
+<body>
+<div id="page-container">
+  <div class="page">
+    <h1>cv-pls Helper Extension Update</h1>
+
+    <div class="displaytable">
+      <section>
+        <h3>Changelog v0.17.0</h3>
+
+        <div>
+          <div class="checkbox">
+            <label>
+              <span>Implemented feature to change the room description to cv backlog</span>
+            </label>
+          </div>
+          <div class="checkbox">
+            <label>
+              <span>Implemented changelog</span>
+            </label>
+          </div>
+          <div class="checkbox">
+            <label>
+              <span>Set default height of oneboxes to 30px</span>
+            </label>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="js/jquery-1.7.1.min.js"></script>
+<script src="js/Settings.js"></script>
+<script src="js/PluginSettings.js"></script>
+<script src="js/options.js"></script>
+</body>
+</html>
