@@ -102,7 +102,7 @@ function Post($post) {
   }();
 
   this.postContainsQuestion = function() {
-    if ($('a:contains("stackoverflow.com/questions/")', self.$post).length) {
+    if ($('a:contains("stackoverflow.com/questions/")', self.$post).length || $('a:contains("http://stackoverflow.com/q/")', self.$post).length) {
       return true;
     }
 
@@ -131,12 +131,18 @@ function Post($post) {
 
     if (self.isVoteRequest) {
       self.$post.addClass('cvhelper-vote-request');
+
       $('a[href^="http://stackoverflow.com/questions/' + self.questionId + '"]', self.$post).addClass('cvhelper-question-link');
+      $('a[href^="http://stackoverflow.com/q/' + self.questionId + '/"]', self.$post).addClass('cvhelper-question-link');
     }
   };
 
   this.setQuestionId = function() {
-    self.questionId = $('a:contains("stackoverflow.com/questions/")', self.$post).attr('href').split('/')[4];
+    if ($('a:contains("stackoverflow.com/questions/")', self.$post).length) {
+      self.questionId = $('a:contains("stackoverflow.com/questions/")', self.$post).attr('href').split('/')[4];
+    } else {
+      self.questionId = $('a:contains("stackoverflow.com/q/")', self.$post).attr('href').split('/')[4];
+    }
   };
 
   if (this.postContainsQuestion()) {
