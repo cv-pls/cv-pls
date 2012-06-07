@@ -8,6 +8,31 @@
         var settings = new Settings();
         var pluginSettings = new PluginSettings(settings);
 
+        function DesktopNotification(pluginSettings) {
+
+          this.buildNotification = function(title, message) {
+            this.notification = webkitNotifications.createNotification(
+              chrome.extension.getURL('img/icon48.png'),
+              title,
+              message
+            );
+
+            this.notification = webkitNotifications.createHTMLNotification(
+              'notification.html'
+            );
+          };
+
+          this.show = function() {
+            if (!pluginSettings.desktopNotification()) {
+              return null;
+            }
+
+            this.notification.show();
+          }.bind(this);
+        }
+
+        var desktopNotification = new DesktopNotification(pluginSettings);
+
         chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
           switch(request.method) {
             case 'showIcon':
@@ -17,12 +42,30 @@
               sendResponse({});
               break;
 
+            case 'checkUpdate':
+              if (settings.getSetting('currentSavedVersion') == null || pluginSettings.getVersion() != settings.getSetting('currentSavedVersion')) {
+                chrome.tabs.create({
+                  url: chrome.extension.getURL('update.html')
+                });
+              }
+              settings.saveSetting('currentSavedVersion', pluginSettings.getVersion());
+              sendResponse({
+                current: settings.getSetting('currentSavedVersion')
+              });
+              break;
+
             case 'getSettings':
               sendResponse(pluginSettings.getAllSettings());
               break;
 
             case 'saveSetting':
               pluginSettings.settings.saveSetting(request.key, request.value);
+              sendResponse({});
+              break;
+
+            case 'showNotification':
+              desktopNotification.buildNotification(request.title, request.message);
+              desktopNotification.show();
               sendResponse({});
               break;
 

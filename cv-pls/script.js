@@ -535,6 +535,75 @@ function ButtonsManager(pluginSettings) {
   };
 }
 
+function DesktopNotification(pluginSettings) {
+  this.show = function(title, message) {
+    if (!pluginSettings.desktopNotification()) {
+      return null;
+    }
+
+    chrome.extension.sendRequest({method: 'showNotification', title: title, message: message}, function(response) { });
+  }.bind(this);
+}
+
+function CvBacklog(pluginSettings, backlogUrl) {
+  var self = this;
+
+  this.descriptionElem = $('#roomdesc');
+  this.originalDescription = this.descriptionElem.html();
+
+  this.show = function() {
+  }.bind(this);
+
+  this.hide = function() {
+    this.descriptionElem.html(this.originalDescription);
+  }.bind(this);
+
+  this.refresh = function() {
+    if (!pluginSettings.backlogEnabled()) {
+      return null;
+    }
+
+    $.ajax({
+      headers: {
+          Accept : 'application/json; charset=utf-8'
+      },
+      url: backlogUrl,
+      error: function(jqHr, status, error) {
+        // request error, this should be taken care of :)
+        // e.g. request quota reached
+      },
+      success: function(data, status, jqHr) {
+        var html = '';
+        var lineBreak = '';
+
+        for (var i = 0; i < data.length; i++) {
+          if (i == pluginSettings.backlogAmount()) {
+            break;
+          }
+
+          html += lineBreak + self.buildCvLink(data[i]);
+
+          lineBreak = '<br>';
+        }
+
+        self.descriptionElem.html(html);
+
+        if (pluginSettings.backlogRefresh()) {
+          setTimeout(function() {
+            self.refresh();
+          }, (pluginSettings.backlogRefreshInterval() * 60 * 1000));
+        }
+      }
+    });
+  };
+
+  this.buildCvLink = function(cvRequest) {
+    return '[cv-pls] <a href="' + cvRequest.link + '" target="_blank">' + cvRequest.title + '</a>';
+  };
+
+  self.refresh();
+}
+
 (function($) {
   var settings = new Settings();
   var pluginSettings = new PluginSettings(settings);
@@ -561,6 +630,10 @@ function ButtonsManager(pluginSettings) {
   var pollQueueProcessor = new VoteQueueProcessor(stackApi, statusRequestProcessor);
   var statusPolling = new StatusPolling(pluginSettings, pollMessageQueue, pollQueueProcessor);
 
+  var desktopNotification = new DesktopNotification(pluginSettings);
+
+  var cvBacklog = new CvBacklog(pluginSettings, 'http://cvbacklog.gordon-oheim.biz/');
+
   chrome.extension.sendRequest({method: 'getSettings'}, function(settingsJsonString) {
     pluginSettings.saveAllSettings(settingsJsonString);
     buttonsManager.init();
@@ -568,7 +641,13 @@ function ButtonsManager(pluginSettings) {
     // wait 1 minute before polling to prevent getting kicked from stack-api
     setTimeout(statusPolling.pollStatus, 60000);
 
+    // desktop notifications test
+    //desktopNotification.show('the <a href="#">title</a>', 'http://stackoverflow.com');
+
+    cvBacklog.show();
+
     chrome.extension.sendRequest({method: 'showIcon'}, function(response) { });
+    chrome.extension.sendRequest({method: 'checkUpdate'}, function(response) { });
 
     // sound options
     $('#sound').click(function() {
