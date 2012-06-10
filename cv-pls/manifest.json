@@ -17,9 +17,7 @@
     {
       "matches": [
         "http://chat.stackoverflow.com/rooms/*",
-        "http://chat.stackoverflow.com/transcript/*",
-        "http://stackoverflow.com/questions/*",
-        "http://stackoverflow.com/q/*"
+        "http://chat.stackoverflow.com/transcript/*"
       ],
       "js" : [
         "js/jquery-1.7.1.min.js",
@@ -44,8 +42,6 @@
       ],
       "js" : [
         "js/jquery-1.7.1.min.js",
-        "js/jquery-ui-1.8.18.custom.min.js",
-        "js/griphandler-0.10.1.min.js",
         "js/Settings.js",
         "js/PluginSettings.js",
         "question-script.js"
