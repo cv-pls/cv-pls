@@ -44,6 +44,7 @@
         "js/jquery-1.7.1.min.js",
         "js/Settings.js",
         "js/PluginSettings.js",
+        "js/putCursorAtEnd.js",
         "question-script.js"
       ],
       "run_at" : "document_idle",

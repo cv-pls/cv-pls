@@ -68,6 +68,14 @@ function PluginSettings(settings) {
     return settings.normalizeDefaultNumeric(settings.getSetting('backlogRefreshInterval'), 60);
   };
 
+  this.dupesEnabled = function() {
+    return settings.normalizeDefaultFalse(settings.getSetting('dupesEnabled'));
+  };
+
+  this.dupesList = function() {
+    return settings.normalizeDefaultArray(settings.getSetting('dupesList'));
+  };
+
   this.getAllSettings = function() {
     return {
       version: self.getVersion(),
@@ -85,7 +93,9 @@ function PluginSettings(settings) {
       backlogEnabled: self.backlogEnabled(),
       backlogAmount: self.backlogAmount(),
       backlogRefresh: self.backlogRefresh(),
-      backlogRefreshInterval: self.backlogRefreshInterval()
+      backlogRefreshInterval: self.backlogRefreshInterval(),
+      dupesEnabled: self.dupesEnabled(),
+      dupesList: self.dupesList()
     };
   };
 
@@ -105,5 +115,7 @@ function PluginSettings(settings) {
     settings.saveSetting('backlogAmount', settingsJsonString.backlogAmount);
     settings.saveSetting('backlogRefresh', settingsJsonString.backlogRefresh);
     settings.saveSetting('backlogRefreshInterval', settingsJsonString.backlogRefreshInterval);
+    settings.saveSetting('dupesEnabled', settingsJsonString.dupesEnabled);
+    settings.saveSetting('dupesList', JSON.stringify(settingsJsonString.dupesList));
   };
 }

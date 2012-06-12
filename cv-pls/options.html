@@ -51,6 +51,35 @@
       text-align: right;
       width: 30px;
     }
+
+    .dupeslist {
+      display: none;
+    }
+
+    .table th, .table td {
+      text-align: left;
+    }
+
+    .table .title {
+      width: 350px;
+    }
+
+    .table .title input {
+      width: 330px;
+    }
+
+    .table .url {
+      width: 590px;
+    }
+
+    .table .url input {
+      width: 570px;
+    }
+
+    .table .delete img, .table .add img {
+      position: relative;
+      top: 3px;
+    }
   </style>
 </head>
 <body>
@@ -177,12 +206,47 @@
           </div>
         </div>
       </section>
+      <section>
+        <h3>Dupes helper</h3>
+
+        <div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="dupes">
+              <span>Enable the dupes helper</span>
+            </label>
+          </div>
+          <div class="textbox">
+            <label>
+              <span>Reference list</span>
+              <input type="submit" name="showdupes" value="Show list">
+            </label>
+          </div>
+        </div>
+      </section>
     </div>
+  </div>
+</div>
+<div class="dupeslist">
+  <div class="table">
+    <table>
+      <tr class="heading">
+        <th class="title">Title</th>
+        <th class="url">URL</th>
+        <th class="delete">&nbsp;</th>
+      </tr>
+      <tr class="footer">
+        <td class="title"><input type="text" name="title" placeholder="Title"></td>
+        <td class="url"><input type="text" name="url" placeholder="Question URL"></td>
+        <td class="add"><img src="ui/add.png" alt="add" title="Add"></td>
+      </tr>
+    </table>
   </div>
 </div>
 <script src="js/jquery-1.7.1.min.js"></script>
 <script src="js/Settings.js"></script>
 <script src="js/PluginSettings.js"></script>
 <script src="js/options.js"></script>
+<script src="js/jquery.blockUI.js"></script>
 </body>
 </html>

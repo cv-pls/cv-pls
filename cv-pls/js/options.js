@@ -65,6 +65,10 @@ function SettingsManager(pluginSettings) {
     } else {
       $('input[name="backloginterval"]').attr('disabled', true);
     }
+
+    if (pluginSettings.dupesEnabled()) {
+      $('input[name="dupes"]').prop('checked', 'checked');
+    }
   }
 }
 
@@ -183,5 +187,89 @@ function SettingsManager(pluginSettings) {
 
   $('input[name="backloginterval"]').keyup(function() {
     settings.saveSetting('backlogRefreshInterval', $(this).val());
+  });
+
+  $('input[name="dupes"]').change(function() {
+    var checked = $(this).prop('checked');
+    settings.saveSetting('dupesEnabled', checked);
+  });
+
+  $('input[name="showdupes"]').click(function() {
+    var $dupeslist = $('.dupeslist');
+    var $heading = $('.heading', $dupeslist);
+
+    var dupes = pluginSettings.dupesList();
+
+    if (dupes !== []) {
+      var html = '';
+      max = dupes.length;
+      for(i = 0; i < max; i++) {
+        html = '';
+        html+= '<tr>';
+        html+= '  <td class="title">' + dupes[i].title + '</td>';
+        html+= '  <td class="url">' + dupes[i].url + '</td>';
+        html+= '  <td class="delete"><img src="ui/delete.png" alt="delete" title="Delete"></td>';
+        html+= '</tr>';
+
+        $heading.after(html);
+      }
+    }
+
+    $.blockUI({
+      message: $dupeslist.html(),
+      css: {
+        width: '960px',
+        left: '17%',
+        cursor: 'default'
+      },
+      onUnblock: function(){
+        $('tr:not(.heading, .footer)', $dupeslist).remove();
+      }
+    });
+    $('.blockOverlay').click($.unblockUI);
+  });
+
+  $(document).on('click', '.table .delete', function() {
+    var $row = $(this).closest('tr');
+    var $title = $('.title', $row);
+    var $url = $('.url', $row);
+
+    var dupes = pluginSettings.dupesList();
+    var max = dupes.length;
+    for(i = 0; i < max; i++) {
+      if (dupes[i].title == $title.text() && dupes[i].url == $url.text()) {
+        dupes.splice(i, 1);
+        break;
+      }
+    }
+
+    settings.saveSetting('dupesList', JSON.stringify(dupes));
+
+    $row.remove();
+  });
+
+  $(document).on('click', '.table .add', function() {
+    var $row = $(this).closest('tr');
+    var $title = $('[name="title"]', $row);
+    var $url = $('[name="url"]', $row);
+
+    var dupes = pluginSettings.dupesList();
+    dupes.push({
+      title: $title.val(),
+      url: $url.val()
+    });
+
+    settings.saveSetting('dupesList', JSON.stringify(dupes));
+
+    var html = '';
+    html += '<tr>';
+    html += '  <td class="title">' + $title.val() + '</td>';
+    html += '  <td class="url">' + $url.val() + '</td>';
+    html += '  <td class="delete"><img src="ui/delete.png" alt="delete" title="Delete"></td>';
+    html += '</tr>';
+
+    $('.heading', $(this).closest('table')).after(html);
+    $title.val('');
+    $url.val('');
   });
 })(jQuery);

@@ -23,6 +23,22 @@ function Settings() {
     return value;
   }
 
+  this.normalizeDefaultArray = function(value) {
+    if (!value.length) {
+      return [];
+    }
+
+    return JSON.parse(value);
+  }
+
+  this.normalizeDefaultObject = function(value) {
+    if (!value.length) {
+      return {};
+    }
+
+    return JSON.parse(value);
+  }
+
   this.getSetting = function(key) {
     return localStorage.getItem(key);
   };
