@@ -604,7 +604,11 @@ function CvBacklog(pluginSettings, backlogUrl) {
   };
 
   this.buildCvLink = function(cvRequest) {
-    return '[cv-pls] <a href="' + cvRequest.link + '" target="_blank">' + cvRequest.title + '</a>';
+    if (typeof(cvRequest.closed_date) !== 'undefined') {
+      return '[delv-pls] <a href="' + cvRequest.link + '" target="_blank">' + cvRequest.title + '</a>';
+    } else {
+      return '[cv-pls] <a href="' + cvRequest.link + '" target="_blank">' + cvRequest.title + '</a>';
+    }
   };
 
   self.refresh();
