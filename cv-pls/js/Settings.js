@@ -24,7 +24,7 @@ function Settings() {
   }
 
   this.normalizeDefaultArray = function(value) {
-    if (!value.length) {
+    if (value === null  || !value.length) {
       return [];
     }
 
@@ -32,7 +32,7 @@ function Settings() {
   }
 
   this.normalizeDefaultObject = function(value) {
-    if (!value.length) {
+    if (value === null || !value.length) {
       return {};
     }
 
