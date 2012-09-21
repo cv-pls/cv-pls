@@ -15,7 +15,7 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
   };
 
   this.postListener = function() {
-    var xpathQuery, xpathResult, i, post;
+    var xpathQuery, xpathResult, i, $post;
 
     // Get all unprocessed posts
     xpathQuery = "//div[contains(@class,'message')]/div[contains(@class,'content') and not(contains(@class,'cvhelper-processed'))]";
