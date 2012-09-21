@@ -15,27 +15,30 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
   };
 
   this.postListener = function() {
-    // we should do something smarter here. e.g. only loop through new posts
-    $('div.user-container div.messages div.message div.content').each(function() {
-      var $post = $(this);
-      if ($post.hasClass('cvhelper-processed')) {
-        return true;
-      }
+    var xpathQuery, xpathResult, i, post;
+
+    // Get all unprocessed posts
+    xpathQuery = "//div[contains(@class,'message')]/div[contains(@class,'content') and not(contains(@class,'cvhelper-processed'))]";
+    xpathResult = document.evaluate(xpathQuery, document.getElementById('chat'), null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    // Iterate posts and search for new cv events
+    for (i = 0; i < xpathResult.snapshotLength; i++) {
+      $post = $(this);
 
       if (self.isMessagePending($post)) {
-        return false;
+        break;
       }
 
       var post = new Post($post);
 
       if (self.isOwnPost($post)) {
-        return true;
+        continue;
       }
 
       if (post.isVoteRequest) {
         self.voteRequestMessageQueue.enqueue(post);
       }
-    });
+    }
 
     voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
 
