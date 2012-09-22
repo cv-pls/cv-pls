@@ -23,7 +23,7 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
 
     // Iterate posts and search for new cv events
     for (i = 0; i < xpathResult.snapshotLength; i++) {
-      $post = $(this);
+      $post = $(xpathResult.snapshotItem(i));
 
       if (self.isMessagePending($post)) {
         break;
