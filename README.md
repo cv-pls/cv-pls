@@ -7,6 +7,8 @@ It will convert all [cv-pls] and [delv-pls] requests into nice oneboxes in the S
 
 [Download current stable version (0.18.1)][1]
 
+NOTE: If you've updated chrome past [Revision 137699][2], you'll have to drag the .crx file into the chrome://extensions window to install it.
+
 Usage
 -----
 
@@ -26,3 +28,4 @@ Settings
 - Dupes helper
 
 [1]:https://github.com/downloads/cv-pls/cv-pls/cv-pls.0.18.1.crx
+[2]:http://src.chromium.org/viewvc/chrome?view=rev&revision=137699
