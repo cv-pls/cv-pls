@@ -178,7 +178,7 @@ function VoteRequestBuffer(voteRequestMessageQueue) {
 }
 
 // this is where all the items in the queue get processed
-function VoteQueueProcessor(stackApi, voteRequestFormatter) {
+function VoteQueueProcessor(stackApi, voteRequestProcessor) {
   var self = this;
 
   this.stackApi = stackApi;
@@ -193,7 +193,7 @@ function VoteQueueProcessor(stackApi, voteRequestFormatter) {
   };
 
   this.makeRequest = function(voteRequestBuffer) {
-    stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', voteRequestFormatter);
+    stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', voteRequestProcessor);
   };
 }
 
