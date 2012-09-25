@@ -327,32 +327,37 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
 
   this.enqueue = function($post) {
     avatarNotificationStack.push($post);
-    self.displayNotitication();
+    self.updateNotificationDisplay();
   }
 
-  this.displayNotitication = function() {
-    if (!pluginSettings.avatarNotification()) {
+  this.updateNotificationDisplay = function() {
+    if (pluginSettings.avatarNotification()) {
       return null;
     }
 
-    var $cvCount = $('#cv-count');
-
-    if (!$cvCount.length) {
-      var css = '';
-      css+= 'position:absolute; z-index:4; top:7px; left:24px;';
-      css+= ' color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417));';
-      css+= ' border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer;';
-      css+= ' font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px;';
-      css+= ' min-width: 12px; padding: 0 4px; text-align: center; display: none;';
-      var html = '<div title="Cv request waiting for review" id="cv-count" style="' + css + '">' + avatarNotificationStack.queue.length + '</div>';
-
-      $('#reply-count').after(html);
-      $cvCount = $('#cv-count');
+    if (avatarNotificationStack.queue.length) {
+      // Nothing left in queue, set to 0 and fade
+      $('#cv-count').text("0").animate({
+        opacity: 0
+      }, 1000, function() {
+        $(this).remove();
+      });
     } else {
-      $cvCount.text(avatarNotificationStack.queue.length);
-    }
+      // Create element if it doesn't exist and set to current stack size
+      if (document.getElementById('cv-count') === null) {
+        var html, css = '';
 
-    $cvCount.show();
+        css+= 'position:absolute; z-index:4; top:7px; left:24px;';
+        css+= ' color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417));';
+        css+= ' border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer;';
+        css+= ' font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px;';
+        css+= ' min-width: 12px; padding: 0 4px; text-align: center; display: none;';
+        html = '<div title="CV requests waiting for review" id="cv-count" style="' + css + '"></div>';
+
+        $('#reply-count').after(html);
+      }
+      $('#cv-count').text(avatarNotificationStack.queue.length).show();
+    }
   };
 
   this.navigateToLastRequest = function() {
@@ -379,37 +384,26 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
       window.open('http://chat.stackoverflow.com/transcript/message/' + lastRequest.id + '#' + lastRequest.id, '_blank');
     }
 
-    self.updateSubtractedNotification();
+    self.updateNotificationDisplay();
+  };
+
+  this.getStackPosById = function(id) {
+    // Separate this because I anticipate using it somewhere else in order to remove cv requests that have scrolled off screen
+    for (var i = avatarNotificationStack.queue.length - 1; i >= 0; i--) {
+      if (avatarNotificationStack.queue[i].id == id) {
+        return i;
+      }
+    }
+
+    return null;
   };
 
   this.manualDeleteFromStack = function(id) {
-    var foundInStack = false;
+    var stackPos = self.getStackPosById(id);
 
-    for (var i = avatarNotificationStack.queue.length-1; i >= 0; i--) {
-      if (avatarNotificationStack.queue[i].id == id) {
-        avatarNotificationStack.queue.splice(i, 1);
-        foundInStack = true;
-        break;
-      }
-    }
-
-    if (foundInStack) {
-      self.updateSubtractedNotification();
-    }
-  };
-
-  this.updateSubtractedNotification = function() {
-    var $cvCount = $('#cv-count');
-    if ($cvCount.length) {
-      $cvCount.text(avatarNotificationStack.queue.length);
-
-      if (!avatarNotificationStack.queue.length) {
-        $cvCount.animate({
-          opacity: 0
-        }, 1000, function() {
-          $cvCount.remove();
-        });
-      }
+    if (stackPos !== null) {
+      avatarNotificationStack.queue.splice(stackPos, 1);
+      self.updateNotificationDisplay();
     }
   };
 }
