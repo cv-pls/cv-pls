@@ -94,23 +94,11 @@ function ChatRoom() {
 function Post($post) {
   var self = this;
 
-  this.$post = $post.addClass('cvhelper-processed');
-  this.id = null;
+  this.$post = $post;
+  this.id = $post.closest('div.message').attr('id').substr(8);
   this.questionId = null;
   this.isVoteRequest = false;
   this.voteType = null;
-
-  this.setMessageId = function() {
-    self.id = self.$post.closest('div.message').attr('id').substr(8);
-  }();
-
-  this.postContainsQuestion = function() {
-    if ($('a:contains("stackoverflow.com/questions/")', self.$post).length || $('a:contains("http://stackoverflow.com/q/")', self.$post).length) {
-      return true;
-    }
-
-    return false;
-  };
 
   this.parseQuestionPost = function() {
     $('a .ob-post-tag', self.$post).each(function() {
@@ -134,22 +122,22 @@ function Post($post) {
 
     if (self.isVoteRequest) {
       self.$post.addClass('cvhelper-vote-request');
-
-      $('a[href^="http://stackoverflow.com/questions/' + self.questionId + '"]', self.$post).addClass('cvhelper-question-link');
-      $('a[href^="http://stackoverflow.com/q/' + self.questionId + '/"]', self.$post).addClass('cvhelper-question-link');
+      $('a[href^="http://stackoverflow.com/questions/' + self.questionId + '"], a[href^="http://stackoverflow.com/q/' + self.questionId + '"]', self.$post).addClass('cvhelper-question-link');
     }
   };
 
   this.setQuestionId = function() {
-    if ($('a:contains("stackoverflow.com/questions/")', self.$post).length) {
-      self.questionId = $('a:contains("stackoverflow.com/questions/")', self.$post).attr('href').split('/')[4];
+    var $links = $('a:contains("stackoverflow.com/questions/"), a:contains("stackoverflow.com/q/")', self.$post);
+    if ($links.length) {
+      self.questionId = $links.attr('href').split('/')[4];
+      return true;
     } else {
-      self.questionId = $('a:contains("stackoverflow.com/q/")', self.$post).attr('href').split('/')[4];
+      return false;
     }
   };
 
-  if (this.postContainsQuestion()) {
-    this.setQuestionId();
+  $post.addClass('cvhelper-processed');
+  if (this.setQuestionId()) {
     this.parseQuestionPost();
   }
 }
