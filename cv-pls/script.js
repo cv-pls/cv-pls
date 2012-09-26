@@ -338,6 +338,9 @@ function VoteRequestFormatter(pluginSettings) {
 
 // handles the avatar notifications
 function AvatarNotification(avatarNotificationStack, pluginSettings) {
+
+  "use strict";
+
   var self = this;
 
   this.enqueue = function($post) {
@@ -346,18 +349,11 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
   }
 
   this.updateNotificationDisplay = function() {
-    if (pluginSettings.avatarNotification()) {
+    if (!pluginSettings.avatarNotification()) {
       return null;
     }
 
     if (avatarNotificationStack.queue.length) {
-      // Nothing left in queue, set to 0 and fade
-      $('#cv-count').text("0").animate({
-        opacity: 0
-      }, 1000, function() {
-        $(this).remove();
-      });
-    } else {
       // Create element if it doesn't exist and set to current stack size
       if (document.getElementById('cv-count') === null) {
         var html, css = '';
@@ -372,6 +368,13 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
         $('#reply-count').after(html);
       }
       $('#cv-count').text(avatarNotificationStack.queue.length).show();
+    } else {
+      // Nothing left in queue, set to 0 and fade
+      $('#cv-count').text("0").animate({
+        opacity: 0
+      }, 1000, function() {
+        $(this).remove();
+      });
     }
   };
 
