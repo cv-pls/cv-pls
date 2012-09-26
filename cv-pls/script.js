@@ -1,67 +1,82 @@
 // listens for new posts added to the DOM and queues them if they contain cv-pls / delv-pls requests
 function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor) {
+
+  "use strict";
+
   var self = this;
 
   this.chatRoom = chatRoom;
   this.voteRequestMessageQueue = voteRequestMessageQueue;
   self.activeUserClass = $('#active-user').attr('class').split(' ')[1];
 
+  // Initialisation function
   this.init = function() {
+
+    // Declare variables
+    var xpathQuery, xpathResult, i, $post;
+
+    // While room is not yet loaded wait 1 second then try again
     if (!self.chatRoom.isRoomLoaded()) {
       setTimeout(self.init, 1000);
-    } else {
-      self.postListener();
+      return;
     }
-  };
 
-  this.postListener = function() {
-    var xpathQuery, xpathResult, i, $post, post;
+    // Register event listener
+    document.getElementById('chat').addEventListener('DOMNodeInserted', self.domNodeInsertedListener);
 
-    // Get all unprocessed posts
+    // Get/loop all posts on the DOM
     xpathQuery = "//div[contains(@class,'message')]/div[contains(@class,'content') and not(contains(@class,'cvhelper-processed'))]";
     xpathResult = document.evaluate(xpathQuery, document.getElementById('chat'), null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
 
-    // Iterate posts and search for new cv events
     for (i = 0; i < xpathResult.snapshotLength; i++) {
       $post = $(xpathResult.snapshotItem(i));
 
-      if (self.isMessagePending($post)) {
-        break;
-      }
-
-      post = new Post($post);
-
-      if (self.isOwnPost($post)) {
-        continue;
-      }
-
-      if (post.isVoteRequest) {
-        self.voteRequestMessageQueue.enqueue(post);
+      // Skip pending messages and posts by current user
+      if (!self.isMessagePending($post) || !self.isOwnPost($post)) {
+        self.processPost($post);
       }
     }
 
-    voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
-
-    setTimeout(self.postListener, 1000);
+    if (self.voteRequestMessageQueue.queue.length > 0) {
+      voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
+    }
   };
 
-  // check if message is still pending
+  // Event listener for DOMNodeInserted event
+  this.domNodeInsertedListener = function(ev) {
+    var $el = $(ev.srcElement), $post;
+    if (self.isNewOrEditedPost($el)) {
+      $post = $('div.content', $el);
+      if (!self.isOwnPost($post)) {
+        self.processPost($post);
+        if (self.voteRequestMessageQueue.queue.length > 0) {
+          voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
+        }
+      }
+    }
+  };
+
+  // Enqueue post if it is a vote request
+  this.processPost = function($post) {
+    var post = new Post($post);
+    if (post.isVoteRequest) {
+      self.voteRequestMessageQueue.enqueue(post);
+    }
+  };
+
+  // Check if element is a new or edited post
+  this.isNewOrEditedPost = function($el) {
+    return $el.hasClass('message') && $el.hasClass('neworedit');
+  };
+
+  // Check if message is still pending
   this.isMessagePending = function($post) {
-    if ($post.closest('div.message').attr('id').substr(0, 7) == 'pending') {
-      return true;
-    }
-
-    return false;
+    return $post.closest('div.message').attr('id').substr(0, 7) === 'pending';
   };
 
-  // check whether vote request is the user's
+  // Check whether post is the current user's
   this.isOwnPost = function($post) {
-    var $userinfo = $post.closest('.messages').prev();
-    if ($userinfo.attr('class').split(' ')[1] == self.activeUserClass) {
-      return true;
-    }
-
-    return false;
+    return $post.closest('.messages').prev().hasClass(self.activeUserClass);
   };
 }
 
