@@ -30,6 +30,14 @@ function SettingsManager(pluginSettings) {
       $('input[name="avatar"]').prop('checked', 'checked');
     }
 
+    if (pluginSettings.removeLostNotifications()) {
+      $('input[name="avatarlost"]').prop('checked', 'checked');
+    }
+
+    if (pluginSettings.removeCompletedNotifications()) {
+      $('input[name="avatarcomplete"]').prop('checked', 'checked');
+    }
+
     if (pluginSettings.desktopNotification()) {
       $('input[name="desktop"]').prop('checked', 'checked');
     }
@@ -110,7 +118,26 @@ function SettingsManager(pluginSettings) {
   });
 
   $('input[name="avatar"]').change(function() {
-    settings.saveSetting('avatarNotification', $(this).prop('checked'));
+    var checked = $(this).prop('checked');
+
+    settings.saveSetting('avatarNotification', checked);
+
+    $('#avatarlost, #avatarcomplete').each(function() {
+      $('input[type="checkbox"]', this).prop('disabled', !checked);
+      if (checked) {
+        $(this).addClass('disabled');
+      } else {
+        $(this).removeClass('disabled');
+      }
+    });
+  });
+
+  $('input[name="avatarlost"]').change(function() {
+    settings.saveSetting('removeLostNotifications', $(this).prop('checked'));
+  });
+
+  $('input[name="avatarcomplete"]').change(function() {
+    settings.saveSetting('removeCompletedNotifications', $(this).prop('checked'));
   });
 
   $('input[name="desktop"]').change(function() {
