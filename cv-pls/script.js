@@ -1,4 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true */
+/*global jQuery, $, VoteRequestListener, XPathResult, Settings, PluginSettings, AudioPlayer, RequestStack, StackApi, RequestQueue, chrome */
 
 // ChatRoom class
 function ChatRoom() {
