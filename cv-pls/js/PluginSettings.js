@@ -32,6 +32,10 @@ function PluginSettings(settings) {
     return settings.normalizeDefaultFalse(settings.getSetting('removeLostNotifications'));
   };
 
+  this.removeCompletedNotifications = function() {
+    return settings.normalizeDefaultFalse(settings.getSetting('removeCompletedNotifications'));
+  };
+
   this.desktopNotification = function() {
     return settings.normalizeDefaultFalse(settings.getSetting('desktopNotification'));
   };
@@ -89,6 +93,7 @@ function PluginSettings(settings) {
       soundNotification: self.soundNotification(),
       avatarNotification: self.avatarNotification(),
       removeLostNotifications: self.removeLostNotifications(),
+      removeCompletedNotifications: self.removeCompletedNotifications(),
       desktopNotification: self.desktopNotification(),
       showCloseStatus: self.showCloseStatus(),
       pollCloseStatus: self.pollCloseStatus(),
@@ -111,6 +116,7 @@ function PluginSettings(settings) {
     settings.saveSetting('soundNotification', settingsJsonString.soundNotification);
     settings.saveSetting('avatarNotification', settingsJsonString.avatarNotification);
     settings.saveSetting('removeLostNotifications', settingsJsonString.removeLostNotifications);
+    settings.saveSetting('removeCompletedNotifications', settingsJsonString.removeCompletedNotifications);
     settings.saveSetting('desktopNotification', settingsJsonString.desktopNotification);
     settings.saveSetting('showCloseStatus', settingsJsonString.showCloseStatus);
     settings.saveSetting('pollCloseStatus', settingsJsonString.pollCloseStatus);
