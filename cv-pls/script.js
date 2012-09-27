@@ -1,5 +1,5 @@
 // listens for new posts added to the DOM and queues them if they contain cv-pls / delv-pls requests
-function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor) {
+function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
 
   "use strict";
 
@@ -7,13 +7,15 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
 
   this.chatRoom = chatRoom;
   this.voteRequestMessageQueue = voteRequestMessageQueue;
+  this.voteQueueProcessor = voteQueueProcessor;
+  this.voteRemoveProcessor = voteRemoveProcessor;
   self.activeUserClass = $('#active-user').attr('class').split(' ')[1];
 
   // Initialisation function
   this.init = function() {
 
     // Declare variables
-    var xpathQuery, xpathResult, i, $post;
+    var chat, xpathQuery, xpathResult, i, $post;
 
     // While room is not yet loaded wait 1 second then try again
     if (!self.chatRoom.isRoomLoaded()) {
@@ -21,8 +23,10 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
       return;
     }
 
-    // Register event listener
-    document.getElementById('chat').addEventListener('DOMNodeInserted', self.domNodeInsertedListener);
+    // Register event listeners
+    chat = document.getElementById('chat');
+    chat.addEventListener('DOMNodeInserted', self.domNodeInsertedListener);
+    chat.addEventListener('DOMNodeRemoved', self.domNodeRemovedListener);
 
     // Get/loop all posts on the DOM
     xpathQuery = "//div[contains(@class,'message')]/div[contains(@class,'content') and not(contains(@class,'cvhelper-processed'))]";
@@ -32,41 +36,65 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
       $post = $(xpathResult.snapshotItem(i));
 
       // Skip pending messages and posts by current user
-      if (!self.isMessagePending($post) || !self.isOwnPost($post)) {
-        self.processPost($post);
+      if (!self.isMessagePending($post)) {
+        self.processNewPost($post);
       }
     }
 
     if (self.voteRequestMessageQueue.queue.length > 0) {
-      voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
+      self.voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
     }
   };
 
   // Event listener for DOMNodeInserted event
-  this.domNodeInsertedListener = function(ev) {
-    var $el = $(ev.srcElement), $post;
-    if (self.isNewOrEditedPost($el)) {
-      $post = $('div.content', $el);
-      if (!self.isOwnPost($post)) {
-        self.processPost($post);
-        if (self.voteRequestMessageQueue.queue.length > 0) {
-          voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
-        }
+  this.domNodeInsertedListener = function(event) {
+    var $element = $(event.srcElement), $post;
+    if (self.isNewOrEditedMessage($element)) {
+      $post = $('div.content', $element);
+      self.processNewPost($post);
+      if (self.voteRequestMessageQueue.queue.length > 0) {
+        self.voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
       }
     }
   };
 
+  // Event listener for DOMNodeRemoved event
+  this.domNodeRemovedListener = function(event) {
+    var $element = $(event.srcElement), $post;
+    if (self.isRemovedMessage($element)) {
+      $post = $('div.content', $element);
+      self.processRemovedPost($post);
+    }
+  };
+
   // Enqueue post if it is a vote request
-  this.processPost = function($post) {
-    var post = new Post($post);
-    if (post.isVoteRequest) {
-      self.voteRequestMessageQueue.enqueue(post);
+  this.processNewPost = function($post) {
+    if (!self.isOwnPost($post)) {
+      var post = new Post($post);
+      if (post.isVoteRequest) {
+        self.voteRequestMessageQueue.enqueue(post);
+      }
+    }
+  };
+
+  // Adjust avatar notifications for removed post
+  this.processRemovedPost = function($post) {
+    if (!self.isOwnPost($post)) {
+      var post = new Post($post);
+      if (post.isVoteRequest) {
+        self.voteRemoveProcessor.removeLost(post);
+      }
     }
   };
 
   // Check if element is a new or edited post
-  this.isNewOrEditedPost = function($el) {
-    return $el.hasClass('message') && $el.hasClass('neworedit');
+  this.isNewOrEditedMessage = function($element) {
+    return $element.hasClass('message') && $element.hasClass('neworedit');
+  };
+
+  // Check if element is a message being removed from the DOM
+  this.isRemovedMessage = function($element) {
+    return $element.hasClass('message') && !$element.hasClass('posted');
   };
 
   // Check if message is still pending
@@ -253,6 +281,24 @@ function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer,
   };
 }
 
+// Handles posts that fall off the top of the screen
+function VoteRemoveProcessor(pluginSettings, avatarNotification) {
+
+  "use strict";
+
+  var self = this;
+
+  this.pluginSettings = pluginSettings;
+  this.avatarNotification = avatarNotification;
+
+  this.removeLost = function(post) {
+    if (pluginSettings.removeLostNotifications()) {
+      self.avatarNotification.dequeue(post.id);
+      self.avatarNotification.reconcileQueue();
+    }
+  };
+}
+
 // turn cv / delv requests in nice oneboxes
 function VoteRequestFormatter(pluginSettings) {
   var self = this;
@@ -336,18 +382,48 @@ function VoteRequestFormatter(pluginSettings) {
   };
 }
 
-// handles the avatar notifications
+// Handles the avatar notifications
 function AvatarNotification(avatarNotificationStack, pluginSettings) {
 
   "use strict";
 
   var self = this;
 
-  this.enqueue = function($post) {
-    avatarNotificationStack.push($post);
+  // Adds a post to the queue
+  this.enqueue = function(post) {
+    avatarNotificationStack.push(post);
     self.updateNotificationDisplay();
-  }
+  };
 
+  // Removes a post from the queue by post ID
+  this.dequeue = function(id) {
+    var i, stackPos;
+
+    for (i = avatarNotificationStack.queue.length - 1; i >= 0; i--) {
+      if (avatarNotificationStack.queue[i].id === id) {
+        stackPos = i;
+        break;
+      }
+    }
+
+    avatarNotificationStack.queue.splice(stackPos, 1);
+    self.updateNotificationDisplay();
+  };
+
+  // Checks that all posts in the queue are still on the DOM
+  this.reconcileQueue = function() {
+    var i;
+
+    for (i = avatarNotificationStack.queue.length - 1; i >= 0; i--) {
+      if (document.getElementById('message-'+avatarNotificationStack.queue[i].id) === null) {
+        avatarNotificationStack.queue.splice(i, 1);
+      }
+    }
+
+    self.updateNotificationDisplay();
+  };
+
+  // Updates the avatar notification display
   this.updateNotificationDisplay = function() {
     if (!pluginSettings.avatarNotification()) {
       return null;
@@ -378,16 +454,17 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
     }
   };
 
+  // Moves the screen to the last cv request on the stack (click handler for notification box)
   this.navigateToLastRequest = function() {
-    var lastRequest = avatarNotificationStack.pop();
+    var lastRequest = avatarNotificationStack.pop(), lastRequestPost, lastCvRequestContainer, originalBackgroundColor;
     if (lastRequest === null) {
       return null;
     }
 
-    var lastRequestPost = $('#message-'+lastRequest.id);
+    lastRequestPost = $('#message-'+lastRequest.id);
     if (lastRequestPost.length) {
-      var lastCvRequestContainer = lastRequestPost;//.parent();
-      var originalBackgroundColor = lastCvRequestContainer.parents('.messages').css('backgroundColor');
+      lastCvRequestContainer = lastRequestPost;
+      originalBackgroundColor = lastCvRequestContainer.parents('.messages').css('backgroundColor');
 
       // check if question is deleted
       if (lastCvRequestContainer.length) {
@@ -399,30 +476,12 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
         });
       }
     } else {
-      window.open('http://chat.stackoverflow.com/transcript/message/' + lastRequest.id + '#' + lastRequest.id, '_blank');
-    }
-
-    self.updateNotificationDisplay();
-  };
-
-  this.getStackPosById = function(id) {
-    // Separate this because I anticipate using it somewhere else in order to remove cv requests that have scrolled off screen
-    for (var i = avatarNotificationStack.queue.length - 1; i >= 0; i--) {
-      if (avatarNotificationStack.queue[i].id == id) {
-        return i;
+      if (!pluginSettings.removeLostNotifications()) {
+        window.open('http://chat.stackoverflow.com/transcript/message/' + lastRequest.id + '#' + lastRequest.id, '_blank');
       }
     }
 
-    return null;
-  };
-
-  this.manualDeleteFromStack = function(id) {
-    var stackPos = self.getStackPosById(id);
-
-    if (stackPos !== null) {
-      avatarNotificationStack.queue.splice(stackPos, 1);
-      self.updateNotificationDisplay();
-    }
+    self.updateNotificationDisplay();
   };
 }
 
@@ -630,13 +689,14 @@ function CvBacklog(pluginSettings, backlogUrl) {
   var avatarNotificationStack = new RequestStack();
   var avatarNotification = new AvatarNotification(avatarNotificationStack, pluginSettings);
   var voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
+  var voteRemoveProcessor = new VoteRemoveProcessor(pluginSettings, avatarNotification);
 
   var stackApi = new StackApi();
   var voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestProcessor);
 
   var chatRoom = new ChatRoom();
   var voteRequestMessageQueue = new RequestQueue();
-  var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor);
+  var voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor);
 
   var pollMessageQueue = new RequestQueue();
   var statusRequestProcessor = new StatusRequestProcessor(pluginSettings);
@@ -705,6 +765,6 @@ function CvBacklog(pluginSettings, backlogUrl) {
   // handle click on link of a request
   $('body').on('click', '.cvhelper-question-link', function() {
     var id = $(this).closest('.message').attr('id').split('-')[1];
-    avatarNotification.manualDeleteFromStack(id);
+    avatarNotification.dequeue(id);
   });
 })(jQuery);

@@ -30,6 +30,10 @@ function SettingsManager(pluginSettings) {
       $('input[name="avatar"]').prop('checked', 'checked');
     }
 
+    if (pluginSettings.removeLostNotifications()) {
+      $('input[name="avatarlost"]').prop('checked', 'checked');
+    }
+
     if (pluginSettings.desktopNotification()) {
       $('input[name="desktop"]').prop('checked', 'checked');
     }
@@ -111,6 +115,10 @@ function SettingsManager(pluginSettings) {
 
   $('input[name="avatar"]').change(function() {
     settings.saveSetting('avatarNotification', $(this).prop('checked'));
+  });
+
+  $('input[name="avatarlost"]').change(function() {
+    settings.saveSetting('removeLostNotifications', $(this).prop('checked'));
   });
 
   $('input[name="desktop"]').change(function() {
