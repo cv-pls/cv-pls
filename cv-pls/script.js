@@ -36,6 +36,10 @@ function Post($post) {
 
   var self = this;
 
+  if ($post === undefined) {
+  	return;
+  }
+
   this.$post = $post;
   this.id = $post.closest('div.message').attr('id').substr(8);
   this.questionId = null;
@@ -84,11 +88,18 @@ function Post($post) {
     this.parseQuestionPost();
   }
 }
+Post.prototype.create = function($post) {
+  return new this.constructor($post);
+};
 
 // Buffers up to 100 (maximum per API request) vote requests
 function VoteRequestBuffer(voteRequestMessageQueue) {
 
   "use strict";
+
+  if (voteRequestMessageQueue === undefined) {
+  	return;
+  }
 
   var self = this;
 
@@ -124,15 +135,21 @@ function VoteRequestBuffer(voteRequestMessageQueue) {
 
   this.createBuffer(voteRequestMessageQueue);
 }
+VoteRequestBuffer.prototype.create = function(voteRequestMessageQueue) {
+  return new this.constructor(voteRequestMessageQueue);
+};
 
 // Listens for new posts added to/removed from the DOM and queues/dequeues them if they contain vote requests
-function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
+// Too many args for this constructor? Probably
+function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
 
   "use strict";
 
   var self = this;
 
   this.chatRoom = chatRoom;
+  this.postFactory = postFactory;
+  this.voteRequestBufferFactory = voteRequestBufferFactory;
   this.voteRequestMessageQueue = voteRequestMessageQueue;
   this.voteQueueProcessor = voteQueueProcessor;
   this.voteRemoveProcessor = voteRemoveProcessor;
@@ -191,7 +208,7 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
   // Enqueue post if it is a vote request
   this.processNewPost = function($post) {
     if (!self.isOwnPost($post)) {
-      var post = new Post($post);
+      var post = self.postFactory.create($post);
       if (post.isVoteRequest) {
         self.voteRequestMessageQueue.enqueue(post);
       }
@@ -201,7 +218,7 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
   // Adjust avatar notifications for removed post
   this.processRemovedPost = function($post) {
     if (!self.isOwnPost($post)) {
-      var post = new Post($post);
+      var post = self.postFactory.create($post);
       if (post.isVoteRequest) {
         self.voteRemoveProcessor.removeLost(post);
       }
@@ -211,7 +228,7 @@ function VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcess
   // Process the voteRequestMessageQueue
   this.processQueue = function() {
     if (self.voteRequestMessageQueue.queue.length > 0) {
-      self.voteQueueProcessor.processQueue(new VoteRequestBuffer(self.voteRequestMessageQueue));
+      self.voteQueueProcessor.processQueue(self.voteRequestBufferFactory.create(self.voteRequestMessageQueue));
     }
   };
 
@@ -536,11 +553,13 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
 }
 
 // Handles the polling of the status of requests
-function StatusPolling(pluginSettings, pollMessageQueue, pollQueueProcessor) {
+function StatusPolling(pluginSettings, postFactory, voteRequestBufferFactory, pollMessageQueue, pollQueueProcessor) {
 
   "use strict";
 
   var self = this;
+  this.postFactory = postFactory;
+  this.voteRequestBufferFactory = voteRequestBufferFactory;
 
   this.pollStatus = function() {
     if (!pluginSettings.pollCloseStatus()) {
@@ -549,12 +568,12 @@ function StatusPolling(pluginSettings, pollMessageQueue, pollQueueProcessor) {
     
     // sorry for the tight coupling
     $('.cvhelper-vote-request').each(function() {
-      var post = new Post($(this));
+      var post = self.postFactory.create($(this));
 
       pollMessageQueue.enqueue(post);
     });
 
-    pollQueueProcessor.processQueue(new VoteRequestBuffer(pollMessageQueue));
+    pollQueueProcessor.processQueue(self.voteRequestBufferFactory.create(pollMessageQueue));
 
     setTimeout(self.pollStatus, pluginSettings.pollInterval()*60000);
   };
@@ -764,7 +783,7 @@ function CvBacklog(pluginSettings, backlogUrl) {
       buttonsManager,
       voteRequestFormatter, audioPlayer, avatarNotificationStack, avatarNotification, voteRequestProcessor, voteRemoveProcessor,
       stackApi, voteQueueProcessor,
-      chatRoom, voteRequestMessageQueue, voteRequestListener,
+      chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteRequestListener,
       pollMessageQueue, statusRequestProcessor, pollQueueProcessor, statusPolling,
       desktopNotification,
       cvBacklog;
@@ -787,13 +806,15 @@ function CvBacklog(pluginSettings, backlogUrl) {
   voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestProcessor);
 
   chatRoom = new ChatRoom();
+  postFactory = new Post();
+  voteRequestBufferFactory = new VoteRequestBuffer();
   voteRequestMessageQueue = new RequestQueue();
-  voteRequestListener = new VoteRequestListener(chatRoom, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor);
+  voteRequestListener = new VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor);
 
   pollMessageQueue = new RequestQueue();
   statusRequestProcessor = new StatusRequestProcessor(pluginSettings, voteRequestFormatter, avatarNotification);
   pollQueueProcessor = new VoteQueueProcessor(stackApi, statusRequestProcessor);
-  statusPolling = new StatusPolling(pluginSettings, pollMessageQueue, pollQueueProcessor);
+  statusPolling = new StatusPolling(pluginSettings, postFactory, voteRequestBufferFactory, pollMessageQueue, pollQueueProcessor);
 
   desktopNotification = new DesktopNotification(pluginSettings);
 
