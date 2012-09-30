@@ -1,3 +1,6 @@
+/*jslint plusplus: true, white: true, browser: true */
+/*global Audio, chrome */
+
 function AudioPlayer(audioFile) {
 
   "use strict";

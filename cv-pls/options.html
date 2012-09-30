@@ -18,41 +18,41 @@
       position: relative;
     }
 
-    input[name=oneboxheight] {
+    input[name="oneBoxHeight"] {
       box-sizing: border-box;
       padding-top: 3px;
       text-align: right;
       width: 40px;
     }
 
-    input[name=oneboxheightunits] {
+    input[name="oneBoxHeightunits"] {
       display: block;
       -webkit-box-flex: 1;
       max-width: 200px;
     }
 
-    input[name=pollinterval] {
+    input[name="pollInterval"] {
       box-sizing: border-box;
       padding-top: 3px;
       text-align: right;
       width: 30px;
     }
 
-    input[name=backlogamount] {
+    input[name="backlogAmount"] {
       box-sizing: border-box;
       padding-top: 3px;
       text-align: right;
       width: 30px;
     }
 
-    input[name=backloginterval] {
+    input[name="backlogRefreshInterval"] {
       box-sizing: border-box;
       padding-top: 3px;
       text-align: right;
       width: 30px;
     }
 
-    .dupeslist {
+    .dupesList {
       display: none;
     }
 
@@ -94,31 +94,39 @@
         <div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="icon">
+              <input type="checkbox" name="showIcon">
               <span>Enable addressbar icon</span>
             </label>
           </div>
           <div class="customOneBoxGroup">
             <div class="checkbox">
               <label>
-                <input type="checkbox" name="oneboxcv">
+                <input type="checkbox" name="oneBox">
                 <span>OneBox cv requests</span>
               </label>
             </div>
             <div>
-              <input type="text" data-type="number" name="oneboxheight" placeholder="Height" pattern="[0-9]*"
+              <input type="text" data-type="number" name="oneBoxHeight" placeholder="Height" pattern="[0-9]*"
                      maxlength="4"> px
+            </div>
+          </div>
+          <div class="subsection">
+            <div class="checkbox" id="removeCompletedOneboxes">
+              <label>
+                <input type="checkbox" name="removeCompletedOneboxes">
+                <span>Remove OneBoxes for questions that have been closed/deleted</span>
+              </label>
             </div>
           </div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="cvbutton">
+              <input type="checkbox" name="cvPlsButton">
               <span>Add cv-pls button to chat</span>
             </label>
           </div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="delvbutton">
+              <input type="checkbox" name="delvPlsButton">
               <span>Add delv-pls button to chat</span>
             </label>
           </div>
@@ -130,25 +138,25 @@
         <div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="beep">
+              <input type="checkbox" name="soundNotification">
               <span>Enable sound notification (@mention beep)</span>
             </label>
           </div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="avatar">
+              <input type="checkbox" name="avatarNotification">
               <span>Enable avatar notifications</span>
             </label>
             <div class="subsection">
-              <div class="checkbox" id="avatarlost">
+              <div class="checkbox" id="removeLostNotifications">
                 <label>
-                  <input type="checkbox" name="avatarlost">
+                  <input type="checkbox" name="removeLostNotifications">
                   <span>Remove notifications for vote requests that scroll off screen</span>
                 </label>
               </div>
-              <div class="checkbox" id="avatarcomplete">
+              <div class="checkbox" id="removeCompletedNotifications">
                 <label>
-                  <input type="checkbox" name="avatarcomplete">
+                  <input type="checkbox" name="removeCompletedNotifications">
                   <span>Remove notifications for questions that have been closed/deleted</span>
                 </label>
               </div>
@@ -156,7 +164,7 @@
           </div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="desktop">
+              <input type="checkbox" name="desktopNotification">
               <span>Enable desktop notifications</span>
             </label>
           </div>
@@ -168,23 +176,29 @@
         <div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="status">
+              <input type="checkbox" name="showCloseStatus">
               <span>Show status in onebox</span>
             </label>
           </div>
           <div class="customOneBoxGroup">
             <div class="checkbox">
               <label>
-                <input type="checkbox" name="poll">
+                <input type="checkbox" name="pollCloseStatus">
                 <span>Poll server for closed questions every </span>
               </label>
             </div>
             <div>
               <label>
-                <input type="text" data-type="number" name="pollinterval" pattern="[0-9]*"
+                <input type="text" data-type="number" name="pollInterval" pattern="[0-9]*"
                        maxlength="3"> <span>minutes</span>
               </label>
             </div>
+          </div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="strikethroughCompleted">
+              <span>Strike through vote requests for questions that have been closed/deleted</span>
+            </label>
           </div>
         </div>
       </section>
@@ -194,26 +208,26 @@
         <div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="backlog">
+              <input type="checkbox" name="backlogEnabled">
               <span>Change room description into the backlog</span>
             </label>
           </div>
           <div class="textbox">
             <label>
               <span>Number of items in the list</span>
-              <input type="text" name="backlogamount">
+              <input type="text" name="backlogAmount">
             </label>
           </div>
           <div class="customOneBoxGroup">
             <div class="checkbox">
               <label>
-                <input type="checkbox" name="backlogrefresh">
+                <input type="checkbox" name="backlogRefresh">
                 <span>Refresh backlog every </span>
               </label>
             </div>
             <div>
               <label>
-                <input type="text" data-type="number" name="backloginterval" pattern="[0-9]*"
+                <input type="text" data-type="number" name="backlogRefreshInterval" pattern="[0-9]*"
                        maxlength="3"> <span>minutes</span>
               </label>
             </div>
@@ -226,14 +240,14 @@
         <div>
           <div class="checkbox">
             <label>
-              <input type="checkbox" name="dupes">
+              <input type="checkbox" name="dupesEnabled">
               <span>Enable the dupes helper</span>
             </label>
           </div>
           <div class="textbox">
             <label>
               <span>Reference list</span>
-              <input type="submit" name="showdupes" value="Show list">
+              <input type="submit" name="showDupes" value="Show list">
             </label>
           </div>
         </div>
@@ -241,7 +255,7 @@
     </div>
   </div>
 </div>
-<div class="dupeslist">
+<div class="dupesList">
   <div class="table">
     <table>
       <tr class="heading">
@@ -258,6 +272,7 @@
   </div>
 </div>
 <script src="js/jquery-1.7.1.min.js"></script>
+<script src="js/cvHelperDisableCheckbox.js"></script>
 <script src="js/Settings.js"></script>
 <script src="js/PluginSettings.js"></script>
 <script src="js/options.js"></script>

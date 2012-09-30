@@ -1,144 +1,6 @@
 /*jslint plusplus: true, white: true, browser: true */
 /*global jQuery, $, VoteRequestListener, XPathResult, Settings, PluginSettings, AudioPlayer, RequestStack, StackApi, RequestQueue, chrome */
 
-// ChatRoom class
-function ChatRoom() {
-
-  "use strict";
-
-  var self = this;
-
-  this.status = false;
-
-  this.checkRoomStatus = function() {
-    if (document.getElementById('loading')) {
-      setTimeout(self.checkRoomStatus, 1000);
-    } else {
-      self.setRoomStatus(true);
-    }
-  };
-
-  this.setRoomStatus = function(status) {
-    self.status = status;
-  };
-
-  this.isRoomLoaded = function() {
-    return self.status;
-  };
-
-  this.checkRoomStatus();
-}
-
-// Post class
-function Post($post) {
-
-  "use strict";
-
-  var self = this;
-
-  if ($post === undefined) {
-  	return;
-  }
-
-  this.$post = $post;
-  this.id = $post.closest('div.message').attr('id').substr(8);
-  this.questionId = null;
-  this.isVoteRequest = false;
-  this.voteType = null;
-
-  this.parseQuestionPost = function() {
-    $('a .ob-post-tag', self.$post).each(function() {
-      switch($(this).text()) {
-        case 'cv-pls':
-        case 'cv-maybe':
-          self.isVoteRequest = true;
-          self.voteType = 'cv';
-          break;
-
-        case 'delv-pls':
-        case 'delv-maybe':
-          self.isVoteRequest = true;
-          self.voteType = 'delv';
-          break;
-
-        default:
-          break;
-      }
-    });
-
-    if (self.isVoteRequest) {
-      self.$post.addClass('cvhelper-vote-request');
-      $('a[href^="http://stackoverflow.com/questions/' + self.questionId + '"], a[href^="http://stackoverflow.com/q/' + self.questionId + '"]', self.$post).addClass('cvhelper-question-link');
-    }
-  };
-
-  this.setQuestionId = function() {
-    var $links = $('a:contains("stackoverflow.com/questions/"), a:contains("stackoverflow.com/q/")', self.$post);
-
-    if (!$links.length) {
-      return false;
-    }
-
-    self.questionId = parseInt($links.attr('href').split('/')[4], 10);
-    return true;
-  };
-
-  $post.addClass('cvhelper-processed');
-  if (this.setQuestionId()) {
-    this.parseQuestionPost();
-  }
-}
-Post.prototype.create = function($post) {
-  return new this.constructor($post);
-};
-
-// Buffers up to 100 (maximum per API request) vote requests
-function VoteRequestBuffer(voteRequestMessageQueue) {
-
-  "use strict";
-
-  if (voteRequestMessageQueue === undefined) {
-  	return;
-  }
-
-  var self = this;
-
-  this.items = 0;
-  this.posts = [];
-  this.postsIds = [];
-  this.questionIds = [];
-
-  this.createBuffer = function(queue) {
-    self.posts = [];
-    var post = queue.dequeue();
-    while(post !== null && self.posts.length <= 100) {
-      self.posts.push(post);
-
-      post = queue.dequeue();
-    }
-
-    self.setIds();
-  };
-
-  this.setIds = function() {
-    var i;
-
-    self.postsIds = [];
-    self.questionIds = [];
-
-    self.items = self.posts.length;
-    for (i = 0; i < self.items; i++) {
-      self.postsIds.push(self.posts[i].id);
-      self.questionIds.push(self.posts[i].questionId);
-    }
-  };
-
-  this.createBuffer(voteRequestMessageQueue);
-}
-VoteRequestBuffer.prototype.create = function(voteRequestMessageQueue) {
-  return new this.constructor(voteRequestMessageQueue);
-};
-
 // Listens for new posts added to/removed from the DOM and queues/dequeues them if they contain vote requests
 // Too many args for this constructor? Probably
 function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
@@ -207,8 +69,8 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
 
   // Enqueue post if it is a vote request
   this.processNewPost = function($post) {
-    if (!self.isOwnPost($post)) {
-      var post = self.postFactory.create($post);
+    var post = self.postFactory.create($post);
+    if (!post.isOwnPost) {
       if (post.isVoteRequest) {
         self.voteRequestMessageQueue.enqueue(post);
       }
@@ -217,8 +79,8 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
 
   // Adjust avatar notifications for removed post
   this.processRemovedPost = function($post) {
-    if (!self.isOwnPost($post)) {
-      var post = self.postFactory.create($post);
+    var post = self.postFactory.create($post);
+    if (!post.isOwnPost) { // Tempoary until own post handling is implemented
       if (post.isVoteRequest) {
         self.voteRemoveProcessor.removeLost(post);
       }
@@ -233,6 +95,8 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
   };
 
   // Get classes of message as array, return empty array if element is not a <div>
+  // This is a slightly childish refusal to use jQuery in cases where it doesn't
+  // make things much easier than they are in vanilla JS
   this.getClassNameArray = function(element) {
     if (element.tagName === undefined || element.tagName.toLowerCase() !== 'div') {
       return [];
@@ -257,10 +121,180 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
     return $post.closest('div.message').attr('id').substr(0, 7) === 'pending';
   };
 
-  // Check whether post is the current user's
-  this.isOwnPost = function($post) {
-    return $post.closest('.messages').prev().hasClass(self.activeUserClass);
+}
+
+// ChatRoom class
+function ChatRoom() {
+
+  "use strict";
+
+  var self = this;
+
+  this.status = false;
+
+  this.checkRoomStatus = function() {
+    if (document.getElementById('loading')) {
+      setTimeout(self.checkRoomStatus, 1000);
+    } else {
+      self.setRoomStatus(true);
+    }
   };
+
+  this.setRoomStatus = function(status) {
+    self.status = status;
+  };
+
+  this.isRoomLoaded = function() {
+    return self.status;
+  };
+
+  this.checkRoomStatus();
+}
+
+// Post class
+function Post($post, activeUserClass) {
+
+  "use strict";
+
+  var self = this;
+
+  // Enums FTW!
+  this.voteTypes = {
+    CV: 1,
+    DELV: 2
+  };
+  this.postTypes = {
+    NEW: 1,
+    EDIT: 2,
+    REMOVE: 3
+  };
+
+  // An attempt at a factory pattern implementation. I do not like this approach, but it works for now.
+  if ($post === undefined) {
+    this.activeUserClass = $('#active-user').attr('class').split(' ')[1]; // It's not as bad as a static property. It isn't. No it *isn't*. Shut up.
+    this.create = function($post) {
+      return new self.constructor($post, self.activeUserClass);
+    };
+    return;
+  }
+
+  this.$post = $post;
+  this.id = $post.closest('div.message').attr('id').substr(8);
+  this.questionId = null;
+  this.isVoteRequest = false;
+  this.voteType = null;
+  this.postType = null;
+  this.isOwnPost = false;
+
+  this.setQuestionId = function() {
+    var $links = $('a:contains("stackoverflow.com/questions/"), a:contains("stackoverflow.com/q/")', self.$post);
+
+    if (!$links.length) {
+      return false;
+    }
+
+    self.questionId = parseInt($links.attr('href').split('/')[4], 10);
+    return true;
+  };  
+
+  this.parseQuestionPost = function() {
+
+    // TODO: This is not very DRY, some of this work is already done in VoteRequestListener. Also the jQuery is crap.
+    if (!$post.hasClass('neworedit')) {
+      self.postType = self.postTypes.REMOVE;
+    } else if ($('a.edits', $post.closest('div.message')).length) {
+      self.postType = self.postTypes.EDIT;
+    } else {
+      self.postType = self.postTypes.NEW;
+    }
+
+    self.isOwnPost = $post.closest('.messages').prev().hasClass(activeUserClass);
+
+    // TODO: Rewrite this. It kind of sucks.
+    $('a .ob-post-tag', self.$post).each(function() {
+      switch($(this).text()) {
+        case 'cv-pls':
+        case 'cv-maybe':
+          self.isVoteRequest = true;
+          self.voteType = self.voteTypes.CV;
+          break;
+
+        case 'delv-pls':
+        case 'delv-maybe':
+          self.isVoteRequest = true;
+          self.voteType = self.voteTypes.DELV;
+          break;
+
+        default:
+          break;
+      }
+
+    });
+
+    if (self.isVoteRequest) {
+      self.$post.addClass('cvhelper-vote-request');
+      if ($(".cvhelper-vote-request-text", self.$post).length < 1) {
+        // Required for strikethrough to work
+        self.$post.html('<span class="cvhelper-vote-request-text">' + self.$post.html() + '</span>');
+      }
+      $('a[href^="http://stackoverflow.com/questions/' + self.questionId + '"], a[href^="http://stackoverflow.com/q/' + self.questionId + '"]', self.$post).addClass('cvhelper-question-link');
+    }
+
+  };
+
+  $post.addClass('cvhelper-processed');//.children().wrapAll('<span class="cvhelper-vote-request-text"></span>');
+  if (this.setQuestionId()) {
+    this.parseQuestionPost();
+  }
+
+}
+
+// Buffers up to 100 (maximum per API request) vote requests
+function VoteRequestBuffer(voteRequestMessageQueue) {
+
+  "use strict";
+
+  var self = this;
+
+  // An attempt at a factory pattern implementation. I do not like this approach, but it works for now.
+  if (voteRequestMessageQueue === undefined) {
+    this.create = function(voteRequestMessageQueue) {
+      return new self.constructor(voteRequestMessageQueue);
+    };
+    return;
+  }
+
+  this.items = 0;
+  this.posts = [];
+  this.postsIds = [];
+  this.questionIds = [];
+
+  this.createBuffer = function(queue) {
+    self.posts = [];
+    var post = queue.dequeue();
+    while(post !== null && self.posts.length <= 100) {
+      self.posts.push(post);
+
+      post = queue.dequeue();
+    }
+
+    self.setIds();
+  };
+
+  this.setIds = function() {
+    var i;
+
+    self.postsIds = [];
+    self.questionIds = [];
+
+    self.items = self.posts.length;
+    for (i = 0; i < self.items; i++) {
+      self.postsIds.push(self.posts[i].id);
+      self.questionIds.push(self.posts[i].questionId);
+    }
+  };
+
+  this.createBuffer(voteRequestMessageQueue);
 }
 
 // This is where all the items in the queue get processed
@@ -299,26 +333,52 @@ function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer,
       post = buffer.posts[i];
       question = self.getQuestionById(items, buffer.questionIds[i]);
 
-      if (question) {
-        newQuestions = true;
+      if (!question) { // Question is deleted
 
-        if (post.voteType !== 'cv' || question.closed_date === undefined || !pluginSettings.removeCompletedNotifications()) {
+        if (!pluginSettings.getSetting("removeCompletedNotifications")) {
           avatarNotification.enqueue(post);
         }
-
-        if (pluginSettings.oneBox()) {
-          voteRequestFormatter.addOnebox(post.$post, question);
+        if (pluginSettings.getSetting("strikethroughCompleted")) {
+          voteRequestFormatter.strikethrough(post, question);
         }
 
-      //} else {
+      } else if (question.closed_date !== undefined) { // Question is closed
 
-        // question is deleted
-        // Do stuff here when implementing post strikethrough
+        newQuestions = true;
+
+        if (post.voteType === post.voteTypes.DELV) {
+          avatarNotification.enqueue(post);
+
+          if (pluginSettings.getSetting("oneBox")) {
+            voteRequestFormatter.addOnebox(post.$post, question);
+          }
+        } else {
+          if (!pluginSettings.getSetting("removeCompletedNotifications")) {
+            avatarNotification.enqueue(post);
+          }
+
+          if (pluginSettings.getSetting("oneBox") && !pluginSettings.getSetting("removeCompletedOneboxes")) {
+            voteRequestFormatter.addOnebox(post.$post, question);
+          }
+
+          if (pluginSettings.getSetting("strikethroughCompleted")) {
+            voteRequestFormatter.strikethrough(post, question);
+          }
+        }
+
+      } else { // Question is open
+
+        newQuestions = true;
+
+        avatarNotification.enqueue(post);
+        if (pluginSettings.getSetting("oneBox")) {
+          voteRequestFormatter.addOnebox(post.$post, question);
+        }
 
       }
     }
 
-    if (newQuestions && audioPlayer.enabled && pluginSettings.soundNotification()) {
+    if (newQuestions && audioPlayer.enabled && pluginSettings.getSetting("soundNotification")) {
       audioPlayer.playNotification();
     }
     // enable audioplayer after initial load
@@ -339,6 +399,9 @@ function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer,
 
 // Handles posts that fall off the top of the screen
 function VoteRemoveProcessor(pluginSettings, avatarNotification) {
+  // This whole class is kind of pointless
+  // It's only really here as an LoD buffer
+  // I still can't decide if it's actually necessary
 
   "use strict";
 
@@ -348,7 +411,7 @@ function VoteRemoveProcessor(pluginSettings, avatarNotification) {
   this.avatarNotification = avatarNotification;
 
   this.removeLost = function(post) {
-    if (pluginSettings.removeLostNotifications()) {
+    if (pluginSettings.getSetting("removeLostNotifications")) {
       self.avatarNotification.dequeue(post.id);
       self.avatarNotification.reconcileQueue();
     }
@@ -367,11 +430,15 @@ function VoteRequestFormatter(pluginSettings) {
     self.processOneboxFormatting($post, question);
   };
 
-  this.removeOneBox = function($post) {
-    var $onebox = $('div.onebox', $post);
+  this.removeOnebox = function(post) {
+    var $onebox = $('div.onebox', post.$post);
     if ($onebox.length) {
       $onebox.remove();
     }
+  };
+
+  this.strikethrough = function(post) {
+    $('.cvhelper-vote-request-text', post.$post).css('textDecoration', 'line-through');
   };
 
   this.getOneboxHtml = function(question) {
@@ -420,8 +487,8 @@ function VoteRequestFormatter(pluginSettings) {
 
     $grippie.width($onebox.width());
 
-    if (pluginSettings.oneBoxHeight() !== null && pluginSettings.oneBoxHeight() < $onebox[0].scrollHeight) {
-      $onebox.height(pluginSettings.oneBoxHeight());
+    if (pluginSettings.getSetting("oneBoxHeight") !== null && pluginSettings.getSetting("oneBoxHeight") < $onebox[0].scrollHeight) {
+      $onebox.height(pluginSettings.getSetting("oneBoxHeight"));
       $onebox.css('padding-bottom', '10px');
       $onebox.gripHandler({
         cursor: 'n-resize',
@@ -437,7 +504,7 @@ function VoteRequestFormatter(pluginSettings) {
   };
 
   this.processStatus = function($onebox, question, $post) {
-    if (question.closed_date === undefined || !pluginSettings.showCloseStatus()) {
+    if (question.closed_date === undefined || !pluginSettings.getSetting("showCloseStatus")) {
       return null;
     }
 
@@ -492,7 +559,7 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
 
   // Updates the avatar notification display
   this.updateNotificationDisplay = function() {
-    if (!pluginSettings.avatarNotification()) {
+    if (!pluginSettings.getSetting("avatarNotification")) {
       return null;
     }
 
@@ -543,7 +610,7 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
         });
       }
     } else {
-      if (!pluginSettings.removeLostNotifications()) {
+      if (!pluginSettings.getSetting("removeLostNotifications")) {
         window.open('http://chat.stackoverflow.com/transcript/message/' + lastRequest.id + '#' + lastRequest.id, '_blank');
       }
     }
@@ -562,7 +629,7 @@ function StatusPolling(pluginSettings, postFactory, voteRequestBufferFactory, po
   this.voteRequestBufferFactory = voteRequestBufferFactory;
 
   this.pollStatus = function() {
-    if (!pluginSettings.pollCloseStatus()) {
+    if (!pluginSettings.getSetting("pollCloseStatus")) {
       return false;
     }
     
@@ -575,7 +642,7 @@ function StatusPolling(pluginSettings, postFactory, voteRequestBufferFactory, po
 
     pollQueueProcessor.processQueue(self.voteRequestBufferFactory.create(pollMessageQueue));
 
-    setTimeout(self.pollStatus, pluginSettings.pollInterval()*60000);
+    setTimeout(self.pollStatus, pluginSettings.getSetting("pollInterval")*60000);
   };
 }
 
@@ -596,22 +663,39 @@ function StatusRequestProcessor(pluginSettings, voteRequestFormatter, avatarNoti
       question = self.getQuestionById(items, post.questionId);
 
       if (question) {
-        if (question.closed_date !== undefined) {
-          // question is closed
-          if (pluginSettings.removeCompletedNotifications() && post.voteType === 'cv') {
-            self.avatarNotification.dequeue(post.id);
+        if (question.closed_date !== undefined) { // question is closed
+
+          if (post.voteType === post.voteTypes.CV) {
+            if (pluginSettings.getSetting("removeCompletedNotifications")) {
+              self.avatarNotification.dequeue(post.id);
+            }
+            if (pluginSettings.getSetting("removeCompletedOneboxes")) {
+              self.voteRequestFormatter.removeOnebox(post);
+            }
+            if (pluginSettings.getSetting("strikethroughCompleted")) {
+              self.voteRequestFormatter.strikethrough(post);
+            }
           }
-          if (pluginSettings.showCloseStatus() && !post.$post.hasClass('cvhelper-closed')) {
+
+          if (pluginSettings.getSetting("showCloseStatus") && !post.$post.hasClass('cvhelper-closed')) {
             $title = $('.onebox .cvhelper-question-link', post.$post);
             $title.html($title.html() + ' [closed]');
             post.$post.addClass('cvhelper-closed');
           }
         }
-      } else {
-        // question is deleted
-        if (pluginSettings.removeCompletedNotifications()) {
+
+      } else { // question is deleted
+
+        if (pluginSettings.getSetting("removeCompletedNotifications")) {
           self.avatarNotification.dequeue(post.id);
         }
+        if (pluginSettings.getSetting("removeCompletedOneboxes")) {
+          self.voteRequestFormatter.removeOnebox(post);
+        }
+        if (pluginSettings.getSetting("strikethroughCompleted")) {
+          self.voteRequestFormatter.strikethrough(post);
+        }
+
       }
     }
   };
@@ -642,7 +726,7 @@ function SoundManager(pluginSettings) {
 
     if ($popup.length) {
       status = 'disabled';
-      if (pluginSettings.soundNotification()) {
+      if (pluginSettings.getSetting("soundNotification")) {
         status = 'enabled';
       }
 
@@ -655,7 +739,7 @@ function SoundManager(pluginSettings) {
   // Toggle sound setting
   this.toggleSound = function() {
     var $option = $('#cvpls-sound a');
-    if (pluginSettings.soundNotification()) {
+    if (pluginSettings.getSetting("soundNotification")) {
       pluginSettings.settings.saveSetting('soundNotification', false);
       $option.text('cv-pls (disabled)');
       chrome.extension.sendRequest({method: 'saveSetting', key: 'soundNotification', value: false}, function(){});
@@ -675,11 +759,11 @@ function ButtonsManager(pluginSettings) {
   var self = this;
 
   this.init = function() {
-    if (pluginSettings.delvPlsButton()) {
+    if (pluginSettings.getSetting("delvPlsButton")) {
       self.addDelvButton();
     }
 
-    if (pluginSettings.cvPlsButton()) {
+    if (pluginSettings.getSetting("cvPlsButton")) {
       self.addCvButton();
     }
   };
@@ -703,7 +787,7 @@ function DesktopNotification(pluginSettings) {
   "use strict";
 
   this.show = function(title, message) {
-    if (!pluginSettings.desktopNotification()) {
+    if (!pluginSettings.getSetting("desktopNotification")) {
       return null;
     }
 
@@ -729,7 +813,7 @@ function CvBacklog(pluginSettings, backlogUrl) {
   }.bind(this);
 
   this.refresh = function() {
-    if (!pluginSettings.backlogEnabled()) {
+    if (!pluginSettings.getSetting("backlogEnabled")) {
       return null;
     }
 
@@ -743,7 +827,7 @@ function CvBacklog(pluginSettings, backlogUrl) {
         // e.g. request quota reached
       },
       success: function(data) {
-        var html = '', lineBreak = '', i, backlogAmount = parseInt(pluginSettings.backlogAmount(), 10);
+        var html = '', lineBreak = '', i, backlogAmount = parseInt(pluginSettings.getSetting("backlogAmount"), 10);
 
         for (i = 0; i < data.length; i++) {
           if (i === backlogAmount) {
@@ -757,10 +841,10 @@ function CvBacklog(pluginSettings, backlogUrl) {
 
         self.descriptionElem.html(html);
 
-        if (pluginSettings.backlogRefresh()) {
+        if (pluginSettings.getSetting("backlogRefresh")) {
           setTimeout(function() {
             self.refresh();
-          }, (pluginSettings.backlogRefreshInterval() * 60 * 1000));
+          }, (pluginSettings.getSetting("backlogRefreshInterval") * 60 * 1000));
         }
       }
     });
