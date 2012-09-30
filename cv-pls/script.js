@@ -521,6 +521,9 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
 
   var self = this;
 
+  this.animating = false;
+  this.updateQueued = false;
+
   // Adds a post to the queue
   this.enqueue = function(post) {
     avatarNotificationStack.push(post);
@@ -563,9 +566,18 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
       return null;
     }
 
-    if (avatarNotificationStack.queue.length) {
-      // Create element if it doesn't exist and set to current stack size
-      if (document.getElementById('cv-count') === null) {
+    // Prevent multiple calls in quick succession from causing missing notifications
+    if (self.animating) {
+      self.updateQueued = true;
+      return null;
+    } else {
+      self.updateQueued = false;
+    }
+
+    if (avatarNotificationStack.queue.length) { // Notification to show
+
+      if (document.getElementById('cv-count') === null) { // Create element and display
+
         var html, css = '';
 
         css+= 'position:absolute; z-index:4; top:7px; left:24px;';
@@ -573,18 +585,34 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
         css+= ' border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer;';
         css+= ' font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px;';
         css+= ' min-width: 12px; padding: 0 4px; text-align: center; display: none;';
-        html = '<div title="CV requests waiting for review" id="cv-count" style="' + css + '"></div>';
 
+        html = '<div title="CV requests waiting for review" id="cv-count" style="' + css + '">' + avatarNotificationStack.queue.length + '</div>';
+
+        self.animating = true;
         $('#reply-count').after(html);
+        $('#cv-count').show(200, self.animationCallback);
+
+      } else { // Update element
+
+        $('#cv-count').text(avatarNotificationStack.queue.length);
+
       }
-      $('#cv-count').text(avatarNotificationStack.queue.length).show();
-    } else {
-      // Nothing left in queue, set to 0 and fade
-      $('#cv-count').text("0").animate({
-        opacity: 0
-      }, 1000, function() {
-        $(this).remove();
-      });
+
+    } else { // Nothing left in queue, set to 0 and fade
+
+      self.animating = true;
+      $('#cv-count').text("0").animate({ opacity: 0 }, 1000, self.animationCallback);
+
+    }
+  };
+
+  // Handles the callback at the end of animations
+  this.animationCallback = function() {
+    self.animating = false;
+    if (self.updateQueued) {
+      self.updateNotificationDisplay();
+    } else if (!avatarNotificationStack.queue.length) {
+      $('#cv-count').remove();
     }
   };
 
