@@ -18,4 +18,14 @@ function RequestStack() {
     }
     return self.queue.pop();
   };
+
+  this.each = function(callback) {
+    var i;
+    for (i = 0; i < self.queue.length; i++) {
+      if (callback(self.queue[i], i) === false) {
+        return false;
+      }
+    }
+    return true;
+  };
 }

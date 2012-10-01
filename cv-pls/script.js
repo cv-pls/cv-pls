@@ -35,8 +35,8 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
     chat.addEventListener('DOMNodeRemoved', self.domNodeRemovedListener);
 
     // Get/loop all posts on the DOM
-    xpathQuery = "//div[contains(@class,'message')]/div[contains(@class,'content') and not(contains(@class,'cvhelper-processed'))]";
-    xpathResult = document.evaluate(xpathQuery, document.getElementById('chat'), null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    xpathQuery = ".//div[contains(concat(' ', @class, ' '),' message ')]/div[contains(concat(' ', @class, ' '), ' content ') and not(contains(concat(' ', @class, ' '), ' cvhelper-processed '))]";
+    xpathResult = document.evaluate(xpathQuery, chat, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
 
     for (i = 0; i < xpathResult.snapshotLength; i++) {
       $post = $(xpathResult.snapshotItem(i));
@@ -55,7 +55,7 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
     if (self.isNewOrEditedMessage(event.srcElement)) {
       var $post = $('div.content', event.srcElement);
       self.processNewPost($post);
-      self.processQueue();
+      setTimeout(self.processQueue, 0);
     }
   };
 
@@ -70,20 +70,28 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
   // Enqueue post if it is a vote request
   this.processNewPost = function($post) {
     var post = self.postFactory.create($post);
-    if (!post.isOwnPost) {
-      if (post.isVoteRequest) {
-        self.voteRequestMessageQueue.enqueue(post);
-      }
+    if (post.isVoteRequest && !post.isOwnPost) {
+      self.voteRequestMessageQueue.enqueue(post);
     }
   };
 
-  // Adjust avatar notifications for removed post
+  // Adjust notifications for removed post
   this.processRemovedPost = function($post) {
     var post = self.postFactory.create($post);
-    if (!post.isOwnPost) { // Tempoary until own post handling is implemented
-      if (post.isVoteRequest) {
-        self.voteRemoveProcessor.removeLost(post);
-      }
+    if (!post.isVoteRequest && !post.isOwnPost) {
+      setTimeout(function() {
+        var editFound = false;
+        self.voteRequestMessageQueue.each(function(item, pos) {
+          if (post.id === item.id && post.questionId === item.questionId) {
+            item.stackApiResponse = post.stackApiResponse;
+            editFound = true;
+            return false;
+          }
+        });
+        if (!editFound) {
+          self.voteRemoveProcessor.removeLost(post);
+        }
+      }, 0);
     }
   };
 
@@ -171,7 +179,7 @@ function Post($post, activeUserClass) {
 
   // An attempt at a factory pattern implementation. I do not like this approach, but it works for now.
   if ($post === undefined) {
-    this.activeUserClass = $('#active-user').attr('class').split(' ')[1]; // It's not as bad as a static property. It isn't. No it *isn't*. Shut up.
+    this.activeUserClass = document.getElementById('active-user').getAttribute('class').match(/user-\d+/)[0];
     this.create = function($post) {
       return new self.constructor($post, self.activeUserClass);
     };
@@ -179,73 +187,103 @@ function Post($post, activeUserClass) {
   }
 
   this.$post = $post;
-  this.id = $post.closest('div.message').attr('id').substr(8);
+  this.element = $post[0];
+  this.id = null;
   this.questionId = null;
-  this.isVoteRequest = false;
   this.voteType = null;
   this.postType = null;
+  this.isVoteRequest = false;
   this.isOwnPost = false;
 
-  this.setQuestionId = function() {
-    var $links = $('a:contains("stackoverflow.com/questions/"), a:contains("stackoverflow.com/q/")', self.$post);
+  // Constructor controller
+  this.init = function() {
+    self.setPostId();
+    self.setPostType();
+    self.setIsOwnPost();
+    self.setQuestionId();
+    self.setVoteType();
+    self.markProcessed();
+  };
 
-    if (!$links.length) {
-      return false;
+  // Sets the message ID of the post
+  this.setPostId = function() {
+    var $message = $post.closest('div.message');
+    if ($message.length) {
+      this.id = $message.attr('id').substr(8);
     }
+  };
 
-    self.questionId = parseInt($links.attr('href').split('/')[4], 10);
-    return true;
-  };  
-
-  this.parseQuestionPost = function() {
-
-    // TODO: This is not very DRY, some of this work is already done in VoteRequestListener. Also the jQuery is crap.
-    if (!$post.hasClass('neworedit')) {
+  // Sets the type of event that occured to this post
+  this.setPostType = function() {
+    if (self.element.getAttribute('class').split(/\s+/g).indexOf('neworedit') < 0) {
       self.postType = self.postTypes.REMOVE;
-    } else if ($('a.edits', $post.closest('div.message')).length) {
+    } else if (document.evaluate("../a[contains(concat(' ', @class, ' '), ' edits ')]", self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null).snapshotLength) {
       self.postType = self.postTypes.EDIT;
     } else {
       self.postType = self.postTypes.NEW;
     }
+  };
 
-    self.isOwnPost = $post.closest('.messages').prev().hasClass(activeUserClass);
+  // Determines whether the post was added by the active user
+  this.setIsOwnPost = function() {
+    self.isOwnPost = self.$post.closest('.messages').prev().hasClass(activeUserClass);
+  };
 
-    // TODO: Rewrite this. It kind of sucks.
-    $('a .ob-post-tag', self.$post).each(function() {
-      switch($(this).text()) {
-        case 'cv-pls':
-        case 'cv-maybe':
-          self.isVoteRequest = true;
-          self.voteType = self.voteTypes.CV;
+  // Sets the question ID based on the first question link in the post
+  this.setQuestionId = function() {
+    var xpathQuery, xpathResult, i, parts, parsedId;
+
+    xpathQuery = ".//a[starts-with(lower-case(@href), 'http://stackoverflow.com/questions/') or starts-with(lower-case(@href), 'http://stackoverflow.com/q/')]";
+    xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    for (i = 0; i < xpathResult.snapshotLength; i++) {
+      parts = xpathResult.snapshotItem(i).getAttribute('href').split('/');
+      if (parts.length > 4) {
+        parsedId = parseInt(parts[4], 10);
+        if (!isNaN(parsedId)) {
+          self.questionId = parsedId;
           break;
-
-        case 'delv-pls':
-        case 'delv-maybe':
-          self.isVoteRequest = true;
-          self.voteType = self.voteTypes.DELV;
-          break;
-
-        default:
-          break;
+        }
       }
+    }
 
-    });
+  };  
 
-    if (self.isVoteRequest) {
+  // Sets the vote type of the post and manipulates vote post structure for easy reference later on
+  this.setVoteType = function() {
+    var xpathQuery, xpathResult;
+
+    if (self.questionId === null) {
+      return null;
+    }
+
+    xpathQuery = ".//a/span[contains(concat(' ', @class, ' '), ' ob-post-tag ') and contains(' cv-pls cv-maybe delv-pls delv-maybe ', concat(' ', text(), ' '))]";
+    xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    if (xpathResult.snapshotLength) {
+
+      self.isVoteRequest = true;
+      self.voteType = self.voteTypes[xpathResult.snapshotItem(0).split('-').shift().toUpperCase()];
+
       self.$post.addClass('cvhelper-vote-request');
       if ($(".cvhelper-vote-request-text", self.$post).length < 1) {
-        // Required for strikethrough to work
-        self.$post.html('<span class="cvhelper-vote-request-text">' + self.$post.html() + '</span>');
+        self.$post.html('<span class="cvhelper-vote-request-text">' + self.$post.html() + '</span>'); // Required for strikethrough to work
       }
+
       $('a[href^="http://stackoverflow.com/questions/' + self.questionId + '"], a[href^="http://stackoverflow.com/q/' + self.questionId + '"]', self.$post).addClass('cvhelper-question-link');
+
     }
 
   };
 
-  $post.addClass('cvhelper-processed');//.children().wrapAll('<span class="cvhelper-vote-request-text"></span>');
-  if (this.setQuestionId()) {
-    this.parseQuestionPost();
-  }
+  // Adds a class to the element to indicate that it has been processed
+  this.markProcessed = function() {
+    var classes = self.element.getAttribute('class').split(/\s+/g);
+    classes.push('cvhelper-processed');
+    self.element.setAttribute('class', classes.join(' '));
+  };
+
+  self.init();
 
 }
 
@@ -524,6 +562,8 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
   this.animating = false;
   this.updateQueued = false;
 
+  this.$cvCount = null;
+
   // Adds a post to the queue
   this.enqueue = function(post) {
     avatarNotificationStack.push(post);
@@ -534,6 +574,7 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
   this.dequeue = function(id) {
     var i, stackPos = -1;
 
+    // Find the post in the queue
     for (i = avatarNotificationStack.queue.length - 1; i >= 0; i--) {
       if (avatarNotificationStack.queue[i].id === id) {
         stackPos = i;
@@ -541,6 +582,7 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
       }
     }
 
+    // If we found it remove it and update display
     if (stackPos > -1) {
       avatarNotificationStack.queue.splice(stackPos, 1);
       self.updateNotificationDisplay();
@@ -549,20 +591,26 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
 
   // Checks that all posts in the queue are still on the DOM
   this.reconcileQueue = function() {
-    var i;
+    var i, refresh;
 
+    // Iterate notification queue and remove any items that are no longer on the DOM
+    refresh = false;
     for (i = avatarNotificationStack.queue.length - 1; i >= 0; i--) {
       if (document.getElementById('message-'+avatarNotificationStack.queue[i].id) === null) {
+        refresh = true;
         avatarNotificationStack.queue.splice(i, 1);
       }
     }
 
-    self.updateNotificationDisplay();
+    // Update notification if the stack has been altered or the current notification does not match the stack length
+    if (refresh || parseInt(self.$cvCount.text(), 10) !== avatarNotificationStack.queue.length) {
+      self.updateNotificationDisplay();
+    }
   };
 
   // Updates the avatar notification display
   this.updateNotificationDisplay = function() {
-    var html, css, $cvCount;
+    var html, css, opacity;
 
     if (!pluginSettings.getSetting("avatarNotification")) {
       return null;
@@ -572,13 +620,11 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
     if (self.animating) {
       self.updateQueued = true;
       return null;
-    } else {
-      self.updateQueued = false;
     }
+    self.updateQueued = false;
 
-    $cvCount = $('#cv-count');
-
-    if (!$cvCount.length) {
+    // Create the avatar notification element and add it to the DOM
+    if (self.$cvCount === null) {
       css  = 'position:absolute; z-index:4; top:7px; left:24px;';
       css += ' color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417));';
       css += ' border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer;';
@@ -587,26 +633,33 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
       html = '<div title="CV requests waiting for review" id="cv-count" style="' + css + '"></div>';
 
       $('#reply-count').after(html);
-      $cvCount = $('#cv-count');
+
+      self.$cvCount = $('#cv-count');
     }
 
-    $cvCount.text(avatarNotificationStack.queue.length);
+    /*
+     The problem with avatar notification updates when posts are edited lies mainly in the lines below
+     
+     When a post is edited the original element is removed from the DOM and replaced with a new one. This
+     causes the avatar notification to quickly decrement and then increment, which is particularly noticable
+     when the post is the only notification, because it triggers the animation as well.
+     
+     In order to fix this, the code below needs to be run asynchronously and to check whether an element with
+     the same post ID was re-added to the DOM in the meantime. Alternatively (probably better) this should be
+     implemented in VoteRequestListener.
+    */
+    opacity = avatarNotificationStack.queue.length ? 1 : 0;
+
+    self.$cvCount.text(avatarNotificationStack.queue.length);
 
     self.animating = true;
-    if (avatarNotificationStack.queue.length) {
-      $('#cv-count').animate({opacity: 1}, 1000, self.animationCallback);
-    } else {
-      $('#cv-count').animate({opacity: 0}, 1000, self.animationCallback);
-    }
+    self.$cvCount.animate({opacity: opacity}, 500, function() {
+      self.animating = false;
+      if (self.updateQueued) {
+        self.updateNotificationDisplay();
+      }
+    });
 
-  };
-
-  // Handles the callback at the end of animations
-  this.animationCallback = function() {
-    self.animating = false;
-    if (self.updateQueued) {
-      self.updateNotificationDisplay();
-    }
   };
 
   // Moves the screen to the last cv request on the stack (click handler for notification box)
@@ -631,7 +684,7 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
         });
       }
     } else {
-      if (!pluginSettings.getSetting("removeLostNotifications")) {
+      if (!pluginSettings.getSetting("removeLostNotifications")) { // Should never happen but just in case something goes wrong
         window.open('http://chat.stackoverflow.com/transcript/message/' + lastRequest.id + '#' + lastRequest.id, '_blank');
       }
     }

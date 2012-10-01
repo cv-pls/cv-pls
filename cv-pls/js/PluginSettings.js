@@ -56,9 +56,9 @@ function PluginSettings(settings) {
     for (setting in availableSettings) {
       if (typeof availableSettings[setting] !== "function") {
         if (typeof availableSettings[setting] === "object") {
-          settings.saveSetting(setting, settingsJsonString[setting]);
-        } else {
           settings.saveSetting(setting, JSON.stringify(settingsJsonString[setting]));
+        } else {
+          settings.saveSetting(setting, settingsJsonString[setting]);
         }
       }
     }
