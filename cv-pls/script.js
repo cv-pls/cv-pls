@@ -562,6 +562,8 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
 
   // Updates the avatar notification display
   this.updateNotificationDisplay = function() {
+    var html, css, $cvCount;
+
     if (!pluginSettings.getSetting("avatarNotification")) {
       return null;
     }
@@ -574,36 +576,29 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
       self.updateQueued = false;
     }
 
-    if (avatarNotificationStack.queue.length) { // Notification to show
+    $cvCount = $('#cv-count');
 
-      if (document.getElementById('cv-count') === null) { // Create element and display
+    if (!$cvCount.length) {
+      css  = 'position:absolute; z-index:4; top:7px; left:24px;';
+      css += ' color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417));';
+      css += ' border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer;';
+      css += ' font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px;';
+      css += ' min-width: 12px; padding: 0 4px; text-align: center; opacity: 0;';
+      html = '<div title="CV requests waiting for review" id="cv-count" style="' + css + '"></div>';
 
-        var html, css = '';
-
-        css+= 'position:absolute; z-index:4; top:7px; left:24px;';
-        css+= ' color:white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417));';
-        css+= ' border-radius: 20px; -webkit-box-shadow:1px 1px 2px #555; border:3px solid white; cursor: pointer;';
-        css+= ' font-family:arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; height: 20px; line-height: 20px;';
-        css+= ' min-width: 12px; padding: 0 4px; text-align: center; display: none;';
-
-        html = '<div title="CV requests waiting for review" id="cv-count" style="' + css + '">' + avatarNotificationStack.queue.length + '</div>';
-
-        self.animating = true;
-        $('#reply-count').after(html);
-        $('#cv-count').show(200, self.animationCallback);
-
-      } else { // Update element
-
-        $('#cv-count').text(avatarNotificationStack.queue.length);
-
-      }
-
-    } else { // Nothing left in queue, set to 0 and fade
-
-      self.animating = true;
-      $('#cv-count').text("0").animate({ opacity: 0 }, 1000, self.animationCallback);
-
+      $('#reply-count').after(html);
+      $cvCount = $('#cv-count');
     }
+
+    $cvCount.text(avatarNotificationStack.queue.length);
+
+    self.animating = true;
+    if (avatarNotificationStack.queue.length) {
+      $('#cv-count').animate({opacity: 1}, 1000, self.animationCallback);
+    } else {
+      $('#cv-count').animate({opacity: 0}, 1000, self.animationCallback);
+    }
+
   };
 
   // Handles the callback at the end of animations
@@ -611,8 +606,6 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
     self.animating = false;
     if (self.updateQueued) {
       self.updateNotificationDisplay();
-    } else if (!avatarNotificationStack.queue.length) {
-      $('#cv-count').remove();
     }
   };
 
