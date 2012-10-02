@@ -98,17 +98,11 @@
               <span>Enable addressbar icon</span>
             </label>
           </div>
-          <div class="customOneBoxGroup">
-            <div class="checkbox">
-              <label>
-                <input type="checkbox" name="oneBox">
-                <span>OneBox cv requests</span>
-              </label>
-            </div>
-            <div>
-              <input type="text" data-type="number" name="oneBoxHeight" placeholder="Height" pattern="[0-9]*"
-                     maxlength="4"> px
-            </div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="oneBox">
+              <span>OneBox cv requests <input type="text" data-type="number" name="oneBoxHeight" placeholder="Height" pattern="[0-9]*" maxlength="4"> px</span>
+            </label>
           </div>
           <div class="subsection">
             <div class="checkbox" id="removeCompletedOneboxes">
@@ -180,19 +174,11 @@
               <span>Show status in onebox</span>
             </label>
           </div>
-          <div class="customOneBoxGroup">
-            <div class="checkbox">
-              <label>
-                <input type="checkbox" name="pollCloseStatus">
-                <span>Poll server for closed questions every </span>
-              </label>
-            </div>
-            <div>
-              <label>
-                <input type="text" data-type="number" name="pollInterval" pattern="[0-9]*"
-                       maxlength="3"> <span>minutes</span>
-              </label>
-            </div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="pollCloseStatus">
+              <span>Poll server for closed questions every <input type="text" data-type="number" name="pollInterval" pattern="[0-9]*" maxlength="3"> minutes</span>
+            </label>
           </div>
           <div class="checkbox">
             <label>
@@ -212,25 +198,18 @@
               <span>Change room description into the backlog</span>
             </label>
           </div>
-          <div class="textbox">
+          <div class="checkbox">
             <label>
               <span>Number of items in the list</span>
               <input type="text" name="backlogAmount">
             </label>
           </div>
-          <div class="customOneBoxGroup">
-            <div class="checkbox">
-              <label>
-                <input type="checkbox" name="backlogRefresh">
-                <span>Refresh backlog every </span>
-              </label>
-            </div>
-            <div>
-              <label>
-                <input type="text" data-type="number" name="backlogRefreshInterval" pattern="[0-9]*"
-                       maxlength="3"> <span>minutes</span>
-              </label>
-            </div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="backlogRefresh">
+              <span>Refresh backlog every <input type="text" data-type="number" name="backlogRefreshInterval" pattern="[0-9]*"
+                     maxlength="3"> minutes</span>
+            </label>
           </div>
         </div>
       </section>
@@ -244,7 +223,7 @@
               <span>Enable the dupes helper</span>
             </label>
           </div>
-          <div class="textbox">
+          <div class="checkbox">
             <label>
               <span>Reference list</span>
               <input type="submit" name="showDupes" value="Show list">

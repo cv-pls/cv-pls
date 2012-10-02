@@ -70,6 +70,7 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
   // Enqueue post if it is a vote request
   this.processNewPost = function($post) {
     var post = self.postFactory.create($post);
+    post.postType = post.postTypes.NEW;
     if (post.isVoteRequest && !post.isOwnPost) {
       self.voteRequestMessageQueue.enqueue(post);
     }
@@ -78,12 +79,13 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
   // Adjust notifications for removed post
   this.processRemovedPost = function($post) {
     var post = self.postFactory.create($post);
-    if (!post.isVoteRequest && !post.isOwnPost) {
+    post.postType = post.postTypes.REMOVE;
+    if (post.isVoteRequest && !post.isOwnPost) {
       setTimeout(function() {
         var editFound = false;
-        self.voteRequestMessageQueue.each(function(item, pos) {
+        self.voteRequestMessageQueue.each(function(item) {
           if (post.id === item.id && post.questionId === item.questionId) {
-            item.stackApiResponse = post.stackApiResponse;
+            item.postType = post.postTypes.EDIT;
             editFound = true;
             return false;
           }
@@ -166,12 +168,13 @@ function Post($post, activeUserClass) {
 
   var self = this;
 
-  // Enums FTW!
+  // Type Enums
   this.voteTypes = {
     CV: 1,
     DELV: 2
   };
   this.postTypes = {
+    EXISTING: 0,
     NEW: 1,
     EDIT: 2,
     REMOVE: 3
@@ -188,17 +191,18 @@ function Post($post, activeUserClass) {
 
   this.$post = $post;
   this.element = $post[0];
+
   this.id = null;
   this.questionId = null;
+
   this.voteType = null;
-  this.postType = null;
+  this.postType = 0;
   this.isVoteRequest = false;
   this.isOwnPost = false;
 
   // Constructor controller
   this.init = function() {
     self.setPostId();
-    self.setPostType();
     self.setIsOwnPost();
     self.setQuestionId();
     self.setVoteType();
@@ -207,33 +211,26 @@ function Post($post, activeUserClass) {
 
   // Sets the message ID of the post
   this.setPostId = function() {
-    var $message = $post.closest('div.message');
-    if ($message.length) {
-      this.id = $message.attr('id').substr(8);
-    }
-  };
-
-  // Sets the type of event that occured to this post
-  this.setPostType = function() {
-    if (self.element.getAttribute('class').split(/\s+/g).indexOf('neworedit') < 0) {
-      self.postType = self.postTypes.REMOVE;
-    } else if (document.evaluate("../a[contains(concat(' ', @class, ' '), ' edits ')]", self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null).snapshotLength) {
-      self.postType = self.postTypes.EDIT;
-    } else {
-      self.postType = self.postTypes.NEW;
+    if (self.element.parentNode && self.element.parentNode.ownerDocument && self.element.parentNode.nodeType !== 11) {
+      this.id = (self.element.parentNode.getAttribute('id') || "").substr(8) || null;
     }
   };
 
   // Determines whether the post was added by the active user
   this.setIsOwnPost = function() {
-    self.isOwnPost = self.$post.closest('.messages').prev().hasClass(activeUserClass);
+    var xpathQuery, xpathResult;
+    if (self.id) {
+      xpathQuery = "./a[contains(concat(' ', @class, ' '), ' " + activeUserClass + " ')]";
+      xpathResult = document.evaluate(xpathQuery, self.element.parentNode.parentNode.parentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      self.isOwnPost = Boolean(xpathResult.snapshotLength);
+    }
   };
 
   // Sets the question ID based on the first question link in the post
   this.setQuestionId = function() {
     var xpathQuery, xpathResult, i, parts, parsedId;
 
-    xpathQuery = ".//a[starts-with(lower-case(@href), 'http://stackoverflow.com/questions/') or starts-with(lower-case(@href), 'http://stackoverflow.com/q/')]";
+    xpathQuery = ".//a[starts-with(@href, 'http://stackoverflow.com/questions/') or starts-with(@href, 'http://stackoverflow.com/q/')]";
     xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
     for (i = 0; i < xpathResult.snapshotLength; i++) {
@@ -251,7 +248,7 @@ function Post($post, activeUserClass) {
 
   // Sets the vote type of the post and manipulates vote post structure for easy reference later on
   this.setVoteType = function() {
-    var xpathQuery, xpathResult;
+    var xpathQuery, xpathResult, classes, questionAnchor;
 
     if (self.questionId === null) {
       return null;
@@ -263,14 +260,19 @@ function Post($post, activeUserClass) {
     if (xpathResult.snapshotLength) {
 
       self.isVoteRequest = true;
-      self.voteType = self.voteTypes[xpathResult.snapshotItem(0).split('-').shift().toUpperCase()];
+      self.voteType = self.voteTypes[xpathResult.snapshotItem(0).innerText.split('-').shift().toUpperCase()];
 
-      self.$post.addClass('cvhelper-vote-request');
-      if ($(".cvhelper-vote-request-text", self.$post).length < 1) {
-        self.$post.html('<span class="cvhelper-vote-request-text">' + self.$post.html() + '</span>'); // Required for strikethrough to work
+      self.addClass(self.element, 'cvhelper-vote-request');
+
+      xpathQuery = ".//span[contains(concat(' ', @class, ' '), ' cvhelper-vote-request-text ')]";
+      xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      if (!xpathResult.snapshotLength) {
+        self.element.innerHTML = '<span class="cvhelper-vote-request-text">' + self.element.innerHTML + '</span>'; // Required for strikethrough to work
       }
 
-      $('a[href^="http://stackoverflow.com/questions/' + self.questionId + '"], a[href^="http://stackoverflow.com/q/' + self.questionId + '"]', self.$post).addClass('cvhelper-question-link');
+      xpathQuery = ".//a[starts-with(@href, 'http://stackoverflow.com/questions/" + self.questionId + "') or starts-with(@href, 'http://stackoverflow.com/q/" + self.questionId + "')]";
+      xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+      self.addClass(xpathResult.iterateNext(), 'cvhelper-question-link');
 
     }
 
@@ -278,9 +280,15 @@ function Post($post, activeUserClass) {
 
   // Adds a class to the element to indicate that it has been processed
   this.markProcessed = function() {
-    var classes = self.element.getAttribute('class').split(/\s+/g);
-    classes.push('cvhelper-processed');
-    self.element.setAttribute('class', classes.join(' '));
+    self.addClass(self.element, 'cvhelper-processed');
+  };
+
+  this.addClass = function(el, className) {
+    var classes = (el.getAttribute('class') || "").split(/\s+/g);
+    if (classes.indexOf(className) < 0) {
+      classes.push(className);
+      el.setAttribute('class', classes.join(' ').replace(/^\s+|\s+$/g, ''));
+    }
   };
 
   self.init();
@@ -312,7 +320,6 @@ function VoteRequestBuffer(voteRequestMessageQueue) {
     var post = queue.dequeue();
     while(post !== null && self.posts.length <= 100) {
       self.posts.push(post);
-
       post = queue.dequeue();
     }
 
@@ -385,13 +392,18 @@ function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer,
         newQuestions = true;
 
         if (post.voteType === post.voteTypes.DELV) {
-          avatarNotification.enqueue(post);
+
+          if (post.postType !== post.postTypes.EDIT) {
+            avatarNotification.enqueue(post);
+          }
 
           if (pluginSettings.getSetting("oneBox")) {
             voteRequestFormatter.addOnebox(post.$post, question);
           }
+
         } else {
-          if (!pluginSettings.getSetting("removeCompletedNotifications")) {
+
+          if (post.postType !== post.postTypes.EDIT && !pluginSettings.getSetting("removeCompletedNotifications")) {
             avatarNotification.enqueue(post);
           }
 
@@ -402,18 +414,23 @@ function VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer,
           if (pluginSettings.getSetting("strikethroughCompleted")) {
             voteRequestFormatter.strikethrough(post, question);
           }
+
         }
 
       } else { // Question is open
 
         newQuestions = true;
 
-        avatarNotification.enqueue(post);
+        if (post.postType !== post.postTypes.EDIT) {
+          avatarNotification.enqueue(post);
+        }
+
         if (pluginSettings.getSetting("oneBox")) {
           voteRequestFormatter.addOnebox(post.$post, question);
         }
 
       }
+
     }
 
     if (newQuestions && audioPlayer.enabled && pluginSettings.getSetting("soundNotification")) {
@@ -476,7 +493,10 @@ function VoteRequestFormatter(pluginSettings) {
   };
 
   this.strikethrough = function(post) {
-    $('.cvhelper-vote-request-text', post.$post).css('textDecoration', 'line-through');
+    $('.cvhelper-vote-request-text', post.$post).css({
+      textDecoration: 'line-through',
+      color: '#222'
+    });
   };
 
   this.getOneboxHtml = function(question) {

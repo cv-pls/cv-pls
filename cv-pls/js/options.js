@@ -58,14 +58,13 @@ function SettingsManager(pluginSettings) {
     if (pluginSettings.getSetting("showCloseStatus")) {
       $('input[name="showCloseStatus"]').prop('checked', 'checked');
     } else {
-      $('input[name="pollCloseStatus"]').attr('disabled', true);
-      $('input[name="pollInterval"]').attr('disabled', true);
+      $('input[name="pollCloseStatus"], input[name="pollInterval"]').cvHelperToggleInput(false);
     }
 
     if (pluginSettings.getSetting("pollCloseStatus")) {
       $('input[name="pollCloseStatus"]').prop('checked', 'checked');
     } else {
-      $('input[name="pollInterval"]').attr('disabled', true);
+      $('input[name="pollInterval"]').cvHelperToggleInput(false);
     }
 
     $('input[name="pollInterval"]').val(pluginSettings.getSetting("pollInterval"));
@@ -77,9 +76,7 @@ function SettingsManager(pluginSettings) {
     if (pluginSettings.getSetting("backlogEnabled")) {
       $('input[name="backlogEnabled"]').prop('checked', 'checked');
     } else {
-      $('input[name="backlogAmount"]').attr('disabled', true);
-      $('input[name="backlogRefresh"]').attr('disabled', true);
-      $('input[name="backlogRefreshInterval"]').attr('disabled', true);
+      $('input[name="backlogAmount"], input[name="backlogRefresh"], input[name="backlogRefreshInterval"]').cvHelperToggleInput(false);
     }
 
     $('input[name="backlogAmount"]').val(pluginSettings.getSetting("backlogAmount"));
@@ -88,11 +85,13 @@ function SettingsManager(pluginSettings) {
     if (pluginSettings.getSetting("backlogRefresh")) {
       $('input[name="backlogRefresh"]').prop('checked', 'checked');
     } else {
-      $('input[name="backlogRefreshInterval"]').attr('disabled', true);
+      $('input[name="backlogRefreshInterval"]').cvHelperToggleInput(false);
     }
 
     if (pluginSettings.getSetting("dupesEnabled")) {
       $('input[name="dupesEnabled"]').prop('checked', 'checked');
+    } else {
+      $('input[name="showDupes"]').cvHelperToggleInput(false);
     }
   };
 
@@ -123,6 +122,9 @@ function SettingsManager(pluginSettings) {
 
   $('input[name="oneBoxHeight"]').keyup(function() {
     settings.saveSetting('oneBoxHeight', $(this).val());
+  }).click(function(e) {
+    e.stopPropagation();
+    return false;
   });
 
   $('input[name="removeCompletedOneboxes"]').change(function() {
@@ -163,29 +165,28 @@ function SettingsManager(pluginSettings) {
     var checked, $poll;
     checked = $(this).prop('checked');
     settings.saveSetting('showCloseStatus', checked);
-
     if (checked) {
       $poll = $('input[name="pollCloseStatus"]');
-      $poll.removeAttr('disabled');
+      $poll.cvHelperToggleInput(true);
       if ($poll.prop('checked')) {
-        $(':input[name="pollInterval"]').removeAttr('disabled');
-      } else {
-        $(':input[name="pollInterval"]').attr('disabled', true);
+        $('input[name="pollInterval"]').cvHelperToggleInput(true);
       }
     } else {
-      $(':input[name="pollCloseStatus"]').attr('disabled', true);
-      $(':input[name="pollInterval"]').attr('disabled', true);
+      $('input[name="pollCloseStatus"], input[name="pollInterval"]').cvHelperToggleInput(false);
     }
   });
 
   $('input[name="pollCloseStatus"]').change(function() {
     var checked = $(this).prop('checked');
     settings.saveSetting('pollCloseStatus', checked);
-    $('input[name="pollInterval"]').attr('disabled', !checked);
+    $('input[name="pollInterval"]').cvHelperToggleInput(checked);
   });
 
   $('input[name="pollInterval"]').keyup(function() {
     settings.saveSetting('pollInterval', $(this).val());
+  }).click(function(e) {
+    e.stopPropagation();
+    return false;
   });
 
   $('input[name="strikethroughCompleted"]').change(function() {
@@ -193,23 +194,16 @@ function SettingsManager(pluginSettings) {
   });
 
   $('input[name="backlogEnabled"]').change(function() {
-    var checked, $refresh;
+    var checked;
     checked = $(this).prop('checked');
     settings.saveSetting('backlogEnabled', checked);
-
     if (checked) {
-      $('input[name="backlogAmount"]').removeAttr('disabled');
-      $refresh = $('input[name="backlogRefresh"]');
-      $refresh.removeAttr('disabled');
-      if ($refresh.prop('checked')) {
-        $(':input[name="backlogRefreshInterval"]').removeAttr('disabled');
-      } else {
-        $(':input[name="backlogRefreshInterval"]').attr('disabled', true);
+      $('input[name="backlogAmount"], input[name="backlogRefresh"]').cvHelperToggleInput(true);
+      if ($('input[name="backlogRefresh"]').prop('checked')) {
+        $('input[name="backlogRefreshInterval"]').cvHelperToggleInput(true);
       }
     } else {
-      $(':input[name="backlogAmount"]').attr('disabled', true);
-      $(':input[name="backlogRefresh"]').attr('disabled', true);
-      $(':input[name="backlogRefreshInterval"]').attr('disabled', true);
+      $('input[name="backlogAmount"], input[name="backlogRefresh"], input[name="backlogRefreshInterval"]').cvHelperToggleInput(false);
     }
   });
 
@@ -226,11 +220,15 @@ function SettingsManager(pluginSettings) {
 
   $('input[name="backlogRefreshInterval"]').keyup(function() {
     settings.saveSetting('backlogRefreshInterval', $(this).val());
+  }).click(function(e) {
+    e.stopPropagation();
+    return false;
   });
 
   $('input[name="dupesEnabled"]').change(function() {
     var checked = $(this).prop('checked');
     settings.saveSetting('dupesEnabled', checked);
+    $('input[name="showDupes"]').cvHelperToggleInput(checked);
   });
 
   $('input[name="showDupes"]').click(function() {

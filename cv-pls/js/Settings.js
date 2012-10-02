@@ -12,7 +12,7 @@ function Settings() {
 
       case 'boolean':
         if (defaultValue) {
-          if (value === null || value) {
+          if (value !== "false") {
             result = true;
           } else {
             result = false;
