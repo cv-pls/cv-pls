@@ -93,7 +93,7 @@
       position: relative;
     }
 
-    input[name=oneboxheight] {
+    input[name="oneBoxHeight"] {
       box-sizing: border-box;
       padding-top: 3px;
       text-align: right;
@@ -135,21 +135,15 @@
       <div>
         <div class="checkbox">
           <label>
-            <input type="checkbox" name="icon">
+            <input type="checkbox" name="showIcon">
             <span>Enable addressbar icon</span>
           </label>
         </div>
-        <div id="customOneBoxGroup">
-          <div class="checkbox">
-            <label>
-              <input type="checkbox" name="oneboxcv">
-              <span>OneBox cv requests</span>
-            </label>
-          </div>
-          <div>
-            <input type="text" data-type="number" name="oneboxheight" placeholder="Height" pattern="[0-9]*"
-                   maxlength="4">
-          </div>
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" name="oneBox">
+            <span>OneBox cv requests <input type="text" data-type="number" name="oneBoxHeight" placeholder="Height" pattern="[0-9]*" maxlength="4"> px</span>
+          </label>
         </div>
       </div>
     </section>
@@ -168,6 +162,7 @@
   </tr>
 </table>
 <script src="js/jquery-1.7.1.min.js"></script>
+<script src="js/cvHelperDisableCheckbox.js"></script>
 <script src="js/Settings.js"></script>
 <script src="js/PluginSettings.js"></script>
 <script src="js/options.js"></script>

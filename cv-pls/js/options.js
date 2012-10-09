@@ -1,208 +1,247 @@
+/*jslint plusplus: true, white: true, browser: true */
+/*global jQuery, $, Settings, PluginSettings */
+
 function SettingsManager(pluginSettings) {
+
+  "use strict";
+
   this.init = function() {
-    if (pluginSettings.showIcon()) {
-      $('input[name="icon"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("showIcon")) {
+      $('input[name="showIcon"]').prop('checked', 'checked');
     }
 
-    if (pluginSettings.oneBox()) {
-      $('input[name="oneboxcv"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("oneBox")) {
+      $('input[name="oneBox"]').prop('checked', 'checked');
     } else {
-      $('input[name="oneboxheight"]').attr('disabled', true);
+      $('input[name="oneBoxHeight"]').attr('disabled', true);
+      $('input[name="removeCompletedOneboxes"]').cvHelperToggleInput(false);
     }
 
-    if (pluginSettings.oneBoxHeight() !== null) {
-      $('input[name="oneboxheight"]').val(pluginSettings.oneBoxHeight());
+    if (pluginSettings.getSetting("oneBoxHeight") !== null) {
+      $('input[name="oneBoxHeight"]').val(pluginSettings.getSetting("oneBoxHeight"));
     }
 
-    if (pluginSettings.cvPlsButton()) {
-      $('input[name="cvbutton"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("removeCompletedOneboxes")) {
+      $('input[name="removeCompletedOneboxes"]').prop('checked', 'checked');
     }
 
-    if (pluginSettings.delvPlsButton()) {
-      $('input[name="delvbutton"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("cvPlsButton")) {
+      $('input[name="cvPlsButton"]').prop('checked', 'checked');
     }
 
-    if (pluginSettings.soundNotification()) {
-      $('input[name="beep"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("delvPlsButton")) {
+      $('input[name="delvPlsButton"]').prop('checked', 'checked');
     }
 
-    if (pluginSettings.avatarNotification()) {
-      $('input[name="avatar"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("soundNotification")) {
+      $('input[name="soundNotification"]').prop('checked', 'checked');
     }
 
-    if (pluginSettings.desktopNotification()) {
-      $('input[name="desktop"]').prop('checked', 'checked');
-    }
-
-    if (pluginSettings.showCloseStatus()) {
-      $('input[name="status"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("avatarNotification")) {
+      $('input[name="avatarNotification"]').prop('checked', 'checked');
     } else {
-      $('input[name="poll"]').attr('disabled', true);
-      $('input[name="pollinterval"]').attr('disabled', true);
+      $('input[name="removeLostNotifications"], input[name="removeCompletedNotifications"]').cvHelperToggleInput(false);
     }
 
-    if (pluginSettings.pollCloseStatus()) {
-      $('input[name="poll"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("removeLostNotifications")) {
+      $('input[name="removeLostNotifications"]').prop('checked', 'checked');
+    }
+
+    if (pluginSettings.getSetting("removeCompletedNotifications")) {
+      $('input[name="removeCompletedNotifications"]').prop('checked', 'checked');
+    }
+
+    if (pluginSettings.getSetting("desktopNotification")) {
+      $('input[name="desktopNotification"]').prop('checked', 'checked');
+    }
+
+    if (pluginSettings.getSetting("showCloseStatus")) {
+      $('input[name="showCloseStatus"]').prop('checked', 'checked');
     } else {
-      $('input[name="pollinterval"]').attr('disabled', true);
+      $('input[name="pollCloseStatus"], input[name="pollInterval"]').cvHelperToggleInput(false);
     }
 
-    $('input[name="pollinterval"]').val(pluginSettings.pollInterval());
-
-    if (pluginSettings.backlogEnabled()) {
-      $('input[name="backlog"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("pollCloseStatus")) {
+      $('input[name="pollCloseStatus"]').prop('checked', 'checked');
     } else {
-      $('input[name="backlogamount"]').attr('disabled', true);
-      $('input[name="backlogrefresh"]').attr('disabled', true);
-      $('input[name="backloginterval"]').attr('disabled', true);
+      $('input[name="pollInterval"]').cvHelperToggleInput(false);
     }
 
-    $('input[name="backlogamount"]').val(pluginSettings.backlogAmount());
-    $('input[name="backloginterval"]').val(pluginSettings.backlogRefreshInterval());
+    $('input[name="pollInterval"]').val(pluginSettings.getSetting("pollInterval"));
 
-    if (pluginSettings.backlogRefresh()) {
-      $('input[name="backlogrefresh"]').prop('checked', 'checked');
+    if (pluginSettings.getSetting("strikethroughCompleted")) {
+      $('input[name="strikethroughCompleted"]').prop('checked', 'checked');
+    }
+
+    if (pluginSettings.getSetting("backlogEnabled")) {
+      $('input[name="backlogEnabled"]').prop('checked', 'checked');
     } else {
-      $('input[name="backloginterval"]').attr('disabled', true);
+      $('input[name="backlogAmount"], input[name="backlogRefresh"], input[name="backlogRefreshInterval"]').cvHelperToggleInput(false);
     }
 
-    if (pluginSettings.dupesEnabled()) {
-      $('input[name="dupes"]').prop('checked', 'checked');
+    $('input[name="backlogAmount"]').val(pluginSettings.getSetting("backlogAmount"));
+    $('input[name="backlogRefreshInterval"]').val(pluginSettings.getSetting("backlogRefreshInterval"));
+
+    if (pluginSettings.getSetting("backlogRefresh")) {
+      $('input[name="backlogRefresh"]').prop('checked', 'checked');
+    } else {
+      $('input[name="backlogRefreshInterval"]').cvHelperToggleInput(false);
     }
-  }
+
+    if (pluginSettings.getSetting("dupesEnabled")) {
+      $('input[name="dupesEnabled"]').prop('checked', 'checked');
+    } else {
+      $('input[name="showDupes"]').cvHelperToggleInput(false);
+    }
+  };
+
 }
 
 (function($) {
-  var settings = new Settings();
-  var pluginSettings = new PluginSettings(settings);
-  var settingsManager = new SettingsManager(pluginSettings);
+
+  "use strict";
+
+  var settings, pluginSettings, settingsManager;
+
+  settings = new Settings();
+  pluginSettings = new PluginSettings(settings);
+  settingsManager = new SettingsManager(pluginSettings);
+
   settingsManager.init();
 
-  $('input[name="icon"]').change(function() {
+  $('input[name="showIcon"]').change(function() {
     settings.saveSetting('showIcon', $(this).prop('checked'));
   });
 
-  $('input[name="oneboxcv"]').change(function() {
+  $('input[name="oneBox"]').change(function() {
     var checked = $(this).prop('checked');
     settings.saveSetting('oneBox', checked);
-
-    if (checked) {
-      $(':input[name="oneboxheight"]').removeAttr('disabled');
-    } else {
-      $(':input[name="oneboxheight"]').attr('disabled', true);
-    }
+    $('input[name="oneBoxHeight"]').attr('disabled', !checked);
+    $('input[name="removeCompletedOneboxes"]').cvHelperToggleInput(checked);
   });
 
-  $('input[name="oneboxheight"]').keyup(function() {
+  $('input[name="oneBoxHeight"]').keyup(function() {
     settings.saveSetting('oneBoxHeight', $(this).val());
+  }).click(function(e) {
+    e.stopPropagation();
+    return false;
   });
 
-  $('input[name="cvbutton"]').change(function() {
+  $('input[name="removeCompletedOneboxes"]').change(function() {
+    settings.saveSetting('removeCompletedOneboxes', $(this).prop('checked'));
+  });
+
+  $('input[name="cvPlsButton"]').change(function() {
     settings.saveSetting('cvPlsButton', $(this).prop('checked'));
   });
 
-  $('input[name="delvbutton"]').change(function() {
+  $('input[name="delvPlsButton"]').change(function() {
     settings.saveSetting('delvPlsButton', $(this).prop('checked'));
   });
 
-  $('input[name="beep"]').change(function() {
+  $('input[name="soundNotification"]').change(function() {
     settings.saveSetting('soundNotification', $(this).prop('checked'));
   });
 
-  $('input[name="avatar"]').change(function() {
-    settings.saveSetting('avatarNotification', $(this).prop('checked'));
+  $('input[name="avatarNotification"]').change(function() {
+    var checked = $(this).prop('checked');
+    settings.saveSetting('avatarNotification', checked);
+    $('input[name="removeLostNotifications"], input[name="removeCompletedNotifications"]').cvHelperToggleInput(checked);
   });
 
-  $('input[name="desktop"]').change(function() {
+  $('input[name="removeLostNotifications"]').change(function() {
+    settings.saveSetting('removeLostNotifications', $(this).prop('checked'));
+  });
+
+  $('input[name="removeCompletedNotifications"]').change(function() {
+    settings.saveSetting('removeCompletedNotifications', $(this).prop('checked'));
+  });
+
+  $('input[name="desktopNotification"]').change(function() {
     settings.saveSetting('desktopNotification', $(this).prop('checked'));
   });
 
-  $('input[name="status"]').change(function() {
-    var checked = $(this).prop('checked');
+  $('input[name="showCloseStatus"]').change(function() {
+    var checked, $poll;
+    checked = $(this).prop('checked');
     settings.saveSetting('showCloseStatus', checked);
-
     if (checked) {
-      var $poll = $('input[name="poll"]');
-      $poll.removeAttr('disabled');
-      if ($($poll).prop('checked')) {
-        $(':input[name="pollinterval"]').removeAttr('disabled');
-      } else {
-        $(':input[name="pollinterval"]').attr('disabled', true);
+      $poll = $('input[name="pollCloseStatus"]');
+      $poll.cvHelperToggleInput(true);
+      if ($poll.prop('checked')) {
+        $('input[name="pollInterval"]').cvHelperToggleInput(true);
       }
     } else {
-      $(':input[name="poll"]').attr('disabled', true);
-      $(':input[name="pollinterval"]').attr('disabled', true);
+      $('input[name="pollCloseStatus"], input[name="pollInterval"]').cvHelperToggleInput(false);
     }
   });
 
-  $('input[name="poll"]').change(function() {
+  $('input[name="pollCloseStatus"]').change(function() {
     var checked = $(this).prop('checked');
     settings.saveSetting('pollCloseStatus', checked);
-
-    if (checked) {
-      $('input[name="pollinterval"]').removeAttr('disabled');
-    } else {
-      $('input[name="pollinterval"]').attr('disabled', true);
-    }
+    $('input[name="pollInterval"]').cvHelperToggleInput(checked);
   });
 
-  $('input[name="pollinterval"]').keyup(function() {
+  $('input[name="pollInterval"]').keyup(function() {
     settings.saveSetting('pollInterval', $(this).val());
+  }).click(function(e) {
+    e.stopPropagation();
+    return false;
   });
 
-  $('input[name="backlog"]').change(function() {
-    var checked = $(this).prop('checked');
-    settings.saveSetting('backlogEnabled', checked);
+  $('input[name="strikethroughCompleted"]').change(function() {
+    settings.saveSetting('strikethroughCompleted', $(this).prop('checked'));
+  });
 
+  $('input[name="backlogEnabled"]').change(function() {
+    var checked;
+    checked = $(this).prop('checked');
+    settings.saveSetting('backlogEnabled', checked);
     if (checked) {
-      $('input[name="backlogamount"]').removeAttr('disabled');
-      var $refresh = $('input[name="backlogrefresh"]');
-      $refresh.removeAttr('disabled');
-      if ($refresh.prop('checked')) {
-        $(':input[name="backloginterval"]').removeAttr('disabled');
-      } else {
-        $(':input[name="backloginterval"]').attr('disabled', true);
+      $('input[name="backlogAmount"], input[name="backlogRefresh"]').cvHelperToggleInput(true);
+      if ($('input[name="backlogRefresh"]').prop('checked')) {
+        $('input[name="backlogRefreshInterval"]').cvHelperToggleInput(true);
       }
     } else {
-      $(':input[name="backlogamount"]').attr('disabled', true);
-      $(':input[name="backlogrefresh"]').attr('disabled', true);
-      $(':input[name="backloginterval"]').attr('disabled', true);
+      $('input[name="backlogAmount"], input[name="backlogRefresh"], input[name="backlogRefreshInterval"]').cvHelperToggleInput(false);
     }
   });
 
-  $('input[name="backlogamount"]').keyup(function() {
+  $('input[name="backlogAmount"]').keyup(function() {
     settings.saveSetting('backlogAmount', $(this).val());
   });
 
-  $('input[name="backlogrefresh"]').change(function() {
+  $('input[name="backlogRefresh"]').change(function() {
     var checked = $(this).prop('checked');
     settings.saveSetting('backlogRefresh', checked);
 
-    if (checked) {
-      $(':input[name="backloginterval"]').removeAttr('disabled');
-    } else {
-      $(':input[name="backloginterval"]').attr('disabled', true);
-    }
+    $(':input[name="backlogRefreshInterval"]').attr('disabled', !checked);
   });
 
-  $('input[name="backloginterval"]').keyup(function() {
+  $('input[name="backlogRefreshInterval"]').keyup(function() {
     settings.saveSetting('backlogRefreshInterval', $(this).val());
+  }).click(function(e) {
+    e.stopPropagation();
+    return false;
   });
 
-  $('input[name="dupes"]').change(function() {
+  $('input[name="dupesEnabled"]').change(function() {
     var checked = $(this).prop('checked');
     settings.saveSetting('dupesEnabled', checked);
+    $('input[name="showDupes"]').cvHelperToggleInput(checked);
   });
 
-  $('input[name="showdupes"]').click(function() {
-    var $dupeslist = $('.dupeslist');
-    var $heading = $('.heading', $dupeslist);
+  $('input[name="showDupes"]').click(function() {
+    var $dupesList, $heading, dupes, html, max, i;
 
-    var dupes = pluginSettings.dupesList();
+    $dupesList = $('.dupesList');
+    $heading = $('.heading', $dupesList);
 
-    if (dupes !== []) {
-      var html = '';
+    dupes = pluginSettings.getSetting("dupesList");
+
+    if (dupes.length) {
       max = dupes.length;
+
       for(i = 0; i < max; i++) {
         html = '';
         html+= '<tr>';
@@ -216,28 +255,30 @@ function SettingsManager(pluginSettings) {
     }
 
     $.blockUI({
-      message: $dupeslist.html(),
+      message: $dupesList.html(),
       css: {
         width: '960px',
         left: '17%',
         cursor: 'default'
       },
       onUnblock: function(){
-        $('tr:not(.heading, .footer)', $dupeslist).remove();
+        $('tr:not(.heading, .footer)', $dupesList).remove();
       }
     });
     $('.blockOverlay').click($.unblockUI);
   });
 
   $(document).on('click', '.table .delete', function() {
-    var $row = $(this).closest('tr');
-    var $title = $('.title', $row);
-    var $url = $('.url', $row);
+    var $row, $title, $url, dupes, max, i;
 
-    var dupes = pluginSettings.dupesList();
-    var max = dupes.length;
-    for(i = 0; i < max; i++) {
-      if (dupes[i].title == $title.text() && dupes[i].url == $url.text()) {
+    $row = $(this).closest('tr');
+    $title = $('.title', $row);
+    $url = $('.url', $row);
+
+    dupes = pluginSettings.getSetting("dupesList");
+    max = dupes.length;
+    for (i = 0; i < max; i++) {
+      if (dupes[i].title === $title.text() && dupes[i].url === $url.text()) {
         dupes.splice(i, 1);
         break;
       }
@@ -249,11 +290,13 @@ function SettingsManager(pluginSettings) {
   });
 
   $(document).on('click', '.table .add', function() {
-    var $row = $(this).closest('tr');
-    var $title = $('[name="title"]', $row);
-    var $url = $('[name="url"]', $row);
+    var $row, $title, $url, dupes, html;
 
-    var dupes = pluginSettings.dupesList();
+    $row = $(this).closest('tr');
+    $title = $('[name="title"]', $row);
+    $url = $('[name="url"]', $row);
+
+    dupes = pluginSettings.getSetting("dupesList");
     dupes.push({
       title: $title.val(),
       url: $url.val()
@@ -261,8 +304,7 @@ function SettingsManager(pluginSettings) {
 
     settings.saveSetting('dupesList', JSON.stringify(dupes));
 
-    var html = '';
-    html += '<tr>';
+    html  = '<tr>';
     html += '  <td class="title">' + $title.val() + '</td>';
     html += '  <td class="url">' + $url.val() + '</td>';
     html += '  <td class="delete"><img src="ui/delete.png" alt="delete" title="Delete"></td>';
@@ -272,4 +314,4 @@ function SettingsManager(pluginSettings) {
     $title.val('');
     $url.val('');
   });
-})(jQuery);
+}(jQuery));

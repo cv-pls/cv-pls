@@ -59,6 +59,11 @@ div.checkbox, div.radio {
     margin: 5px 0;
 }
 
+div.subsection {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
 section > h3 {
     margin: 0;
     vertical-align: middle;

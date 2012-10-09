@@ -1,4 +1,10 @@
+/*jslint plusplus: true, white: true, browser: true */
+/*global $ */
+
 function StackApi() {
+
+  "use strict";
+
   var self = this;
 
   this.baseUrl = 'https://api.stackexchange.com/2.0/';
@@ -9,28 +15,31 @@ function StackApi() {
   };
 
   this.makeRequest = function(type, buffer, site, filter, responseProcessor) {
-    var url = self.baseUrl + self.requestMethods[type].urlPath + self.parseIds(buffer.questionIds);
-    var requestData = {
+    var url, requestData, requestSettings;
+
+    url = self.baseUrl + self.requestMethods[type].urlPath + self.parseIds(buffer.questionIds);
+    requestData = {
       site: site,
       filter: filter,
       pagesize: buffer.items,
       key: 'ILSB6JuDQcCfYhS7KP2lqQ(('
     };
-    var requestSettings = {
-        url: url,
-        data: requestData,
-        error: function(jqHr, status, error) {
-          // request error, this should be taken care of :)
-          // e.g. request quota reached
-        },
-        success: function(data, status, jqHr) {
-            if (data.items == undefined || data.items.length == 0) {
-                // questions deleted?
-                return;
-            }
-            responseProcessor.process(buffer, data.items);
+    requestSettings = {
+      url: url,
+      data: requestData,
+      error: function() {
+        // request error, this should be taken care of :)
+        // e.g. request quota reached
+      },
+      success: function(data) {
+        if (data.items === undefined || data.items.length === 0) {
+          // questions deleted?
+          return;
         }
-    }
+        responseProcessor.process(buffer, data.items);
+      }
+    };
+
     $.ajax(requestSettings);
   };
 
