@@ -94,6 +94,10 @@ input[type="checkbox"] {
     width: 16px;
 }
 
+input[type="checkbox"]:disabled {
+    background: -webkit-linear-gradient(#FFFFFF, #FAFAFA);
+}
+
 input[type="checkbox"]:checked::before {
     color: gray;
     content: url('checkmark.png');
@@ -103,8 +107,11 @@ input[type="checkbox"]:checked::before {
     position: absolute;
 }
 
-input[type="radio"] ~ span, input[type="checkbox"] ~ span, input[type="text"] ~ span, div.textbox span {
+input[type="radio"] ~ span, input[type="checkbox"] ~ span, input[type="text"] ~ span, label span {
     color: #444;
+}
+label span.disabled {
+    color: #AAA;
 }
 
 /**
