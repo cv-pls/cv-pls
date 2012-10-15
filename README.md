@@ -5,7 +5,7 @@ This Google Chrome extension will help you close voting questions on Stack Overf
 
 It will convert all [cv-pls] and [delv-pls] requests into nice oneboxes in the SO chat.
 
-[Download current stable version (0.18.1)][1]
+[Download current stable version (0.19.0)][1]
 
 NOTE: If you've updated chrome past [Revision 137699][2], you'll have to drag the .crx file into the chrome://extensions window to install it.
 
@@ -27,5 +27,5 @@ Settings
 - Enable backlog in chat
 - Dupes helper
 
-[1]:https://github.com/downloads/cv-pls/cv-pls/cv-pls.0.18.1.crx
+[1]:https://github.com/downloads/cv-pls/cv-pls/cv-pls.0.19.0.crx
 [2]:http://src.chromium.org/viewvc/chrome?view=rev&revision=137699
