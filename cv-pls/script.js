@@ -248,7 +248,7 @@ function Post($post, activeUserClass) {
 
   // Sets the vote type of the post and manipulates vote post structure for easy reference later on
   this.setVoteType = function() {
-    var xpathQuery, xpathResult, classes, questionAnchor;
+    var xpathQuery, xpathResult;
 
     if (self.questionId === null) {
       return null;
@@ -474,15 +474,16 @@ function VoteRemoveProcessor(pluginSettings, avatarNotification) {
 }
 
 // Turn cv / delv requests in nice oneboxes
-function VoteRequestFormatter(pluginSettings) {
+function VoteRequestFormatter(pluginSettings, avatarNotification) {
 
   "use strict";
 
   var self = this;
 
   this.addOnebox = function($post, question) {
-    $post.append(self.getOneboxHtml(question));
-    self.processOneboxFormatting($post, question);
+    var oneBox = self.getOnebox(question);
+    $post.append(oneBox);
+    self.processOneboxFormatting(oneBox, $post, question);
   };
 
   this.removeOnebox = function(post) {
@@ -499,40 +500,88 @@ function VoteRequestFormatter(pluginSettings) {
     });
   };
 
-  this.getOneboxHtml = function(question) {
-    var html = '';
+  this.getOnebox = function(question) {
+    var oneBox,
+        voteDisplay, siteIcon, postTitleContainer, postBodyContainer, postTagsContainer, clearDiv,
+        postTitleAnchor, postAvatar, tagAnchor, tagSpan, i, grippie;
 
-    html+= '<div class="onebox ob-post cv-request" style="overflow: hidden; position: relative;">';
-    html+= '  <div class="ob-post-votes" title="This question has a score of ' + question.score + '.">' + question.score + '</div>';
-    html+= '  <img width="20" height="20" class="ob-post-siteicon" src="http://sstatic.net/stackoverflow/img/apple-touch-icon.png" title="Stack Overflow">';
-    html+= '  <div class="ob-post-title">Q: <a style="color: #0077CC;" href="' + question.link + '" class="cvhelper-question-link">' + question.title + '</a></div>';
-    html+= '  <p class="ob-post-body">';
-    html+= '    <img width="32" height="32" class="user-gravatar32" src="' + question.owner.profile_image + '" title="' + question.owner.display_name + '" alt="' + question.owner.display_name + '">' + question.body;
-    html+= '  </p>';
-    html+= '  <div class="ob-post-tags">';
-    html+= self.getTagsHtml(question.tags);
-    html+= '    <div class="grippie" style="margin-right: 0px; background-position: 321px -823px; border: 1px solid #DDD; border-width: 0pt 1px 1px; cursor: s-resize; height: 9px; overflow: hidden; background-color: #EEE; margin-right: -8px; background-image: url(\'http://cdn.sstatic.net/stackoverflow/img/sprites.png?v=5\'); background-repeat: no-repeat; margin-top: 10px; display: none; position: absolute; bottom: 0; width: 250px;"></div>';
-    html+= '  </div>';
-    html+= '  <div class="clear-both"></div>';
-    html+= '</div>';
+    oneBox = document.createElement('div');
+    oneBox.setAttribute('class', 'onebox ob-post cv-request');
+    oneBox.setAttribute('style', 'overflow: hidden; position: relative;'); // Yes yes I know. Feel free to fix it if you want. DOM is already verbose enough.
 
-    return html;
-  };
+    voteDisplay = document.createElement('div');
+    voteDisplay.setAttribute('class', 'ob-post-votes');
+    voteDisplay.setAttribute('title', 'This question has a score of ' + question.score);
+    voteDisplay.appendChild(document.createTextNode(question.score));
+    oneBox.appendChild(voteDisplay);
 
-  this.getTagsHtml = function(tags) {
-    var html = '', length = tags.length, i;
+    siteIcon = document.createElement('img');
+    siteIcon.setAttribute('class', 'ob-post-siteicon');
+    siteIcon.setAttribute('width', '20');
+    siteIcon.setAttribute('height', '20');
+    siteIcon.setAttribute('src', 'http://sstatic.net/stackoverflow/img/apple-touch-icon.png');
+    siteIcon.setAttribute('title', 'Stack Overflow');
+    oneBox.appendChild(siteIcon);
 
-    for (i = 0; i < length; i++) {
-      html+= '    <a href="http://stackoverflow.com/questions/tagged/' + tags[i] + '">';
-      html+= '      <span class="ob-post-tag" style="background-color: #E0EAF1; color: #3E6D8E; border-color: #3E6D8E; border-style: solid;">' + tags[i] + '</span>';
-      html+= '    </a>';
+    postTitleAnchor = document.createElement('a');
+    postTitleAnchor.setAttribute('href', question.link);
+    postTitleAnchor.setAttribute('class', 'cvhelper-question-link');
+    postTitleAnchor.setAttribute('style', 'color: #0077CC;');
+    postTitleAnchor.addEventListener('click', function() {
+      var id = $(this).closest('.message').attr('id').split('-')[1];
+      avatarNotification.dequeue(id);
+    });
+    postTitleAnchor.appendChild(document.createTextNode(question.title));
+
+    postTitleContainer = document.createElement('div');
+    postTitleContainer.setAttribute('class', 'ob-post-title');
+    postTitleContainer.appendChild(document.createTextNode('Q: '));
+    postTitleContainer.appendChild(postTitleAnchor);
+    oneBox.appendChild(postTitleContainer);
+
+    postAvatar = document.createElement('img');
+    siteIcon.setAttribute('class', 'user-gravatar32');
+    siteIcon.setAttribute('width', '32');
+    siteIcon.setAttribute('height', '32');
+    siteIcon.setAttribute('src', question.owner.profile_image);
+    siteIcon.setAttribute('title', question.owner.display_name);
+    siteIcon.setAttribute('alt', question.owner.display_name);
+
+    postBodyContainer = document.createElement('p');
+    postBodyContainer.setAttribute('class', 'ob-post-body');
+    postBodyContainer.appendChild(siteIcon);
+    postBodyContainer.appendChild(document.createTextNode(question.body));
+    oneBox.appendChild(postBodyContainer);
+
+    postTagsContainer = document.createElement('div');
+    postTagsContainer.setAttribute('class', 'ob-post-tags');
+
+    for (i = 0; i < question.tags.length; i++) {
+      tagSpan = document.createElement('span');
+      tagSpan.setAttribute('class', 'ob-post-tag');
+      tagSpan.setAttribute('style', 'background-color: #E0EAF1; color: #3E6D8E; border-color: #3E6D8E; border-style: solid;');
+      tagSpan.appendChild(document.createTextNode(question.tags[i]));
+      tagAnchor = document.createElement('a');
+      tagAnchor.setAttribute('href', 'http://stackoverflow.com/questions/tagged/' + question.tags[i]);
+      tagAnchor.appendChild(tagSpan);
+      postTagsContainer.appendChild(tagAnchor);
     }
 
-    return html;
+    grippie = document.createElement('div');
+    grippie.setAttribute('class', 'grippie');
+    grippie.setAttribute('style', 'margin-right: 0px; background-position: 321px -823px; border: 1px solid #DDD; border-width: 0pt 1px 1px; cursor: s-resize; height: 9px; overflow: hidden; background-color: #EEE; margin-right: -8px; background-image: url(\'http://cdn.sstatic.net/stackoverflow/img/sprites.png?v=5\'); background-repeat: no-repeat; margin-top: 10px; display: none; position: absolute; bottom: 0; width: 250px;');
+    postTagsContainer.appendChild(grippie);
+    oneBox.appendChild(postTagsContainer);
+
+    clearDiv = document.createElement('div');
+    clearDiv.setAttribute('class', 'clear-both');
+    oneBox.appendChild(clearDiv);
+
+    return oneBox;
   };
 
-  this.processOneboxFormatting = function($post, question) {
-    var $onebox = $('div.onebox', $post);
+  this.processOneboxFormatting = function(oneBox, $post, question) {
+    var $onebox = $(oneBox);
 
     self.processHeight($onebox);
     self.processStatus($onebox, question, $post);
@@ -587,6 +636,9 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
   // Adds a post to the queue
   this.enqueue = function(post) {
     avatarNotificationStack.push(post);
+    $('a.cvhelper-question-link', post.element)[0].addEventListener('click', function() {
+      self.dequeue(post.id);
+    });
     self.updateNotificationDisplay();
   };
 
@@ -973,10 +1025,10 @@ function CvBacklog(pluginSettings, backlogUrl) {
 
   buttonsManager = new ButtonsManager(pluginSettings);
 
-  voteRequestFormatter = new VoteRequestFormatter(pluginSettings);
   audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
   avatarNotificationStack = new RequestStack();
   avatarNotification = new AvatarNotification(avatarNotificationStack, pluginSettings);
+  voteRequestFormatter = new VoteRequestFormatter(pluginSettings, avatarNotification);
   voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
   voteRemoveProcessor = new VoteRemoveProcessor(pluginSettings, avatarNotification);
 
@@ -1051,11 +1103,5 @@ function CvBacklog(pluginSettings, backlogUrl) {
     if (val.toString() !== '') {
       $('#sayit-button').click();
     }
-  });
-
-  // handle click on link of a request
-  $('body').on('click', '.cvhelper-question-link', function() {
-    var id = $(this).closest('.message').attr('id').split('-')[1];
-    avatarNotification.dequeue(id);
   });
 }(jQuery));
