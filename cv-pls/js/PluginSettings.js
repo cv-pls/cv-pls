@@ -41,6 +41,10 @@ function PluginSettings(settings) {
     return settings.getSettingNormalized(setting, availableSettings[setting]);
   };
 
+  this.saveSetting = function(setting, value) {
+    settings.saveSetting(setting, value);
+  };
+
   this.getAllSettings = function() {
     var setting, result = {};
     for (setting in availableSettings) {

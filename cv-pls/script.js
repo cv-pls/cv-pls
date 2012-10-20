@@ -501,29 +501,49 @@ function VoteRequestFormatter(pluginSettings, avatarNotification) {
   };
 
   this.getOnebox = function(question) {
-    var oneBox,
-        voteDisplay, siteIcon, postTitleContainer, postBodyContainer, postTagsContainer, clearDiv,
-        postTitleAnchor, postAvatar, tagAnchor, tagSpan, i, grippie;
+    var oneBox = document.createElement('div');
 
-    oneBox = document.createElement('div');
     oneBox.setAttribute('class', 'onebox ob-post cv-request');
     oneBox.setAttribute('style', 'overflow: hidden; position: relative;'); // Yes yes I know. Feel free to fix it if you want. DOM is already verbose enough.
 
-    voteDisplay = document.createElement('div');
+    oneBox.appendChild(self.getVoteDisplay(question));
+    oneBox.appendChild(self.getSiteIcon());
+    oneBox.appendChild(self.getPostTitle(question));
+    oneBox.appendChild(self.getPostBody(question));
+    oneBox.appendChild(self.getPostTags(question));
+    oneBox.appendChild(self.getGrippie());
+
+    return oneBox;
+  };
+
+  this.getVoteDisplay = function(question) {
+    var voteDisplay = document.createElement('div');
     voteDisplay.setAttribute('class', 'ob-post-votes');
     voteDisplay.setAttribute('title', 'This question has a score of ' + question.score);
     voteDisplay.appendChild(document.createTextNode(question.score));
-    oneBox.appendChild(voteDisplay);
+    return voteDisplay;
+  };
 
-    siteIcon = document.createElement('img');
+  this.getSiteIcon = function() {
+    var siteIcon = document.createElement('img');
     siteIcon.setAttribute('class', 'ob-post-siteicon');
     siteIcon.setAttribute('width', '20');
     siteIcon.setAttribute('height', '20');
     siteIcon.setAttribute('src', 'http://sstatic.net/stackoverflow/img/apple-touch-icon.png');
     siteIcon.setAttribute('title', 'Stack Overflow');
-    oneBox.appendChild(siteIcon);
+    return siteIcon;
+  };
 
-    postTitleAnchor = document.createElement('a');
+  this.getPostTitle = function(question) {
+    var postTitle = document.createElement('div');
+    postTitle.setAttribute('class', 'ob-post-title');
+    postTitle.appendChild(document.createTextNode('Q: '));
+    postTitle.appendChild(self.getPostTitleAnchor(question));
+    return postTitle;
+  };
+
+  this.getPostTitleAnchor = function(question) {
+    var postTitleAnchor = document.createElement('a');
     postTitleAnchor.setAttribute('href', question.link);
     postTitleAnchor.setAttribute('class', 'cvhelper-question-link');
     postTitleAnchor.setAttribute('style', 'color: #0077CC;');
@@ -531,65 +551,79 @@ function VoteRequestFormatter(pluginSettings, avatarNotification) {
       var id = $(this).closest('.message').attr('id').split('-')[1];
       avatarNotification.dequeue(id);
     });
-    postTitleAnchor.appendChild(document.createTextNode(question.title));
+    postTitleAnchor.innerHTML = question.title;
+    return postTitleAnchor;
+  };
 
-    postTitleContainer = document.createElement('div');
-    postTitleContainer.setAttribute('class', 'ob-post-title');
-    postTitleContainer.appendChild(document.createTextNode('Q: '));
-    postTitleContainer.appendChild(postTitleAnchor);
-    oneBox.appendChild(postTitleContainer);
+  this.getPostBody = function(question) {
+    var postBody = document.createElement('p');
+    postBody.setAttribute('class', 'ob-post-body');
+    // What follows is nasty, but it is the least nasty thing I can come up with. Gloss over it and move on.
+    postBody.innerHTML = question.body;
+    postBody.insertBefore(self.getPostAvatar(question), postBody.firstChild);
+    return postBody;
+  };
 
-    postAvatar = document.createElement('img');
-    siteIcon.setAttribute('class', 'user-gravatar32');
-    siteIcon.setAttribute('width', '32');
-    siteIcon.setAttribute('height', '32');
-    siteIcon.setAttribute('src', question.owner.profile_image);
-    siteIcon.setAttribute('title', question.owner.display_name);
-    siteIcon.setAttribute('alt', question.owner.display_name);
+  this.getPostAvatar = function(question) {
+    var postAvatar = document.createElement('img');
+    postAvatar.setAttribute('class', 'user-gravatar32');
+    postAvatar.setAttribute('width', '32');
+    postAvatar.setAttribute('height', '32');
+    postAvatar.setAttribute('src', question.owner.profile_image);
+    postAvatar.setAttribute('title', question.owner.display_name);
+    postAvatar.setAttribute('alt', question.owner.display_name);
+    return postAvatar;
+  };
 
-    postBodyContainer = document.createElement('p');
-    postBodyContainer.setAttribute('class', 'ob-post-body');
-    postBodyContainer.appendChild(siteIcon);
-    postBodyContainer.appendChild(document.createTextNode(question.body));
-    oneBox.appendChild(postBodyContainer);
-
-    postTagsContainer = document.createElement('div');
-    postTagsContainer.setAttribute('class', 'ob-post-tags');
-
+  this.getPostTags = function(question) {
+    var i, postTags = document.createElement('div');
+    postTags.setAttribute('class', 'ob-post-tags');
     for (i = 0; i < question.tags.length; i++) {
-      tagSpan = document.createElement('span');
-      tagSpan.setAttribute('class', 'ob-post-tag');
-      tagSpan.setAttribute('style', 'background-color: #E0EAF1; color: #3E6D8E; border-color: #3E6D8E; border-style: solid;');
-      tagSpan.appendChild(document.createTextNode(question.tags[i]));
-      tagAnchor = document.createElement('a');
-      tagAnchor.setAttribute('href', 'http://stackoverflow.com/questions/tagged/' + question.tags[i]);
-      tagAnchor.appendChild(tagSpan);
-      postTagsContainer.appendChild(tagAnchor);
+      postTags.appendChild(self.getPostTag(question.tags[i]));
     }
+    return postTags;
+  };
 
+  this.getPostTag = function(tag) {
+    var span, anchor;
+    span = document.createElement('span');
+    span.setAttribute('class', 'ob-post-tag');
+    span.setAttribute('style', 'background-color: #E0EAF1; color: #3E6D8E; border-color: #3E6D8E; border-style: solid; margin-right: 6px;');
+    span.appendChild(document.createTextNode(tag));
+    anchor = document.createElement('a');
+    anchor.setAttribute('href', 'http://stackoverflow.com/questions/tagged/' + tag);
+    anchor.appendChild(span);
+    return anchor;
+  };
+
+  this.getGrippie = function() {
+    var style, grippie;
+    style = 'margin-right: 0px; background-position: 321px -823px; border: 1px solid #DDD; border-width: 0pt 1px 1px;'
+          + 'cursor: s-resize; height: 9px; overflow: hidden; background-color: #EEE; margin-right: -8px;'
+          + 'background-image: url(\'http://cdn.sstatic.net/stackoverflow/img/sprites.png?v=5\'); background-repeat: no-repeat;'
+          + 'margin-top: 10px; display: none; position: absolute; bottom: 0; width: 250px;';
     grippie = document.createElement('div');
     grippie.setAttribute('class', 'grippie');
-    grippie.setAttribute('style', 'margin-right: 0px; background-position: 321px -823px; border: 1px solid #DDD; border-width: 0pt 1px 1px; cursor: s-resize; height: 9px; overflow: hidden; background-color: #EEE; margin-right: -8px; background-image: url(\'http://cdn.sstatic.net/stackoverflow/img/sprites.png?v=5\'); background-repeat: no-repeat; margin-top: 10px; display: none; position: absolute; bottom: 0; width: 250px;');
-    postTagsContainer.appendChild(grippie);
-    oneBox.appendChild(postTagsContainer);
+    grippie.setAttribute('style', style);
+    return grippie;
+  };
 
-    clearDiv = document.createElement('div');
+  this.getClearDiv = function() {
+    var clearDiv = document.createElement('div');
     clearDiv.setAttribute('class', 'clear-both');
-    oneBox.appendChild(clearDiv);
-
-    return oneBox;
+    return clearDiv;
   };
 
   this.processOneboxFormatting = function(oneBox, $post, question) {
     var $onebox = $(oneBox);
 
-    self.processHeight($onebox);
-    self.processStatus($onebox, question, $post);
+    self.processOneboxHeight($onebox);
+    self.processOneboxStatus($onebox, $post, question);
 
     $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
   };
 
-  this.processHeight = function($onebox) {
+  this.processOneboxHeight = function($onebox) {
     var $grippie = $('.grippie', $onebox), totalWidth, grippieX, currentY;
 
     $grippie.width($onebox.width());
@@ -610,7 +644,7 @@ function VoteRequestFormatter(pluginSettings, avatarNotification) {
     }
   };
 
-  this.processStatus = function($onebox, question, $post) {
+  this.processOneboxStatus = function($onebox, $post, question) {
     if (question.closed_date === undefined || !pluginSettings.getSetting("showCloseStatus")) {
       return null;
     }
@@ -709,17 +743,6 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
       self.$cvCount = $('#cv-count');
     }
 
-    /*
-     The problem with avatar notification updates when posts are edited lies mainly in the lines below
-     
-     When a post is edited the original element is removed from the DOM and replaced with a new one. This
-     causes the avatar notification to quickly decrement and then increment, which is particularly noticable
-     when the post is the only notification, because it triggers the animation as well.
-     
-     In order to fix this, the code below needs to be run asynchronously and to check whether an element with
-     the same post ID was re-added to the DOM in the meantime. Alternatively (probably better) this should be
-     implemented in VoteRequestListener.
-    */
     opacity = avatarNotificationStack.queue.length ? 1 : 0;
 
     self.$cvCount.text(avatarNotificationStack.queue.length);
