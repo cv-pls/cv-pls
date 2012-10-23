@@ -1,62 +1,81 @@
 {
   "name": "[cv-pls] Helper",
-  "version": "0.19.0",
-  "description": "Helps to close questions on SO",
-  "icons": { "16": "img/icon16.png",
-             "48": "img/icon48.png",
-            "128": "img/icon128.png" },
-  "update_url": "https://cloud.github.com/downloads/PeeHaa/cv-pls/updates.xml",
-  "options_page": "options.html",
-  "background_page": "background.html",
-  "page_action": {
-    "default_title ": "[cv-pls]",
-    "default_icon": "img/icon19.png",
-    "popup": "setup.html"
+  "version": "0.20.0",
+  "manifest_version": 2,
+  "description": "Helps to close questions on StackOverflow.com",
+  "icons": {
+    "16": "img/icon16.png",
+    "48": "img/icon48.png",
+    "128": "img/icon128.png"
   },
-  "content_scripts" : [
+  "background": {
+    "scripts": [
+      "js/SettingsDataStore.js",
+      "js/PluginSettings.js",
+      "chrome/ChromeBackgroundSettingsDataAccessor.js",
+      "chrome/ChromeDesktopNotification.js",
+      "chrome/background.js"
+    ]
+  },
+  "options_page": "chrome/settings.html",
+  "page_action": {
+    "default_title": "[cv-pls]",
+    "default_icon": "img/icon19.png",
+    "default_popup": "chrome/popup.html"
+  },
+  "content_scripts": [
     {
       "matches": [
         "http://chat.stackoverflow.com/rooms/*",
         "http://chat.stackoverflow.com/transcript/*"
       ],
-      "js" : [
-        "js/jquery-1.7.1.min.js",
-        "js/jquery-ui-1.8.18.custom.min.js",
-        "js/griphandler-0.10.1.min.js",
+      "js": [
+        "js/lib/jquery-1.7.1.min.js",
+        "js/lib/jquery-ui-1.8.18.custom.min.js",
+        "js/lib/griphandler-0.10.1.min.js",
+        "js/lib/putCursorAtEnd.js",
         "js/audioPlayer.js",
-        "js/Settings.js",
+        "js/SettingsDataStore.js",
         "js/PluginSettings.js",
         "js/RequestQueue.js",
         "js/RequestStack.js",
         "js/StackApi.js",
-        "js/putCursorAtEnd.js",
-        "script.js"
+        "js/script-chat.js",
+        "chrome/ChromeContentSettingsDataAccessor.js",
+        "chrome/bootstrap-chat.js"
       ],
-      "run_at" : "document_idle",
-      "all_frames" : false
+      "run_at": "document_idle",
+      "all_frames": false
     },
     {
       "matches": [
         "http://stackoverflow.com/questions/*",
         "http://stackoverflow.com/q/*"
       ],
-      "js" : [
-        "js/jquery-1.7.1.min.js",
-        "js/Settings.js",
+      "js": [
+        "js/lib/jquery-1.7.1.min.js",
+        "js/lib/putCursorAtEnd.js",
+        "js/SettingsDataStore.js",
         "js/PluginSettings.js",
-        "js/putCursorAtEnd.js",
-        "question-script.js"
+        "js/script-question.js",
+        "chrome/ChromeContentSettingsDataAccessor.js",
+        "chrome/bootstrap-question.js"
       ],
-      "run_at" : "document_idle",
-      "all_frames" : false
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "permissions": [
+    "tabs",
     "notifications",
     "http://stackoverflow.com/*",
     "https://stackoverflow.com/*",
     "http://*.stackoverflow.com/*",
     "https://*.stackoverflow.com/*",
     "http://cvbacklog.gordon-oheim.biz/*"
-  ]
+  ],
+  "web_accessible_resources": [
+    "js/lib/custom-jplayer.js"
+  ],
+  "update_url": "https://cloud.github.com/downloads/PeeHaa/cv-pls/updates.xml"
 }

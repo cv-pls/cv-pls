@@ -1,7 +1,7 @@
 /*jslint plusplus: true, white: true, browser: true */
 /*global chrome */
 
-function PluginSettings(settings) {
+function PluginSettings(settingsDataAccessor) {
 
   "use strict";
 
@@ -32,17 +32,60 @@ function PluginSettings(settings) {
     dupesList: []
   };
 
+  this.normalizeSetting = function(value, defaultValue) {
+    var result;
+
+    switch (typeof defaultValue) {
+      case 'boolean':
+        if (defaultValue) {
+          if (value !== "false") {
+            result = true;
+          } else {
+            result = false;
+          }
+        } else {
+          if (value === "false" || !value) {
+            result = false;
+          } else {
+            result = true;
+          }
+        }
+        break;
+
+      case 'number':
+        if (value === null || isNaN(value)) {
+          result = defaultValue;
+        } else {
+          result = value;
+        }
+        break;
+
+      case 'object':
+        if (value === null  || !value.length) {
+          result = defaultValue;
+        } else {
+          result = JSON.parse(value);
+        }
+        break;
+
+    }
+
+    return result;
+  };
+
+/*
   this.getVersion = function() {
     var details = chrome.app.getDetails();
     return details.version;
   };
+*/
 
   this.getSetting = function(setting) {
-    return settings.getSettingNormalized(setting, availableSettings[setting]);
+    return self.normalizeSetting(settingsDataAccessor.getSetting(setting), availableSettings[setting]);
   };
 
   this.saveSetting = function(setting, value) {
-    settings.saveSetting(setting, value);
+    settingsDataAccessor.saveSetting(setting, value);
   };
 
   this.getAllSettings = function() {
@@ -55,16 +98,7 @@ function PluginSettings(settings) {
     return result;
   };
 
-  this.saveAllSettings = function(settingsJsonString) {
-    var setting;
-    for (setting in availableSettings) {
-      if (typeof availableSettings[setting] !== "function") {
-        if (typeof availableSettings[setting] === "object") {
-          settings.saveSetting(setting, JSON.stringify(settingsJsonString[setting]));
-        } else {
-          settings.saveSetting(setting, settingsJsonString[setting]);
-        }
-      }
-    }
+  this.init = function(callback) {
+    settingsDataAccessor.init(callback);
   };
 }

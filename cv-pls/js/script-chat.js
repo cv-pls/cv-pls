@@ -1,5 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global jQuery, $, VoteRequestListener, XPathResult, Settings, PluginSettings, AudioPlayer, RequestStack, StackApi, RequestQueue, chrome */
+/*global $, XPathResult */
 
 // Listens for new posts added to/removed from the DOM and queues/dequeues them if they contain vote requests
 // Too many args for this constructor? Probably
@@ -891,31 +891,51 @@ function SoundManager(pluginSettings) {
 
   // Sound settings popup listener
   this.watchPopup = function() {
-    var $popup = $('#chat-body > .popup'), status;
+    var xpathQuery, xpathResult, popup, status = 'disabled';
 
-    if ($popup.length) {
-      status = 'disabled';
-      if (pluginSettings.getSetting("soundNotification")) {
-        status = 'enabled';
-      }
-
-      $('ul.no-bullets', $popup).after('<hr><ul class="no-bullet" id="cvpls-sound"><li><a href="#">cv-pls (' + status + ')</a></li></ul>');
-    } else {
-      self.watchPopup();
+    xpathQuery = "./div[contains(concat(' ', @class, ' '),' popup ')]";
+    xpathResult = document.evaluate(xpathQuery, document.getElementById('chat-body'), null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+    popup = xpathResult.iterateNext();
+    if (popup === null) {
+      setTimeout(self.watchPopup, 0);
     }
+
+    if (pluginSettings.getSetting("soundNotification")) {
+      status = 'enabled';
+    }
+    self.insertToggleLink(popup, status);
   };
 
+  // Constructs and inserts toggle link
+  this.insertToggleLink = function(popup, status) {
+    var hr, ul, li, a;
+
+    hr = document.createElement('hr');
+    ul = document.createElement('ul');
+    ul.setAttribute('class', 'no-bullet');
+    li = ul.appendChild(document.createElement('li'));
+    a = li.appendChild(document.createElement('a'));
+    a.setAttribute('href', '#');
+    a.innerText = 'cv-pls (' + status + ')';
+    a.addEventListener('click', self.toggleSound);
+
+    popup.appendChild(hr);
+    popup.appendChild(ul);
+  };
+
+  /**
+  *   FIX THIS
+  **/
+
   // Toggle sound setting
-  this.toggleSound = function() {
-    var $option = $('#cvpls-sound a');
+  this.toggleSound = function(event) {
+    event.preventDefault();
     if (pluginSettings.getSetting("soundNotification")) {
-      pluginSettings.settings.saveSetting('soundNotification', false);
-      $option.text('cv-pls (disabled)');
-      chrome.extension.sendRequest({method: 'saveSetting', key: 'soundNotification', value: false}, function(){});
+      pluginSettings.saveSetting('soundNotification', false);
+      this.innerText = 'cv-pls (disabled)';
     } else {
-      pluginSettings.settings.saveSetting('soundNotification', true);
-      $option.text('cv-pls (enabled)');
-      chrome.extension.sendRequest({method: 'saveSetting', key: 'soundNotification', value: true}, function(){});
+      pluginSettings.saveSetting('soundNotification', true);
+      this.innerText = 'cv-pls (enabled)';
     }
   };
 }
@@ -951,7 +971,7 @@ function ButtonsManager(pluginSettings) {
 }
 
 // DesktopNotification class
-function DesktopNotification(pluginSettings) {
+function DesktopNotification(pluginSettings, desktopNotificationDispatcher) {
 
   "use strict";
 
@@ -960,7 +980,7 @@ function DesktopNotification(pluginSettings) {
       return null;
     }
 
-    chrome.extension.sendRequest({method: 'showNotification', title: title, message: message}, function(){});
+    desktopNotificationDispatcher.dispatch(title, message);
   }.bind(this);
 }
 
@@ -1026,105 +1046,3 @@ function CvBacklog(pluginSettings, backlogUrl) {
 
   self.refresh();
 }
-
-(function($) {
-
-  "use strict";
-
-  var settings, pluginSettings,
-      soundManager,
-      buttonsManager,
-      voteRequestFormatter, audioPlayer, avatarNotificationStack, avatarNotification, voteRequestProcessor, voteRemoveProcessor,
-      stackApi, voteQueueProcessor,
-      chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteRequestListener,
-      pollMessageQueue, statusRequestProcessor, pollQueueProcessor, statusPolling,
-      desktopNotification,
-      cvBacklog;
-
-  settings = new Settings();
-  pluginSettings = new PluginSettings(settings);
-
-  soundManager = new SoundManager(pluginSettings);
-
-  buttonsManager = new ButtonsManager(pluginSettings);
-
-  audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
-  avatarNotificationStack = new RequestStack();
-  avatarNotification = new AvatarNotification(avatarNotificationStack, pluginSettings);
-  voteRequestFormatter = new VoteRequestFormatter(pluginSettings, avatarNotification);
-  voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
-  voteRemoveProcessor = new VoteRemoveProcessor(pluginSettings, avatarNotification);
-
-  stackApi = new StackApi();
-  voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestProcessor);
-
-  chatRoom = new ChatRoom();
-  postFactory = new Post();
-  voteRequestBufferFactory = new VoteRequestBuffer();
-  voteRequestMessageQueue = new RequestQueue();
-  voteRequestListener = new VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor);
-
-  pollMessageQueue = new RequestQueue();
-  statusRequestProcessor = new StatusRequestProcessor(pluginSettings, voteRequestFormatter, avatarNotification);
-  pollQueueProcessor = new VoteQueueProcessor(stackApi, statusRequestProcessor);
-  statusPolling = new StatusPolling(pluginSettings, postFactory, voteRequestBufferFactory, pollMessageQueue, pollQueueProcessor);
-
-  desktopNotification = new DesktopNotification(pluginSettings);
-
-  cvBacklog = new CvBacklog(pluginSettings, 'http://cvbacklog.gordon-oheim.biz/');
-
-  chrome.extension.sendRequest({method: 'getSettings'}, function(settingsJsonString) {
-    pluginSettings.saveAllSettings(settingsJsonString);
-    buttonsManager.init();
-    voteRequestListener.init();
-    // wait 1 minute before polling to prevent getting kicked from stack-api
-    setTimeout(statusPolling.pollStatus, 60000);
-
-    // desktop notifications test
-    //desktopNotification.show('the <a href="#">title</a>', 'http://stackoverflow.com');
-
-    cvBacklog.show();
-
-    chrome.extension.sendRequest({method: 'showIcon'}, function(){});
-    chrome.extension.sendRequest({method: 'checkUpdate'}, function(){});
-
-    // sound options
-    $('#sound').click(function() {
-      soundManager.watchPopup();
-    });
-
-    // save sound setting
-    $('body').on('click', '#cvpls-sound li', function() {
-      soundManager.toggleSound();
-
-      return false;
-    });
-  });
-
-  // handle click on avatar notification
-  $('body').on('click', '#cv-count', function() {
-    avatarNotification.navigateToLastRequest();
-
-    return false;
-  });
-
-  // handle cvpls button click
-  $('body').on('click', '#cv-pls-button', function() {
-    var val = $('#input').val();
-    $('#input').val('[tag:cv-pls] ' + val).focus().putCursorAtEnd();
-
-    if (val.toString() !== '') {
-      $('#sayit-button').click();
-    }
-  });
-
-  // handle delvpls button click
-  $('body').on('click', '#delv-pls-button', function() {
-    var val = $('#input').val();
-    $('#input').val('[tag:delv-pls] ' + val).focus().putCursorAtEnd();
-
-    if (val.toString() !== '') {
-      $('#sayit-button').click();
-    }
-  });
-}(jQuery));
