@@ -1,5 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global $, XPathResult */
+/*global XPathResult */
 
 function SettingsManager(pluginSettings) {
 
@@ -289,10 +289,6 @@ function SettingsManager(pluginSettings) {
   };
   this.initShowDupes = function() {
 
-    if (!self.getInputByName('showDupes')) {
-      return;
-    }
-
     function makeDupeRow(dupe) {
       var row, cell, img;
 
@@ -332,55 +328,125 @@ function SettingsManager(pluginSettings) {
       return row;
     }
 
-    self.showDupes.addEventListener('click', function() {
-      var dupesList, dupesBody, dupes, i, row, cell, img;
+    if (!self.getInputByName('showDupes')) {
+      return;
+    }
 
-      dupesList = document.getElementById('dupesList');
-      dupesBody = dupesList.querySelector('tbody');
+    self.showDupes.addEventListener('click', function() {
+      var dupes, i,
+          containerDiv, dupesTable, headerRow, cell, content, dupesBody, footerRow,
+          overlayDiv, overlayStyles, displayDiv, displayStyles, opacityTicker;
+
+      function appear() {
+        if (opacityTicker >= 1) {
+          overlayDiv.style.opacity = 0.6;
+          displayDiv.style.opacity = opacityTicker = 1;
+        } else {
+          opacityTicker += (1 / 9);
+          overlayDiv.style.opacity = opacityTicker * 0.6;
+          displayDiv.style.opacity = opacityTicker;
+          setTimeout(appear, 10);
+        }
+      }
+      function disappear(callBack) {
+        if (opacityTicker <= 0) {
+          overlayDiv.style.opacity = displayDiv.style.opacity = opacityTicker = 0;
+          callBack();
+        } else {
+          opacityTicker -= (1 / 9);
+          overlayDiv.style.opacity = opacityTicker * 0.6;
+          displayDiv.style.opacity = opacityTicker;
+          setTimeout(function() {
+            disappear(callBack);
+          }, 10);
+        }
+      }
+
       dupes = pluginSettings.getSetting('dupesList');
 
+      containerDiv = document.createElement('div');
+      containerDiv.setAttribute('class', 'table');
+      dupesTable = containerDiv.appendChild(document.createElement('table'));
+      headerRow = dupesTable.appendChild(document.createElement('thead')).appendChild(document.createElement('tr'));
+      cell = headerRow.appendChild(document.createElement('th'));
+      cell.setAttribute('class', 'title');
+      cell.appendChild(document.createTextNode('Title'));
+      cell = headerRow.appendChild(document.createElement('th'));
+      cell.setAttribute('class', 'url');
+      cell.appendChild(document.createTextNode('URL'));
+      cell = headerRow.appendChild(document.createElement('th'));
+      cell.setAttribute('class', 'delete');
+      dupesBody = dupesTable.appendChild(document.createElement('tbody'));
       for (i = 0; i < dupes.length; i++) {
         dupesBody.appendChild(makeDupeRow(dupes[i]));
       }
+      footerRow = dupesTable.appendChild(document.createElement('tfoot')).appendChild(document.createElement('tr'));
+      cell = footerRow.appendChild(document.createElement('td'));
+      cell.setAttribute('class', 'title');
+      content = cell.appendChild(document.createElement('input'));
+      content.setAttribute('type', 'text');
+      content.setAttribute('name', 'title');
+      content.setAttribute('placeholder', 'Title');
+      cell = footerRow.appendChild(document.createElement('td'));
+      cell.setAttribute('class', 'url');
+      content = cell.appendChild(document.createElement('input'));
+      content.setAttribute('type', 'text');
+      content.setAttribute('name', 'url');
+      content.setAttribute('placeholder', 'Question URL');
+      cell = footerRow.appendChild(document.createElement('td'));
+      cell.setAttribute('class', 'add');
+      cell.addEventListener('click', function() {
+        var titleInput, urlInput, dupes;
 
-      // TODO: Sort this mess out
-      $.blockUI({
-        message: dupesList.innerHTML,
-        css: {
-          width: '960px',
-          left: '17%',
-          cursor: 'default'
-        },
-        onUnblock: function() {
-          var i;
-          for (i = 0; i < dupesBody.children.length; i++) {
-            dupesBody.removeChild(dupesBody.children[i]);
-          }
-        }
+        titleInput = this.parentNode.querySelector('td.title').firstChild;
+        urlInput = this.parentNode.querySelector('td.url').firstChild;
+
+        dupes = pluginSettings.getSetting("dupesList");
+        dupes.push({
+          title: titleInput.value,
+          url: urlInput.value
+        });
+        pluginSettings.saveSetting('dupesList', JSON.stringify(dupes));
+
+        this.parentNode.parentNode.parentNode.querySelector('tbody').appendChild(makeDupeRow({
+          title: titleInput.value,
+          url: urlInput.value
+        }));
+
+        titleInput.value = urlInput.value = '';
       });
-      $('.blockOverlay').click($.unblockUI);
+      content = cell.appendChild(document.createElement('img'));
+      content.setAttribute('src', '../ui/add.png');
+      content.setAttribute('alt', 'Add');
+      content.setAttribute('title', 'Add');
 
-    });
-
-    $(document).on('click', '.table .add', function() {
-      var titleInput, urlInput, dupes;
-
-      titleInput = this.parentNode.querySelector('td.title').firstChild;
-      urlInput = this.parentNode.querySelector('td.url').firstChild;
-
-      dupes = pluginSettings.getSetting("dupesList");
-      dupes.push({
-        title: titleInput.value,
-        url: urlInput.value
+      overlayStyles = "z-index: 1000; position: fixed; top: 0px; left: 0px; margin: 0px; padding: 0px; width: 100%; height: 100%; "
+                    + "border: none; background-color: rgb(0, 0, 0); cursor: pointer; "
+                    + "opacity: 0;";
+      overlayDiv = document.createElement('div');
+      overlayDiv.setAttribute('style', overlayStyles);
+      overlayDiv.addEventListener('click', function() {
+        disappear(function() {
+          document.body.removeChild(overlayDiv);
+          document.body.removeChild(displayDiv);
+        });
       });
-      pluginSettings.saveSetting('dupesList', JSON.stringify(dupes));
 
-      this.parentNode.parentNode.parentNode.querySelector('tbody').appendChild(makeDupeRow({
-        title: titleInput.value,
-        url: urlInput.value
-      }));
+      displayStyles = "z-index: 1011; position: fixed; top: 40%; left: 17%; margin: 0px; padding: 0px; width: 960px; "
+                    + "text-align: center; color: #000000; border: 3px solid #AAAAAA; background-color: #FFFFFF; cursor: default; "
+                    + "opacity: 0;";
+      displayDiv = document.createElement('div');
+      displayDiv.setAttribute('style', displayStyles);
+      displayDiv.appendChild(containerDiv);
+      overlayDiv.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
 
-      titleInput.value = urlInput.value = '';
+      document.body.appendChild(overlayDiv);
+      document.body.appendChild(displayDiv);
+      opacityTicker = 0;
+      appear();
+
     });
 
   };

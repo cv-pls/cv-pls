@@ -1,6 +1,6 @@
 {
   "name": "[cv-pls] Helper",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "manifest_version": 2,
   "description": "Helps to close questions on StackOverflow.com",
   "icons": {
@@ -75,7 +75,7 @@
     "http://cvbacklog.gordon-oheim.biz/*"
   ],
   "web_accessible_resources": [
-    "js/lib/custom-jplayer.js"
+    "js/custom-jplayer.js"
   ],
-  "update_url": "https://cloud.github.com/downloads/PeeHaa/cv-pls/updates.xml"
+  "update_url": "http://cloud.github.com/downloads/DaveRandom/cv-pls/updates.xml"
 }

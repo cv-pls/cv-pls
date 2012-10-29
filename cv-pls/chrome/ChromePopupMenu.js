@@ -10,7 +10,7 @@ function ChromePopUpMenu() {
   this.version = null;
 
   this.getOptionsUrl = function() {
-    return chrome.extension.getURL('options.html');
+    return chrome.extension.getURL('chrome/settings.html');
   };
 
   this.getVersionNumber = function() {
