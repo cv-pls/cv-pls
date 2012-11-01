@@ -81,7 +81,10 @@ function PluginSettings(settingsDataAccessor) {
 */
 
   this.getSetting = function(setting) {
-    return self.normalizeSetting(settingsDataAccessor.getSetting(setting), availableSettings[setting]);
+    if (availableSettings[setting] !== undefined) {
+      return self.normalizeSetting(settingsDataAccessor.getSetting(setting), availableSettings[setting]);
+    }
+    return null;
   };
 
   this.saveSetting = function(setting, value) {

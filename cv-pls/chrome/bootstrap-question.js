@@ -12,11 +12,9 @@
   closePopup = new ClosePopup(pluginSettings);
   dupeSelector = new DupeSelector(pluginSettings);
 
-  chrome.extension.sendRequest({method: 'getSettings'}, function(settingsJsonString) {
-    pluginSettings.saveAllSettings(settingsJsonString);
-
-    chrome.extension.sendRequest({method: 'showIcon'}, function(response) { });
-    chrome.extension.sendRequest({method: 'checkUpdate'}, function(response) { });
+  pluginSettings.init(function() {
+    chrome.extension.sendMessage({method: 'showIcon'});
+    chrome.extension.sendMessage({method: 'checkUpdate'});
 
     $(document).on('click', '#close-question-form li:first input[type="radio"]', function() {
       closePopup.init();

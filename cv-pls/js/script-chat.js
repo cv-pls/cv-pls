@@ -3,7 +3,7 @@
 
 // Listens for new posts added to/removed from the DOM and queues/dequeues them if they contain vote requests
 // Too many args for this constructor? Probably
-function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
+function VoteRequestListener(document, chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
 
   "use strict";
 
@@ -134,7 +134,7 @@ function VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, vo
 }
 
 // ChatRoom class
-function ChatRoom() {
+function ChatRoom(document) {
 
   "use strict";
 
@@ -162,7 +162,7 @@ function ChatRoom() {
 }
 
 // Post class
-function Post($post, activeUserClass) {
+function Post($post, document, activeUserClass) {
 
   "use strict";
 
@@ -181,10 +181,11 @@ function Post($post, activeUserClass) {
   };
 
   // An attempt at a factory pattern implementation. I do not like this approach, but it works for now.
-  if ($post === undefined) {
-    this.activeUserClass = document.getElementById('active-user').getAttribute('class').match(/user-\d+/)[0];
+  if (activeUserClass === undefined) {
+    document = $post;
+    activeUserClass = document.getElementById('active-user').getAttribute('class').match(/user-\d+/)[0];
     this.create = function($post) {
-      return new self.constructor($post, self.activeUserClass);
+      return new self.constructor($post, document, activeUserClass);
     };
     return;
   }
@@ -474,7 +475,7 @@ function VoteRemoveProcessor(pluginSettings, avatarNotification) {
 }
 
 // Turn cv / delv requests in nice oneboxes
-function VoteRequestFormatter(pluginSettings, avatarNotification) {
+function VoteRequestFormatter(document, pluginSettings, avatarNotification) {
 
   "use strict";
 
@@ -656,7 +657,7 @@ function VoteRequestFormatter(pluginSettings, avatarNotification) {
 }
 
 // Handles the avatar notifications
-function AvatarNotification(avatarNotificationStack, pluginSettings) {
+function AvatarNotification(document, window, avatarNotificationStack, pluginSettings) {
 
   "use strict";
 
@@ -741,6 +742,7 @@ function AvatarNotification(avatarNotificationStack, pluginSettings) {
       $('#reply-count').after(html);
 
       self.$cvCount = $('#cv-count');
+      self.$cvCount.click(self.navigateToLastRequest);
     }
 
     opacity = avatarNotificationStack.queue.length ? 1 : 0;
@@ -883,7 +885,7 @@ function StatusRequestProcessor(pluginSettings, voteRequestFormatter, avatarNoti
 }
 
 // SoundManager class
-function SoundManager(pluginSettings) {
+function SoundManager(document, pluginSettings) {
 
   "use strict";
 
@@ -924,7 +926,7 @@ function SoundManager(pluginSettings) {
   };
 
   /**
-  *   FIX THIS
+  *   FIX THIS - fix what?
   **/
 
   // Toggle sound setting
@@ -941,32 +943,63 @@ function SoundManager(pluginSettings) {
 }
 
 // ButtonsManager class
-function ButtonsManager(pluginSettings) {
+function ButtonsManager(document, pluginSettings) {
 
   "use strict";
 
   var self = this;
 
+  function putCursorAtEnd(element) {
+    var val;
+    if (element.focus) {
+      element.focus();
+    }
+    if (element.setSelectionRange) {
+      element.setSelectionRange(element.value.length + 1, element.value.length + 1);
+    } else {
+      val = element.value;
+      element.value = '';
+      element.value = val;
+    }
+  }
+
+  function addButton(voteType) {
+    var newButton, cancelEditButton;
+
+    voteType += 'pls';
+
+    newButton = document.createElement('button');
+    newButton.setAttribute('class', 'button');
+    newButton.setAttribute('id', voteType + '-button');
+    newButton.style.marginLeft = '4px';
+    newButton.appendChild(document.createTextNode(voteType));
+
+    newButton.addEventListener('click', function() {
+      var input, ev;
+
+      input = document.getElementById('input');
+      input.value = '[tag:' + voteType + '] ' + input.value;
+      putCursorAtEnd(input);
+
+      if (input.value.replace(/\s+/, '') !== '[tag:' + voteType + ']') {
+        ev = document.createEvent('MouseEvents');
+        ev.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        document.getElementById('sayit-button').dispatchEvent(ev);
+      }
+    });
+
+    cancelEditButton = document.getElementById('cancel-editing-button');
+    cancelEditButton.parentNode.insertBefore(newButton, cancelEditButton);
+  }
+
   this.init = function() {
-    if (pluginSettings.getSetting("delvPlsButton")) {
-      self.addDelvButton();
+    if (pluginSettings.getSetting('cvPlsButton')) {
+      addButton('cv');
     }
 
-    if (pluginSettings.getSetting("cvPlsButton")) {
-      self.addCvButton();
+    if (pluginSettings.getSetting('delvPlsButton')) {
+      addButton('delv');
     }
-  };
-
-  this.addCvButton = function() {
-    var html = '<button class="button" id="cv-pls-button" style="margin-left: 4px;">cv-pls</button>';
-
-    $('#upload-file').after(html);
-  };
-
-  this.addDelvButton = function() {
-    var html = '<button class="button" id="delv-pls-button" style="margin-left: 4px;">delv-pls</button>';
-
-    $('#upload-file').after(html);
   };
 }
 
@@ -985,64 +1018,80 @@ function DesktopNotification(pluginSettings, desktopNotificationDispatcher) {
 }
 
 // CvBacklog class
-function CvBacklog(pluginSettings, backlogUrl) {
+function CvBacklog(document, pluginSettings, backlogUrl) {
 
   "use strict";
 
-  var self = this;
+  var self = this,
+      descriptionElement,
+      originalDescription;
 
-  this.descriptionElem = $('#roomdesc');
-  this.originalDescription = this.descriptionElem.html();
+  function buildCvLink(cvRequest) {
+    var div, a, requestType;
 
-  this.show = function() {
-  }.bind(this);
+    requestType = (cvRequest.closed_date !== undefined) ? 'delv' : 'cv';
+
+    div = document.createElement('div');
+    div.appendChild(document.createTextNode('[' + requestType + '-pls] '));
+
+    a = div.appendChild(document.createElement('a'));
+    a.setAttribute('href', cvRequest.link);
+    a.setAttribute('target', '_blank');
+    a.innerHTML = cvRequest.title;
+
+    return div;
+  }
+
+  function processBacklogResponse(data) {
+    var backlogAmount, i, length;
+
+    while (descriptionElement.hasChildNodes()) {
+      descriptionElement.removeChild(descriptionElement.lastChild);
+    }
+
+    backlogAmount = parseInt(pluginSettings.getSetting('backlogAmount'), 10);
+    length = data.length;
+    for (i = 0; i < length && i < backlogAmount; i++) {
+      descriptionElement.appendChild(buildCvLink(data[i]));
+    }
+  }
 
   this.hide = function() {
-    this.descriptionElem.html(this.originalDescription);
-  }.bind(this);
+    descriptionElement.innerHTML = originalDescription;
+  };
 
   this.refresh = function() {
-    if (!pluginSettings.getSetting("backlogEnabled")) {
+    var xhr;
+
+    if (!pluginSettings.getSetting('backlogEnabled')) {
       return null;
     }
 
-    $.ajax({
-      headers: {
-          Accept : 'application/json; charset=utf-8'
-      },
-      url: backlogUrl,
-      error: function() {
-        // request error, this should be taken care of :)
-        // e.g. request quota reached
-      },
-      success: function(data) {
-        var html = '', lineBreak = '', i, backlogAmount = parseInt(pluginSettings.getSetting("backlogAmount"), 10);
+    xhr = new XMLHttpRequest();
+    xhr.open("GET", backlogUrl, true);
+    xhr.setRequestHeader('Accept', 'application/json; charset=utf-8');
 
-        for (i = 0; i < data.length; i++) {
-          if (i === backlogAmount) {
-            break;
-          }
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4 && xhr.status === 200) {
 
-          html += lineBreak + self.buildCvLink(data[i]);
+        try {
+          processBacklogResponse(JSON.parse(xhr.responseText));
+        } catch(e) { /* probably a JSON parse error occured, ignore it */ }
 
-          lineBreak = '<br>';
+        if (pluginSettings.getSetting('backlogRefresh')) {
+          setTimeout(self.refresh, (pluginSettings.getSetting('backlogRefreshInterval') * 60 * 1000));
         }
 
-        self.descriptionElem.html(html);
-
-        if (pluginSettings.getSetting("backlogRefresh")) {
-          setTimeout(function() {
-            self.refresh();
-          }, (pluginSettings.getSetting("backlogRefreshInterval") * 60 * 1000));
-        }
       }
-    });
+    };
+
+    xhr.send(null);
   };
 
-  this.buildCvLink = function(cvRequest) {
-    var requestType = (cvRequest.closed_date !== undefined) ? 'delv' : 'cv';
-    return '[' + requestType + '-pls] <a href="' + cvRequest.link + '" target="_blank">' + cvRequest.title + '</a>';
-  };
+  (function() {
+    descriptionElement = document.getElementById('roomdesc');
+    originalDescription = descriptionElement.innerHTML;
+    self.refresh();
+  }());
 
-  self.refresh();
 }

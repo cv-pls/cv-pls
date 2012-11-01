@@ -1,7 +1,7 @@
 /*jslint plusplus: true, white: true, browser: true */
 /*global jQuery, VoteRequestListener, XPathResult, Settings, PluginSettings, AudioPlayer, RequestStack, StackApi, RequestQueue, chrome */
 
-(function($) {
+(function() {
 
   "use strict";
 
@@ -19,25 +19,25 @@
   settingsDataAccessor = new ChromeContentSettingsDataAccessor(settingsDataStore);
   pluginSettings = new PluginSettings(settingsDataAccessor);
 
-  soundManager = new SoundManager(pluginSettings);
+  soundManager = new SoundManager(document, pluginSettings);
 
-  buttonsManager = new ButtonsManager(pluginSettings);
+  buttonsManager = new ButtonsManager(document, pluginSettings);
 
   audioPlayer = new AudioPlayer('http://or.cdn.sstatic.net/chat/so.mp3');
   avatarNotificationStack = new RequestStack();
-  avatarNotification = new AvatarNotification(avatarNotificationStack, pluginSettings);
-  voteRequestFormatter = new VoteRequestFormatter(pluginSettings, avatarNotification);
+  avatarNotification = new AvatarNotification(document, window, avatarNotificationStack, pluginSettings);
+  voteRequestFormatter = new VoteRequestFormatter(document, pluginSettings, avatarNotification);
   voteRequestProcessor = new VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
   voteRemoveProcessor = new VoteRemoveProcessor(pluginSettings, avatarNotification);
 
   stackApi = new StackApi();
   voteQueueProcessor = new VoteQueueProcessor(stackApi, voteRequestProcessor);
 
-  chatRoom = new ChatRoom();
-  postFactory = new Post();
+  chatRoom = new ChatRoom(document);
+  postFactory = new Post(document);
   voteRequestBufferFactory = new VoteRequestBuffer();
   voteRequestMessageQueue = new RequestQueue();
-  voteRequestListener = new VoteRequestListener(chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor);
+  voteRequestListener = new VoteRequestListener(document, chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor);
 
   pollMessageQueue = new RequestQueue();
   statusRequestProcessor = new StatusRequestProcessor(pluginSettings, voteRequestFormatter, avatarNotification);
@@ -46,47 +46,23 @@
 
   desktopNotification = new DesktopNotification(pluginSettings);
 
-  cvBacklog = new CvBacklog(pluginSettings, 'http://cvbacklog.gordon-oheim.biz/');
+  cvBacklog = new CvBacklog(document, pluginSettings, 'http://cvbacklog.gordon-oheim.biz/');
 
   pluginSettings.init(function() {
+    var sound;
+
     buttonsManager.init();
     voteRequestListener.init();
     cvBacklog.show();
 
     setTimeout(statusPolling.pollStatus, 60000); // wait 1 minute before polling to prevent getting kicked from stack-api
 
-    chrome.extension.sendRequest({method: 'showIcon'}, function(){});
-    chrome.extension.sendRequest({method: 'checkUpdate'}, function(){});
+    chrome.extension.sendMessage({method: 'showIcon'});
+    chrome.extension.sendMessage({method: 'checkUpdate'});
 
-    $('#sound').click(function() {
-      soundManager.watchPopup();
-    });
-  });
-
-  // handle click on avatar notification
-  $('body').on('click', '#cv-count', function() {
-    avatarNotification.navigateToLastRequest();
-
-    return false;
-  });
-
-  // handle cvpls button click
-  $('body').on('click', '#cv-pls-button', function() {
-    var val = $('#input').val();
-    $('#input').val('[tag:cv-pls] ' + val).focus().putCursorAtEnd();
-
-    if (val.toString() !== '') {
-      $('#sayit-button').click();
+    sound = document.getElementById('sound');
+    if (sound) {
+      sound.addEventListener('click', soundManager.watchPopup);
     }
   });
-
-  // handle delvpls button click
-  $('body').on('click', '#delv-pls-button', function() {
-    var val = $('#input').val();
-    $('#input').val('[tag:delv-pls] ' + val).focus().putCursorAtEnd();
-
-    if (val.toString() !== '') {
-      $('#sayit-button').click();
-    }
-  });
-}(jQuery));
+}());
