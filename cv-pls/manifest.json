@@ -1,6 +1,6 @@
 {
   "name": "[cv-pls] Helper",
-  "version": "0.20.1",
+  "version": "0.20.0",
   "manifest_version": 2,
   "description": "Helps to close questions on StackOverflow.com",
   "icons": {
@@ -10,18 +10,24 @@
   },
   "background": {
     "scripts": [
-      "js/SettingsDataStore.js",
+
+      "js/CvPlsHelper.js",
+
       "js/PluginSettings.js",
-      "chrome/ChromeBackgroundSettingsDataAccessor.js",
-      "chrome/ChromeDesktopNotification.js",
-      "chrome/background.js"
+
+      "chrome/js/BackgroundSettingsDataAccessor.js",
+      "chrome/js/DefaultSettings.js",
+      "chrome/js/DesktopNotificationManager.js",
+      "chrome/js/SettingsDataStore.js",
+
+      "chrome/js/pages/background.js"
     ]
   },
-  "options_page": "chrome/settings.html",
+  "options_page": "chrome/html/settings.html",
   "page_action": {
     "default_title": "[cv-pls]",
     "default_icon": "img/icon19.png",
-    "default_popup": "chrome/popup.html"
+    "default_popup": "chrome/html/popup.html"
   },
   "content_scripts": [
     {
@@ -30,19 +36,39 @@
         "http://chat.stackoverflow.com/transcript/*"
       ],
       "js": [
+
         "js/lib/jquery-1.7.1.min.js",
         "js/lib/jquery-ui-1.8.18.custom.min.js",
         "js/lib/griphandler-0.10.1.min.js",
-        "js/lib/putCursorAtEnd.js",
-        "js/audioPlayer.js",
-        "js/SettingsDataStore.js",
+
+        "js/CvPlsHelper.js",
+
+        "js/AudioPlayer.js",
+        "js/AvatarNotification.js",
+        "js/ButtonsManager.js",
+        "js/ChatRoom.js",
+        "js/CvBacklog.js",
         "js/PluginSettings.js",
+        "js/Post.js",
         "js/RequestQueue.js",
         "js/RequestStack.js",
+        "js/SoundManager.js",
         "js/StackApi.js",
-        "js/script-chat.js",
-        "chrome/ChromeContentSettingsDataAccessor.js",
-        "chrome/bootstrap-chat.js"
+        "js/StatusPolling.js",
+        "js/StatusRequestProcessor.js",
+        "js/VoteQueueProcessor.js",
+        "js/VoteRemoveProcessor.js",
+        "js/VoteRequestBuffer.js",
+        "js/VoteRequestFormatter.js",
+        "js/VoteRequestListener.js",
+        "js/VoteRequestProcessor.js",
+
+        "chrome/js/ContentSettingsDataAccessor.js",
+        "chrome/js/DefaultSettings.js",
+        "chrome/js/DesktopNotificationDispatcher.js",
+        "chrome/js/SettingsDataStore.js",
+
+        "chrome/js/bootstraps/chat.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
@@ -55,11 +81,18 @@
       "js": [
         "js/lib/jquery-1.7.1.min.js",
         "js/lib/putCursorAtEnd.js",
-        "js/SettingsDataStore.js",
+
+        "js/CvPlsHelper.js",
+
         "js/PluginSettings.js",
-        "js/script-question.js",
-        "chrome/ChromeContentSettingsDataAccessor.js",
-        "chrome/bootstrap-question.js"
+
+        "chrome/js/ClosePopup.js",
+        "chrome/js/ContentSettingsDataAccessor.js",
+        "chrome/js/DefaultSettings.js",
+        "chrome/js/DupeSelector.js",
+        "chrome/js/SettingsDataStore.js",
+
+        "chrome/js/bootstraps/question.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
@@ -74,8 +107,5 @@
     "https://*.stackoverflow.com/*",
     "http://cvbacklog.gordon-oheim.biz/*"
   ],
-  "web_accessible_resources": [
-    "js/custom-jplayer.js"
-  ],
-  "update_url": "http://cloud.github.com/downloads/DaveRandom/cv-pls/updates.xml"
+  "update_url": "http://cloud.github.com/downloads/cv-pls/cv-pls/updates.xml"
 }

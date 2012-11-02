@@ -1,70 +1,46 @@
 /*jslint plusplus: true, white: true, browser: true */
 /*global chrome */
 
-function PluginSettings(settingsDataAccessor) {
+CvPlsHelper.PluginSettings = function(settingsDataAccessor, defaultSettings) {
 
   "use strict";
 
-  var self, availableSettings;
-
-  self = this;
-  availableSettings = { // name: defaultValue
-    showIcon: true,
-    oneBox: true,
-    oneBoxHeight: 30,
-    removeCompletedOneboxes: false,
-    soundNotification: false,
-    avatarNotification: false,
-    removeLostNotifications: false,
-    removeCompletedNotifications: false,
-    desktopNotification: false,
-    showCloseStatus: true,
-    pollCloseStatus: false,
-    pollInterval: 5,
-    strikethroughCompleted: false,
-    cvPlsButton: true,
-    delvPlsButton: false,
-    backlogEnabled: false,
-    backlogAmount: 5,
-    backlogRefresh: true,
-    backlogRefreshInterval: 60,
-    dupesEnabled: false,
-    dupesList: []
-  };
+  var self = this;
 
   this.normalizeSetting = function(value, defaultValue) {
     var result;
 
+    if (value == undefined || value === null) {
+      return defaultValue;
+    }
+
     switch (typeof defaultValue) {
+      case 'string':
+        result = String(value);
+        break;
+
       case 'boolean':
-        if (defaultValue) {
-          if (value !== "false") {
-            result = true;
-          } else {
-            result = false;
-          }
-        } else {
-          if (value === "false" || !value) {
-            result = false;
-          } else {
-            result = true;
-          }
-        }
+        result = Boolean(value && value !== "false");
         break;
 
       case 'number':
-        if (value === null || isNaN(value)) {
+        result = Number(value);
+        if (isNaN(result)) {
           result = defaultValue;
-        } else {
-          result = value;
         }
         break;
 
       case 'object':
-        if (value === null  || !value.length) {
-          result = defaultValue;
+        if (typeof value === 'object') {
+          result = value;
+        } else if (typeof value === 'string') {
+          try {
+            result = JSON.parse(value);
+          } catch (e) {
+            result = defaultValue;
+          }
         } else {
-          result = JSON.parse(value);
+          result = defaultValue;
         }
         break;
 
@@ -73,16 +49,9 @@ function PluginSettings(settingsDataAccessor) {
     return result;
   };
 
-/*
-  this.getVersion = function() {
-    var details = chrome.app.getDetails();
-    return details.version;
-  };
-*/
-
   this.getSetting = function(setting) {
-    if (availableSettings[setting] !== undefined) {
-      return self.normalizeSetting(settingsDataAccessor.getSetting(setting), availableSettings[setting]);
+    if (defaultSettings[setting] !== undefined) {
+      return self.normalizeSetting(settingsDataAccessor.getSetting(setting), defaultSettings[setting]);
     }
     return null;
   };
@@ -93,8 +62,8 @@ function PluginSettings(settingsDataAccessor) {
 
   this.getAllSettings = function() {
     var setting, result = {};
-    for (setting in availableSettings) {
-      if (typeof availableSettings[setting] !== "function") {
+    for (setting in defaultSettings) {
+      if (typeof defaultSettings[setting] !== "function") {
         result[setting] = self.getSetting(setting);
       }
     }
@@ -104,4 +73,4 @@ function PluginSettings(settingsDataAccessor) {
   this.init = function(callback) {
     settingsDataAccessor.init(callback);
   };
-}
+};

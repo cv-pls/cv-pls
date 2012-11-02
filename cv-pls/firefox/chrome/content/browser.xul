@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/css" href="chrome://global/skin/" ?>
+<?xml-stylesheet type="text/css" href="chrome://cv-pls/skin/cv-pls.css" ?>
+
+<!DOCTYPE overlay SYSTEM "chrome://cv-pls/locale/cv-pls.dtd">
+
+<overlay id="cv-pls-browser-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script src="chrome://cv-pls/content/js/lib/jquery-1.7.1.min.js" />
+  <script src="chrome://cv-pls/content/js/lib/jquery-ui-1.8.18.custom.min.js" />
+  <script src="chrome://cv-pls/content/js/lib/griphandler-0.10.1.min.js" />
+
+  <script src="chrome://cv-pls/content/js/audioPlayer.js" />
+  <script src="chrome://cv-pls/content/js/SettingsDataStore.js" />
+  <script src="chrome://cv-pls/content/js/PluginSettings.js" />
+  <script src="chrome://cv-pls/content/js/RequestQueue.js" />
+  <script src="chrome://cv-pls/content/js/RequestStack.js" />
+  <script src="chrome://cv-pls/content/js/StackApi.js" />
+  <script src="chrome://cv-pls/content/js/script-chat.js" />
+
+  <script src="chrome://cv-pls/content/bootstrap.js" />
+
+</overlay>

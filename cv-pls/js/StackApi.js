@@ -1,7 +1,7 @@
 /*jslint plusplus: true, white: true, browser: true */
 /*global $ */
 
-function StackApi() {
+CvPlsHelper.StackApi = function() {
 
   "use strict";
 
@@ -46,4 +46,5 @@ function StackApi() {
   this.parseIds = function(ids) {
     return ids.join(';');
   };
-}
+
+};

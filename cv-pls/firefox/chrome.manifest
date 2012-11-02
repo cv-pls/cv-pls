@@ -1,0 +1,7 @@
+content cv-pls chrome/content/ contentaccessible=yes
+overlay chrome://browser/content/browser.xul chrome://cv-pls/content/browser.xul
+
+locale	cv-pls	en-US	locale/en-US/
+
+skin    cv-pls	classic/1.0	skin/
+#style   chrome://global/content/customizeToolbar.xul   chrome://cv-pls/skin/skin.css

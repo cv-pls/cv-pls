@@ -1,6 +1,6 @@
 /*jslint plusplus: true, white: true, browser: true */
 
-function RequestQueue() {
+CvPlsHelper.RequestQueue = function() {
 
   "use strict";
 
@@ -28,4 +28,4 @@ function RequestQueue() {
     }
     return true;
   };
-}
+};

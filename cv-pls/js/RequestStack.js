@@ -1,6 +1,6 @@
 /*jslint plusplus: true, white: true, browser: true */
 
-function RequestStack() {
+CvPlsHelper.RequestStack = function() {
 
   "use strict";
 
@@ -28,4 +28,4 @@ function RequestStack() {
     }
     return true;
   };
-}
+};
