@@ -134,7 +134,7 @@ CvPlsHelper.AvatarNotification = function(document, window, avatarNotificationSt
         newValue = 0;
       }
       cvCountEl.style.opacity = newValue;
-      setTimeout(self.appear, 33);
+      setTimeout(self.disappear, 33);
     } else {
       animating = false;
       if (updateQueued) {
