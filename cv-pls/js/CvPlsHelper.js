@@ -1,4 +1,0 @@
-var CvPlsHelper = {
-  chrome: {},
-  firefox: {}
-};
