@@ -5,92 +5,70 @@ CvPlsHelper.ChatApplication = function(document, constructors, onInit) {
 
   "use strict";
 
-  var pluginSettings,
-      audioPlayer, desktopNotificationDispatcher, desktopNotification, stackApi,
-      avatarNotificationStack, avatarNotification, voteRequestFormatter, voteRequestProcessor, voteRemoveProcessor, voteQueueProcessor,
-      chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteRequestListener,
-      pollMessageQueue, statusRequestProcessor, pollQueueProcessor, statusPolling,
-      soundManager, buttonsManager, cvBacklog;
+  var objects = {};
 
   this.start = function() {
 
     // Settings accessors
-    pluginSettings = new constructors.SettingsDataAccessor(new constructors.SettingsDataStore(), constructors.DefaultSettings);
+    objects.pluginSettings = new constructors.SettingsDataAccessor(new constructors.SettingsDataStore(), constructors.DefaultSettings);
 
     // Vote request processing
-    audioPlayer = new CvPlsHelper.AudioPlayer(document, 'http://or.cdn.sstatic.net/chat/so.mp3');
-    desktopNotificationDispatcher = new constructors.DesktopNotificationDispatcher();
-    desktopNotification = CvPlsHelper.DesktopNotification(pluginSettings, desktopNotificationDispatcher);
-    stackApi = new CvPlsHelper.StackApi();
+    objects.audioPlayer = new CvPlsHelper.AudioPlayer(document, 'http://or.cdn.sstatic.net/chat/so.mp3');
+    objects.desktopNotificationDispatcher = new constructors.DesktopNotificationDispatcher();
+    objects.desktopNotification = CvPlsHelper.DesktopNotification(objects.pluginSettings, objects.desktopNotificationDispatcher);
+    objects.stackApi = new CvPlsHelper.StackApi();
 
-    avatarNotificationStack = new CvPlsHelper.RequestStack();
-    avatarNotification = new CvPlsHelper.AvatarNotification(document, avatarNotificationStack, pluginSettings);
-    voteRequestFormatter = new CvPlsHelper.VoteRequestFormatter(document, pluginSettings, avatarNotification);
-    voteRequestProcessor = new CvPlsHelper.VoteRequestProcessor(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification);
-    voteRemoveProcessor = new CvPlsHelper.VoteRemoveProcessor(pluginSettings, avatarNotification);
-    voteQueueProcessor = new CvPlsHelper.VoteQueueProcessor(stackApi, voteRequestProcessor);
+    objects.avatarNotificationStack = new CvPlsHelper.RequestStack();
+    objects.avatarNotification = new CvPlsHelper.AvatarNotification(document, objects.avatarNotificationStack, objects.pluginSettings);
+    objects.voteRequestFormatter = new CvPlsHelper.VoteRequestFormatter(document, objects.pluginSettings, objects.avatarNotification);
+    objects.voteRequestProcessor = new CvPlsHelper.VoteRequestProcessor(objects.pluginSettings, objects.voteRequestFormatter, objects.audioPlayer, objects.avatarNotification);
+    objects.voteRemoveProcessor = new CvPlsHelper.VoteRemoveProcessor(objects.pluginSettings, objects.avatarNotification);
+    objects.voteQueueProcessor = new CvPlsHelper.VoteQueueProcessor(objects.stackApi, objects.voteRequestProcessor);
 
     // Vote request listening
-    chatRoom = new CvPlsHelper.ChatRoom(document);
-    postFactory = new CvPlsHelper.Post(document);
-    voteRequestBufferFactory = new CvPlsHelper.VoteRequestBuffer();
-    voteRequestMessageQueue = new CvPlsHelper.RequestQueue();
-    voteRequestListener = new CvPlsHelper.VoteRequestListener(document, chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor);
+    objects.chatRoom = new CvPlsHelper.ChatRoom(document);
+    objects.postFactory = new CvPlsHelper.Post(document);
+    objects.voteRequestBufferFactory = new CvPlsHelper.VoteRequestBuffer();
+    objects.voteRequestMessageQueue = new CvPlsHelper.RequestQueue();
+    objects.voteRequestListener = new CvPlsHelper.VoteRequestListener(document, objects.chatRoom, objects.postFactory, objects.voteRequestBufferFactory, objects.voteRequestMessageQueue, objects.voteQueueProcessor, objects.voteRemoveProcessor);
 
     // Vote status processors
-    pollMessageQueue = new CvPlsHelper.RequestQueue();
-    statusRequestProcessor = new CvPlsHelper.StatusRequestProcessor(pluginSettings, voteRequestFormatter, avatarNotification);
-    pollQueueProcessor = new CvPlsHelper.VoteQueueProcessor(stackApi, statusRequestProcessor);
-    statusPolling = new CvPlsHelper.StatusPolling(document, pluginSettings, postFactory, voteRequestBufferFactory, pollMessageQueue, pollQueueProcessor);
+    objects.pollMessageQueue = new CvPlsHelper.RequestQueue();
+    objects.statusRequestProcessor = new CvPlsHelper.StatusRequestProcessor(objects.pluginSettings, objects.voteRequestFormatter, objects.avatarNotification);
+    objects.pollQueueProcessor = new CvPlsHelper.VoteQueueProcessor(objects.stackApi, objects.statusRequestProcessor);
+    objects.statusPolling = new CvPlsHelper.StatusPolling(document, objects.pluginSettings, objects.postFactory, objects.voteRequestBufferFactory, objects.pollMessageQueue, objects.pollQueueProcessor);
 
     // UI enchancement
-    buttonsManager = new CvPlsHelper.ButtonsManager(document, pluginSettings);
-    soundManager = new CvPlsHelper.SoundManager(document, pluginSettings);
-    cvBacklog = new CvPlsHelper.CvBacklog(document, pluginSettings, 'http://cvbacklog.gordon-oheim.biz/');
+    objects.buttonsManager = new CvPlsHelper.ButtonsManager(document, objects.pluginSettings);
+    objects.soundManager = new CvPlsHelper.SoundManager(document, objects.pluginSettings);
+    objects.cvBacklog = new CvPlsHelper.CvBacklog(document, objects.pluginSettings, 'http://cvbacklog.gordon-oheim.biz/');
 
     // Set everything going
-    pluginSettings.init(function() {
+    objects.pluginSettings.init(function() {
       // Enchance UI
-      buttonsManager.init();
-      soundManager.init();
+      objects.buttonsManager.init();
+      objects.soundManager.init();
 
       // Start background processes
-      voteRequestListener.start();
-      statusPolling.start();
+      objects.voteRequestListener.start();
+      objects.statusPolling.start();
 
       // Initialisation callback
-      onInit();
+      if (typeof onInit === 'function') {
+        onInit(objects.pluginSettings);
+      }
+      document = constructors = onInit = null;
     });
 
   };
 
   this.shutdown = function() {
-    voteRequestListener.stop();
-    statusPolling.stop();
+    objects.voteRequestListener.stop();
+    objects.statusPolling.stop();
 
-    delete pluginSettings;
-    delete audioPlayer;
-    delete desktopNotificationDispatcher;
-    delete desktopNotification;
-    delete stackApi;
-    delete avatarNotificationStack;
-    delete avatarNotification;
-    delete voteRequestFormatter;
-    delete voteRequestProcessor;
-    delete voteRemoveProcessor;
-    delete voteQueueProcessor;
-    delete chatRoom;
-    delete postFactory;
-    delete voteRequestBufferFactory;
-    delete voteRequestMessageQueue;
-    delete voteRequestListener;
-    delete pollMessageQueue;
-    delete statusRequestProcessor;
-    delete pollQueueProcessor;
-    delete statusPolling;
-    delete soundManager;
-    delete buttonsManager;
-    delete cvBacklog;
+    // Destroy objects.
+    // This probably needs improvement, need to check codebase for circular references that may cause memory leaks.
+    objects = null;
   };
 
 };
