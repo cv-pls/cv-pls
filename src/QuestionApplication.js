@@ -1,0 +1,1 @@
+CvPlsHelper.QuestionApplication = function(document, constructors, onInit) {};

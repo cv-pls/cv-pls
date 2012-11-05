@@ -2,87 +2,61 @@
 // Too many args for this constructor? Probably
 CvPlsHelper.VoteRequestListener = function(document, chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
 
-  "use strict";
+  'use strict';
 
-  var self = this;
+  var chatContainer, self = this;
 
-  this.chatRoom = chatRoom;
-  this.postFactory = postFactory;
-  this.voteRequestBufferFactory = voteRequestBufferFactory;
-  this.voteRequestMessageQueue = voteRequestMessageQueue;
-  this.voteQueueProcessor = voteQueueProcessor;
-  this.voteRemoveProcessor = voteRemoveProcessor;
-  self.activeUserClass = $('#active-user', document).attr('class').split(' ')[1];
+  this.activeUserClass = null;
 
-  // Initialisation function
-  this.init = function() {
-
-    // Declare variables
-    var chat, xpathQuery, xpathResult, i, $post;
-
-    // While room is not yet loaded wait 1 second then try again
-    if (!self.chatRoom.isRoomLoaded()) {
-      setTimeout(self.init, 1000);
-      return;
+  // Get classes of message as array, return empty array if element is not a <div>
+  function getClassNameArray(element) {
+    if (element.tagName === undefined || element.tagName.toLowerCase() !== 'div') {
+      return [];
     }
+    return element.className.split(/\s+/g);
+  }
 
-    // Register event listeners
-    chat = document.getElementById('chat');
-    chat.addEventListener('DOMNodeInserted', self.domNodeInsertedListener);
-    chat.addEventListener('DOMNodeRemoved', self.domNodeRemovedListener);
+  // Check if element is a new or edited post
+  function isNewOrEditedMessage(element) {
+    var classes = getClassNameArray(element);
+    return classes.indexOf('message') > -1 && classes.indexOf('neworedit') > -1;
+  }
 
-    // Get/loop all posts on the DOM
-    xpathQuery = ".//div[contains(concat(' ', @class, ' '),' message ')]/div[contains(concat(' ', @class, ' '), ' content ') and not(contains(concat(' ', @class, ' '), ' cvhelper-processed '))]";
-    xpathResult = document.evaluate(xpathQuery, chat, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+  // Check if element is a message being removed from the DOM
+  function isRemovedMessage(element) {
+    var classes = getClassNameArray(element);
+    return classes.indexOf('message') > -1 && classes.indexOf('posted') < 0;
+  }
 
-    for (i = 0; i < xpathResult.snapshotLength; i++) {
-      $post = $(xpathResult.snapshotItem(i));
+  // Check if message is still pending
+  function isMessagePending($post) {
+    return $post.closest('div.message').attr('id').substr(0, 7) === 'pending';
+  }
 
-      // Skip pending messages and posts by current user
-      if (!self.isMessagePending($post)) {
-        self.processNewPost($post);
-      }
+  // Process the voteRequestMessageQueue
+  function processQueue() {
+    if (voteRequestMessageQueue.queue.length > 0) {
+      voteQueueProcessor.processQueue(voteRequestBufferFactory.create(voteRequestMessageQueue));
     }
-
-    self.processQueue();
-  };
-
-  // Event listener for DOMNodeInserted event
-  this.domNodeInsertedListener = function(event) {
-    var $post, target = event.target || event.srcElement;
-    if (self.isNewOrEditedMessage(target)) {
-      $post = $('div.content', target);
-      self.processNewPost($post);
-      setTimeout(self.processQueue, 0);
-    }
-  };
-
-  // Event listener for DOMNodeRemoved event
-  this.domNodeRemovedListener = function(event) {
-    var $post, target = event.target || event.srcElement;
-    if (self.isRemovedMessage(target)) {
-      $post = $('div.content', target);
-      self.processRemovedPost($post);
-    }
-  };
+  }
 
   // Enqueue post if it is a vote request
-  this.processNewPost = function($post) {
-    var post = self.postFactory.create($post);
+  function processNewPost($post) {
+    var post = postFactory.create($post);
     post.postType = post.postTypes.NEW; // this sucks. fix please
     if (post.isVoteRequest && !post.isOwnPost) {
-      self.voteRequestMessageQueue.enqueue(post);
+      voteRequestMessageQueue.enqueue(post);
     }
-  };
+  }
 
   // Adjust notifications for removed post
-  this.processRemovedPost = function($post) {
-    var post = self.postFactory.create($post);
+  function processRemovedPost($post) {
+    var post = postFactory.create($post);
     post.postType = post.postTypes.REMOVE;
     if (post.isVoteRequest && !post.isOwnPost) {
       setTimeout(function() {
         var editFound = false;
-        self.voteRequestMessageQueue.each(function(item) {
+        voteRequestMessageQueue.each(function(item) {
           if (post.id === item.id && post.questionId === item.questionId) {
             item.postType = post.postTypes.EDIT;
             editFound = true;
@@ -90,44 +64,77 @@ CvPlsHelper.VoteRequestListener = function(document, chatRoom, postFactory, vote
           }
         });
         if (!editFound) {
-          self.voteRemoveProcessor.removeLost(post);
+          voteRemoveProcessor.removeLost(post);
         }
       }, 0);
     }
-  };
+  }
 
-  // Process the voteRequestMessageQueue
-  this.processQueue = function() {
-    if (self.voteRequestMessageQueue.queue.length > 0) {
-      self.voteQueueProcessor.processQueue(self.voteRequestBufferFactory.create(self.voteRequestMessageQueue));
+  // Event listener for DOMNodeInserted event
+  function domNodeInsertedListener(event) {
+    var $post, target = event.target || event.srcElement;
+    if (isNewOrEditedMessage(target)) {
+      $post = $('div.content', target);
+      processNewPost($post);
+      setTimeout(processQueue, 0);
     }
-  };
+  }
 
-  // Get classes of message as array, return empty array if element is not a <div>
-  // This is a slightly childish refusal to use jQuery in cases where it doesn't
-  // make things much easier than they are in vanilla JS
-  this.getClassNameArray = function(element) {
-    if (element.tagName === undefined || element.tagName.toLowerCase() !== 'div') {
-      return [];
+  // Event listener for DOMNodeRemoved event
+  function domNodeRemovedListener(event) {
+    var $post, target = event.target || event.srcElement;
+    if (isRemovedMessage(target)) {
+      $post = $('div.content', target);
+      processRemovedPost($post);
     }
-    return element.className.split(/\s+/g);
+  }
+
+  function registerEventListeners() {
+    chatContainer.addEventListener('DOMNodeInserted', domNodeInsertedListener);
+    chatContainer.addEventListener('DOMNodeRemoved', domNodeRemovedListener);
+  }
+
+  function setChatContainer() {
+    chatContainer = document.getElementById('chat');
+  }
+
+  function setActiveUserClass() {
+    self.activeUserClass = $('#active-user', document).attr('class').split(' ')[1];
+  }
+
+  function processAllPosts() {
+    var xpathQuery, xpathResult, i, $post;
+
+    xpathQuery = ".//div[contains(concat(' ', @class, ' '),' message ')]/div[contains(concat(' ', @class, ' '), ' content ') and not(contains(concat(' ', @class, ' '), ' cvhelper-processed '))]";
+    xpathResult = document.evaluate(xpathQuery, chatContainer, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    for (i = 0; i < xpathResult.snapshotLength; i++) {
+      $post = $(xpathResult.snapshotItem(i));
+
+      // Skip pending messages and posts by current user
+      if (!isMessagePending($post)) {
+        processNewPost($post);
+      }
+    }
+  }
+
+  // Initialisation function
+  this.start = function() {
+    if (!chatRoom.isRoomLoaded()) {
+      setTimeout(self.start, 1000);
+      return;
+    }
+
+    setActiveUserClass();
+    setChatContainer();
+    registerEventListeners();
+
+    processAllPosts();
+    processQueue();
   };
 
-  // Check if element is a new or edited post
-  this.isNewOrEditedMessage = function(element) {
-    var classes = self.getClassNameArray(element);
-    return classes.indexOf('message') > -1 && classes.indexOf('neworedit') > -1;
-  };
-
-  // Check if element is a message being removed from the DOM
-  this.isRemovedMessage = function(element) {
-    var classes = self.getClassNameArray(element);
-    return classes.indexOf('message') > -1 && classes.indexOf('posted') < 0;
-  };
-
-  // Check if message is still pending
-  this.isMessagePending = function($post) {
-    return $post.closest('div.message').attr('id').substr(0, 7) === 'pending';
+  this.stop = function() {
+    // Might need to do something here, not sure
   };
 
 };

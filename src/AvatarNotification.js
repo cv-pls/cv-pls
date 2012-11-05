@@ -1,4 +1,4 @@
-CvPlsHelper.AvatarNotification = function(document, window, avatarNotificationStack, pluginSettings) {
+CvPlsHelper.AvatarNotification = function(document, avatarNotificationStack, pluginSettings) {
 
   "use strict";
 

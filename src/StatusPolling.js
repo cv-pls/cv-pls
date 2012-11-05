@@ -2,21 +2,37 @@ CvPlsHelper.StatusPolling = function(document, pluginSettings, postFactory, vote
 
   "use strict";
 
-  var self = this;
-  this.postFactory = postFactory;
-  this.voteRequestBufferFactory = voteRequestBufferFactory;
+  var self, timeout;
 
-  this.pollStatus = function() {
-    if (!pluginSettings.getSetting("pollCloseStatus")) {
+  self = this;
+  timeout = null;
+
+  function pollStatus() {
+    if (!pluginSettings.getSetting('pollCloseStatus')) {
       return false;
     }
     
     $('.cvhelper-vote-request', document).each(function() {
-      pollMessageQueue.enqueue(self.postFactory.create($(this)));
+      pollMessageQueue.enqueue(postFactory.create($(this)));
     });
 
-    pollQueueProcessor.processQueue(self.voteRequestBufferFactory.create(pollMessageQueue));
+    pollQueueProcessor.processQueue(voteRequestBufferFactory.create(pollMessageQueue));
 
-    setTimeout(self.pollStatus, pluginSettings.getSetting("pollInterval") * 60000);
+    if (timeout !== null) {
+      timeout = setTimeout(pollStatus, pluginSettings.getSetting('pollInterval') * 60000);
+    }
+  }
+
+  this.start = function() {
+     // Wait 1 minute before polling to prevent getting kicked from stack api
+     timeout = setTimeout(pollStatus, 60000);
   };
+
+  this.stop = function() {
+    if (timeout !== null) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+  };
+
 };
