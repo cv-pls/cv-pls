@@ -1,6 +1,6 @@
 // Listens for new posts added to/removed from the DOM and queues/dequeues them if they contain vote requests
 // Too many args for this constructor? Probably
-CvPlsHelper.VoteRequestListener = function(document, chatRoom, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
+CvPlsHelper.VoteRequestListener = function(document, chatRoom, mutationListenerFactory, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
 
   'use strict';
 
@@ -120,17 +120,13 @@ CvPlsHelper.VoteRequestListener = function(document, chatRoom, postFactory, vote
 
   // Initialisation function
   this.start = function() {
-    if (!chatRoom.isRoomLoaded()) {
-      setTimeout(self.start, 1000);
-      return;
-    }
-
-    setActiveUserClass();
-    setChatContainer();
-    registerEventListeners();
-
-    processAllPosts();
-    processQueue();
+    chatRoom.onLoad(function() {
+      setActiveUserClass();
+      setChatContainer();
+      registerEventListeners();
+      processAllPosts();
+      processQueue();
+    });
   };
 
   this.stop = function() {

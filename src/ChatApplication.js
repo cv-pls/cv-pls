@@ -26,11 +26,12 @@ CvPlsHelper.ChatApplication = function(document, constructors, onInit) {
     objects.voteQueueProcessor = new CvPlsHelper.VoteQueueProcessor(objects.stackApi, objects.voteRequestProcessor);
 
     // Vote request listening
-    objects.chatRoom = new CvPlsHelper.ChatRoom(document);
+    objects.mutationListenerFactory = new DOMChildListMutationListenerFactory();
+    objects.chatRoom = new CvPlsHelper.ChatRoom(document, objects.mutationListenerFactory);
     objects.postFactory = new CvPlsHelper.Post(document);
     objects.voteRequestBufferFactory = new CvPlsHelper.VoteRequestBuffer();
     objects.voteRequestMessageQueue = new CvPlsHelper.RequestQueue();
-    objects.voteRequestListener = new CvPlsHelper.VoteRequestListener(document, objects.chatRoom, objects.postFactory, objects.voteRequestBufferFactory, objects.voteRequestMessageQueue, objects.voteQueueProcessor, objects.voteRemoveProcessor);
+    objects.voteRequestListener = new CvPlsHelper.VoteRequestListener(document, objects.chatRoom, objects.mutationListenerFactory, objects.postFactory, objects.voteRequestBufferFactory, objects.voteRequestMessageQueue, objects.voteQueueProcessor, objects.voteRemoveProcessor);
 
     // Vote status processors
     objects.pollMessageQueue = new CvPlsHelper.RequestQueue();
