@@ -3,7 +3,49 @@
 
 (function() {
 
-  "use strict";
+  'use strict';
+
+  /*
+   * Private methods
+   */
+  function startListener() {
+    if (this.mutationListener && !this.mutationListener.isListening()) {
+      this.mutationListener.on('NodeRemoved', mutationListenerCallback.bind(this));
+    }
+  }
+
+  function stopListener() {
+    if (this.mutationListener.isListening()) {
+      this.mutationListener.off('NodeRemoved', mutationListenerCallback.bind(this));
+      this.mutationListener = null;
+    }
+  }
+
+  function setRoomLoaded() {
+    this.loaded = true;
+    this.chatContainer = this.document.getElementById('chat');
+    this.activeUserClass = this.document.getElementById('active-user').className.split(' ')[1];
+    stopListener().call(this);
+    while (this.callbacks.length) {
+      this.callbacks.shift().call();
+    }
+  }
+
+  function mutationListenerCallback(node) {
+    if (node.getAttribute && node.getAttribute('id') === 'loading') {
+      setRoomLoaded.call(this);
+    }
+  }
+
+  function checkRoomStatus() {
+    if (!this.loaded) {
+      if (this.document.getElementById('loading')) {
+        startListener.call(this);
+      } else {
+        setRoomLoaded.call(this);
+      }
+    }
+  }
 
   /*
    * Constructor
@@ -13,56 +55,16 @@
     this.mutationListener = mutationListenerFactory.getListener(document.body);
     this.callbacks = [];
   };
-
-  /*
-   * Internal members
-   */
   CvPlsHelper.ChatRoom.prototype.loaded = false;
-
-  CvPlsHelper.ChatRoom.prototype.mutationListenerCallback = function(node) {
-    if (node.getAttribute && node.getAttribute('id') === 'loading') {
-      this.setRoomLoaded();
-    }
-  };
-
-  CvPlsHelper.ChatRoom.prototype.checkRoomStatus = function() {
-    if (!this.loaded) {
-      if (this.document.getElementById('loading')) {
-        this.startListener();
-      } else {
-        this.setRoomLoaded();
-      }
-    }
-  };
-
-  CvPlsHelper.ChatRoom.prototype.startListener = function() {
-    if (this.mutationListener && !this.mutationListener.isListening()) {
-      this.mutationListenerCallback = this.mutationListenerCallback.bind(this);
-      this.mutationListener.on('NodeRemoved', this.mutationListenerCallback);
-    }
-  };
-
-  CvPlsHelper.ChatRoom.prototype.stopListener = function() {
-    if (this.mutationListener.isListening()) {
-      this.mutationListener.off('NodeRemoved', this.mutationListenerCallback);
-      this.mutationListener = null;
-    }
-  };
-
-  CvPlsHelper.ChatRoom.prototype.setRoomLoaded = function() {
-    this.loaded = true;
-    this.stopListener();
-    while (this.callbacks.length) {
-      this.callbacks.shift().call();
-    }
-  };
+  CvPlsHelper.ChatRoom.prototype.chatContainer = null;
+  CvPlsHelper.ChatRoom.prototype.activeUserClass = null;
 
   /*
    * Public methods
    */
   CvPlsHelper.ChatRoom.prototype.isLoaded = function() {
     if (!this.loaded) {
-      this.checkRoomStatus();
+      checkRoomStatus().call(this);
     }
     return this.loaded;
   };

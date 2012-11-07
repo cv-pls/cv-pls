@@ -1,19 +1,24 @@
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper */
+
 // Listens for new posts added to/removed from the DOM and queues/dequeues them if they contain vote requests
-// Too many args for this constructor? Probably
-CvPlsHelper.VoteRequestListener = function(document, chatRoom, mutationListenerFactory, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
+(function() {
 
   'use strict';
 
-  var chatContainer, self = this;
-
-  this.activeUserClass = null;
-
   // Get classes of message as array, return empty array if element is not a <div>
   function getClassNameArray(element) {
-    if (element.tagName === undefined || element.tagName.toLowerCase() !== 'div') {
-      return [];
+    var raw, current, result = [];
+    if (element && element.className) {
+      raw = element.className.split(/\s+/g);
+      while (raw.length) {
+        current = raw.shift();
+        if (current) {
+          result.push(current);
+        }
+      }
     }
-    return element.className.split(/\s+/g);
+    return result;
   }
 
   // Check if element is a new or edited post
@@ -28,109 +33,98 @@ CvPlsHelper.VoteRequestListener = function(document, chatRoom, mutationListenerF
     return classes.indexOf('message') > -1 && classes.indexOf('posted') < 0;
   }
 
-  // Check if message is still pending
-  function isMessagePending($post) {
-    return $post.closest('div.message').attr('id').substr(0, 7) === 'pending';
-  }
-
   // Process the voteRequestMessageQueue
   function processQueue() {
-    if (voteRequestMessageQueue.queue.length > 0) {
-      voteQueueProcessor.processQueue(voteRequestBufferFactory.create(voteRequestMessageQueue));
+    this.queueProcessPending = false;
+    if (this.voteRequestMessageQueue.queue.length > 0) {
+      this.voteQueueProcessor.processQueue(this.voteRequestBufferFactory.create(this.voteRequestMessageQueue));
     }
   }
 
   // Enqueue post if it is a vote request
-  function processNewPost($post) {
-    var post = postFactory.create($post);
+  function processNewPost(element) {
+    var post = this.postFactory.create($(element));
     post.postType = post.postTypes.NEW; // this sucks. fix please
     if (post.isVoteRequest && !post.isOwnPost) {
-      voteRequestMessageQueue.enqueue(post);
+      this.voteRequestMessageQueue.enqueue(post);
     }
   }
 
   // Adjust notifications for removed post
-  function processRemovedPost($post) {
-    var post = postFactory.create($post);
+  function processRemovedPost(element) {
+    var post = postFactory.create($(post));
     post.postType = post.postTypes.REMOVE;
     if (post.isVoteRequest && !post.isOwnPost) {
-      setTimeout(function() {
-        var editFound = false;
-        voteRequestMessageQueue.each(function(item) {
-          if (post.id === item.id && post.questionId === item.questionId) {
-            item.postType = post.postTypes.EDIT;
-            editFound = true;
-            return false;
-          }
-        });
-        if (!editFound) {
-          voteRemoveProcessor.removeLost(post);
-        }
-      }, 0);
+      this.voteRemoveProcessor.removeLost(post);
     }
   }
 
-  // Event listener for DOMNodeInserted event
-  function domNodeInsertedListener(event) {
-    var $post, target = event.target || event.srcElement;
-    if (isNewOrEditedMessage(target)) {
-      $post = $('div.content', target);
-      processNewPost($post);
-      setTimeout(processQueue, 0);
-    }
-  }
-
-  // Event listener for DOMNodeRemoved event
-  function domNodeRemovedListener(event) {
-    var $post, target = event.target || event.srcElement;
-    if (isRemovedMessage(target)) {
-      $post = $('div.content', target);
-      processRemovedPost($post);
-    }
-  }
-
-  function registerEventListeners() {
-    chatContainer.addEventListener('DOMNodeInserted', domNodeInsertedListener);
-    chatContainer.addEventListener('DOMNodeRemoved', domNodeRemovedListener);
-  }
-
-  function setChatContainer() {
-    chatContainer = document.getElementById('chat');
-  }
-
-  function setActiveUserClass() {
-    self.activeUserClass = $('#active-user', document).attr('class').split(' ')[1];
-  }
-
-  function processAllPosts() {
-    var xpathQuery, xpathResult, i, $post;
-
-    xpathQuery = ".//div[contains(concat(' ', @class, ' '),' message ')]/div[contains(concat(' ', @class, ' '), ' content ') and not(contains(concat(' ', @class, ' '), ' cvhelper-processed '))]";
-    xpathResult = document.evaluate(xpathQuery, chatContainer, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-
-    for (i = 0; i < xpathResult.snapshotLength; i++) {
-      $post = $(xpathResult.snapshotItem(i));
-
-      // Skip pending messages and posts by current user
-      if (!isMessagePending($post)) {
-        processNewPost($post);
+  // Event listener for NodeAdded event
+  function nodeAddedListener(node) {
+    if (isNewOrEditedMessage(node)) {
+      processNewPost.call(this, node.querySelector('div.content'));
+      if (!this.queueProcessPending) {
+        setTimeout(processQueue.bind(this), 0);
+        this.queueProcessPending = true;
       }
     }
   }
 
-  // Initialisation function
-  this.start = function() {
-    chatRoom.onLoad(function() {
-      setActiveUserClass();
-      setChatContainer();
-      registerEventListeners();
-      processAllPosts();
-      processQueue();
-    });
+  // Event listener for DOMNodeRemoved event
+  function nodeRemovedListener(node) {
+    if (isRemovedMessage(node)) {
+      processRemovedPost.call(this, node.querySelector('div.content'));
+    }
+  }
+
+  // Event listener for DOMNodeRemoved event
+  function nodeReplacedListener(event) {
+    // do something here
+  }
+
+  // Registers the mutation event listeners
+  function registerEventListeners() {
+    var listener = this.mutationListenerFactory.getListener(this.chatRoom.chatContainer);
+    listener.on('NodeAdded', nodeAddedListener.bind(this));
+    listener.on('NodeRemoved', nodeRemovedListener.bind(this));
+    listener.on('NodeReplaced', nodeReplacedListener.bind(this));
+  }
+
+  // Process all existing message on room load
+  function processAllPosts() {
+    var posts, i, l;
+
+    posts = this.chatRoom.chatContainer.querySelectorAll('div.message:not(.pending) div.content:not(.cvhelper-processed)');
+
+    for (i = 0, l = posts.length; i < l; i++) {
+      processNewPost.call(this, posts[i]);
+    }
+
+    processQueue.call(this);
+  }
+
+  // Too many args for this constructor? Probably
+  CvPlsHelper.VoteRequestListener = function(chatRoom, mutationListenerFactory, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
+    this.chatRoom = chatRoom;
+    this.mutationListenerFactory = mutationListenerFactory;
+    this.postFactory = postFactory;
+    this.voteRequestBufferFactory = voteRequestBufferFactory;
+    this.voteRequestMessageQueue = voteRequestMessageQueue;
+    this.voteQueueProcessor = voteQueueProcessor; 
+    this.voteRemoveProcessor = voteRemoveProcessor;
+  };
+  CvPlsHelper.VoteRequestListener.prototype.queueProcessPending = false;
+
+  // Starts the background processes
+  CvPlsHelper.VoteRequestListener.prototype.start = function() {
+    this.chatRoom.onLoad(function() {
+      registerEventListeners.call(this);
+      processAllPosts.call(this);
+    }.bind(this));
   };
 
-  this.stop = function() {
+  CvPlsHelper.VoteRequestListener.prototype.stop = function() {
     // Might need to do something here, not sure
   };
 
-};
+}());

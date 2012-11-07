@@ -31,7 +31,7 @@ CvPlsHelper.ChatApplication = function(document, constructors, onInit) {
     objects.postFactory = new CvPlsHelper.Post(document);
     objects.voteRequestBufferFactory = new CvPlsHelper.VoteRequestBuffer();
     objects.voteRequestMessageQueue = new CvPlsHelper.RequestQueue();
-    objects.voteRequestListener = new CvPlsHelper.VoteRequestListener(document, objects.chatRoom, objects.mutationListenerFactory, objects.postFactory, objects.voteRequestBufferFactory, objects.voteRequestMessageQueue, objects.voteQueueProcessor, objects.voteRemoveProcessor);
+    objects.voteRequestListener = new CvPlsHelper.VoteRequestListener(objects.chatRoom, objects.mutationListenerFactory, objects.postFactory, objects.voteRequestBufferFactory, objects.voteRequestMessageQueue, objects.voteQueueProcessor, objects.voteRemoveProcessor);
 
     // Vote status processors
     objects.pollMessageQueue = new CvPlsHelper.RequestQueue();
