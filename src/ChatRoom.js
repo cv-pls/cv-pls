@@ -24,8 +24,8 @@
   function setRoomLoaded() {
     this.loaded = true;
     this.chatContainer = this.document.getElementById('chat');
-    this.activeUserClass = this.document.getElementById('active-user').className.split(' ')[1];
-    stopListener().call(this);
+    this.activeUserClass = this.document.getElementById('active-user').className.match(/user-\d+/)[0];
+    stopListener.call(this);
     while (this.callbacks.length) {
       this.callbacks.shift().call();
     }
@@ -64,7 +64,7 @@
    */
   CvPlsHelper.ChatRoom.prototype.isLoaded = function() {
     if (!this.loaded) {
-      checkRoomStatus().call(this);
+      checkRoomStatus.call(this);
     }
     return this.loaded;
   };

@@ -1,4 +1,84 @@
-CvPlsHelper.Post = function($post, document, activeUserClass) {
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper */
+
+// Represents a post in the chatroom
+(function() {
+
+  // Adds a class name to an element
+  function addClass(element, className) {
+    var classes = (element.getAttribute('class') || "").split(/\s+/g);
+    if (classes.indexOf(className) < 0) {
+      classes.push(className);
+      element.setAttribute('class', classes.join(' ').replace(/^\s+|\s+$/g, ''));
+    }
+  };
+
+  // Sets the message ID of the post
+  function setPostId() {
+    if (this.element.parentNode && this.element.parentNode.ownerDocument && this.element.parentNode.nodeType !== 11) {
+      this.id = this.postId = (this.element.parentNode.getAttribute('id') || "").substr(8) || null;
+    }
+  };
+
+  // Determines whether the post was added by the active user
+  function setIsOwnPost() {
+    var xpathQuery, xpathResult;
+    if (this.postId && this.element.parentNode.parentNode) {
+      xpathQuery = "./a[contains(concat(' ', @class, ' '), ' " + activeUserClass + " ')]";
+      xpathResult = document.evaluate(xpathQuery, this.element.parentNode.parentNode.parentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      this.isOwnPost = Boolean(xpathResult.snapshotLength);
+    }
+  };
+
+  // Constructor
+  CvPlsHelper.Post = function(document, chatRoom, $post) {
+    this.document = document;
+    this.chatRoom = chatRoom;
+    if ($post) {
+      this.$post = $post;
+      this.element = $post[0];
+
+      setPostId.call(this);
+      setIsOwnPost.call(this);
+      setQuestionId.call(this);
+      setVoteType.call(this);
+      markProcessed.call(this);
+    }
+  };
+
+  // Factory method
+  CvPlsHelper.Post.prototype.create = function($post) {
+    return new this.constructor(this.document, this.chatRoom, $post);
+  };
+
+  // Type Enums
+  CvPlsHelper.Post.voteTypes = CvPlsHelper.Post.prototype.voteTypes = {
+    CV: 1,
+    DELV: 2
+  };
+  CvPlsHelper.Post.postTypes = CvPlsHelper.Post.prototype.postTypes = {
+    EXISTING: 0,
+    NEW: 1,
+    EDIT: 2,
+    REMOVE: 3
+  };
+
+  // Public properties
+  CvPlsHelper.Post.prototype.$post = null;
+  CvPlsHelper.Post.prototype.element = null;
+
+  CvPlsHelper.Post.prototype.id = null;
+  CvPlsHelper.Post.prototype.postId = null; // This will replace .id asap
+  CvPlsHelper.Post.prototype.questionId = null;
+
+  CvPlsHelper.Post.prototype.voteType = null;
+  CvPlsHelper.Post.prototype.postType = 0;
+  CvPlsHelper.Post.prototype.isVoteRequest = false;
+  CvPlsHelper.Post.prototype.isOwnPost = false;
+
+}());
+
+CvPlsHelper.Post = function(document, $post, activeUserClass) {
 
   "use strict";
 
@@ -18,50 +98,12 @@ CvPlsHelper.Post = function($post, document, activeUserClass) {
 
   // An attempt at a factory pattern implementation. I do not like this approach, but it works for now.
   if (activeUserClass === undefined) {
-    document = $post;
-    activeUserClass = document.getElementById('active-user').getAttribute('class').match(/user-\d+/)[0];
+    activeUserClass = document.getElementById('active-user').className.match(/user-\d+/)[0];
     this.create = function($post) {
       return new self.constructor($post, document, activeUserClass);
     };
     return;
   }
-
-  this.$post = $post;
-  this.element = $post[0];
-
-  this.id = null;
-  this.questionId = null;
-
-  this.voteType = null;
-  this.postType = 0;
-  this.isVoteRequest = false;
-  this.isOwnPost = false;
-
-  // Constructor controller
-  this.init = function() {
-    self.setPostId();
-    self.setIsOwnPost();
-    self.setQuestionId();
-    self.setVoteType();
-    self.markProcessed();
-  };
-
-  // Sets the message ID of the post
-  this.setPostId = function() {
-    if (self.element.parentNode && self.element.parentNode.ownerDocument && self.element.parentNode.nodeType !== 11) {
-      this.id = (self.element.parentNode.getAttribute('id') || "").substr(8) || null;
-    }
-  };
-
-  // Determines whether the post was added by the active user
-  this.setIsOwnPost = function() {
-    var xpathQuery, xpathResult;
-    if (self.id) {
-      xpathQuery = "./a[contains(concat(' ', @class, ' '), ' " + activeUserClass + " ')]";
-      xpathResult = document.evaluate(xpathQuery, self.element.parentNode.parentNode.parentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-      self.isOwnPost = Boolean(xpathResult.snapshotLength);
-    }
-  };
 
   // Sets the question ID based on the first question link in the post
   this.setQuestionId = function() {
@@ -118,14 +160,6 @@ CvPlsHelper.Post = function($post, document, activeUserClass) {
   // Adds a class to the element to indicate that it has been processed
   this.markProcessed = function() {
     self.addClass(self.element, 'cvhelper-processed');
-  };
-
-  this.addClass = function(el, className) {
-    var classes = (el.getAttribute('class') || "").split(/\s+/g);
-    if (classes.indexOf(className) < 0) {
-      classes.push(className);
-      el.setAttribute('class', classes.join(' ').replace(/^\s+|\s+$/g, ''));
-    }
   };
 
   self.init();

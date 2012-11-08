@@ -33,6 +33,10 @@
     return classes.indexOf('message') > -1 && classes.indexOf('posted') < 0;
   }
 
+  function isDeletedPost(element) {
+    return Boolean(element.querySelector('span.deleted'));
+  }
+
   // Process the voteRequestMessageQueue
   function processQueue() {
     this.queueProcessPending = false;
@@ -41,28 +45,12 @@
     }
   }
 
-  // Enqueue post if it is a vote request
-  function processNewPost(element) {
-    var post = this.postFactory.create($(element));
+  // Event listener for NodeAdded event
+  function nodeAddedListener(node) {
+    var post = this.postFactory.create($(node.querySelector('div.content')));
     post.postType = post.postTypes.NEW; // this sucks. fix please
     if (post.isVoteRequest && !post.isOwnPost) {
       this.voteRequestMessageQueue.enqueue(post);
-    }
-  }
-
-  // Adjust notifications for removed post
-  function processRemovedPost(element) {
-    var post = postFactory.create($(post));
-    post.postType = post.postTypes.REMOVE;
-    if (post.isVoteRequest && !post.isOwnPost) {
-      this.voteRemoveProcessor.removeLost(post);
-    }
-  }
-
-  // Event listener for NodeAdded event
-  function nodeAddedListener(node) {
-    if (isNewOrEditedMessage(node)) {
-      processNewPost.call(this, node.querySelector('div.content'));
       if (!this.queueProcessPending) {
         setTimeout(processQueue.bind(this), 0);
         this.queueProcessPending = true;
@@ -72,22 +60,55 @@
 
   // Event listener for DOMNodeRemoved event
   function nodeRemovedListener(node) {
-    if (isRemovedMessage(node)) {
-      processRemovedPost.call(this, node.querySelector('div.content'));
+    var post = this.postFactory.create($(node.querySelector('div.content')));
+    post.postType = post.postTypes.REMOVE;
+    if (post.isVoteRequest && !post.isOwnPost) {
+      this.voteRemoveProcessor.removeLost(post);
     }
   }
 
   // Event listener for DOMNodeRemoved event
-  function nodeReplacedListener(event) {
-    // do something here
+  function nodeReplacedListener(oldNode, newNode) {
+    var oneBox,
+        oldPost = this.postFactory.create($(oldNode.querySelector('div.content'))),
+        newPost = this.postFactory.create($(newNode.querySelector('div.content')));
+    oldPost.postType = oldPost.postTypes.REMOVE;
+    newPost.postType = newPost.postTypes.EDIT;
+    if (newPost.isVoteRequest && !newPost.isOwnPost) {
+      oneBox = oldNode.querySelector('div.oneBox.cv-request');
+      if (oneBox && oldPost.questionId === newPost.questionId) {
+        oldNode.removeChild(oneBox);
+        newNode.appendChild(oneBox);
+      } else {
+        this.voteRequestMessageQueue.enqueue(newPost);
+        if (!this.queueProcessPending) {
+          setTimeout(processQueue.bind(this), 0);
+          this.queueProcessPending = true;
+        }
+      }
+    } else if (oldPost.isVoteRequest && !oldPost.isOwnPost) {
+      this.voteRemoveProcessor.removeLost(post);
+    }
   }
 
   // Registers the mutation event listeners
   function registerEventListeners() {
     var listener = this.mutationListenerFactory.getListener(this.chatRoom.chatContainer);
     listener.on('NodeAdded', nodeAddedListener.bind(this));
+    listener.on('FilterAdded', function(node) {
+      return isNewOrEditedMessage(node);
+    });
     listener.on('NodeRemoved', nodeRemovedListener.bind(this));
+    listener.on('FilterRemoved', function(node) {
+      return isRemovedMessage(node);
+    });
     listener.on('NodeReplaced', nodeReplacedListener.bind(this));
+    listener.on('FilterReplaced', function(oldNode, newNode) {
+      return isNewOrEditedMessage(newNode);
+    });
+    listener.on('FilterCompare', function(node1, node2) {
+      return node1.id === node2.id;
+    });
   }
 
   // Process all existing message on room load
