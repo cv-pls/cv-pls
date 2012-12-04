@@ -5,11 +5,12 @@
 
   'use strict';
 
-  function getVoteDisplay() {
+  function getQuestionScore() {
     var voteDisplay = this.document.createElement('div');
     voteDisplay.setAttribute('class', 'ob-post-votes');
     voteDisplay.setAttribute('title', 'This question has a score of ' + this.post.questionData.score);
-    voteDisplay.appendChild(this.document.createTextNode(this.post.questionData.score));
+    this.scoreTextNode = this.document.createTextNode(this.post.questionData.score);
+    voteDisplay.appendChild(this.scoreTextNode);
     return voteDisplay;
   }
   function getSiteIcon() {
@@ -23,18 +24,20 @@
   }
 
   function getPostTitleAnchor() {
-    var avatarNotification = this.avatarNotification;
-    this.postTitleAnchor = this.document.createElement('a');
-    this.postTitleAnchor.setAttribute('href', this.post.questionData.link);
-    this.postTitleAnchor.setAttribute('class', 'cvhelper-question-link');
-    this.postTitleAnchor.setAttribute('style', 'color: #0077CC;');
-    this.postTitleAnchor.addEventListener('click', function() {
-      // Sort this the fuck out.
-      var id = $(this).closest('.message').attr('id').split('-')[1];
-      avatarNotification.dequeue(id);
+    var postTitleAnchor,
+        avatarNotification = this.avatarNotification,
+        post = this.post;
+    postTitleAnchor = this.document.createElement('a');
+    postTitleAnchor.setAttribute('href', this.post.questionData.link);
+    postTitleAnchor.setAttribute('class', 'cvhelper-question-link');
+    postTitleAnchor.setAttribute('style', 'color: #0077CC;');
+    postTitleAnchor.addEventListener('click', function() {
+      avatarNotification.dequeue(post);
     });
-    this.postTitleAnchor.innerHTML = this.post.questionData.title;
-    return this.postTitleAnchor;
+    postTitleAnchor.innerHTML = this.post.questionData.title;
+    this.statusTextNode = this.document.createTextNode('');
+    postTitleAnchor.appendChild(this.statusTextNode);
+    return postTitleAnchor;
   }
   function getPostTitle() {
     var postTitle = this.document.createElement('div');
@@ -107,7 +110,7 @@
     this.element.style.overflow = 'hidden';
     this.element.style.position = 'relative';
 
-    this.element.appendChild(getVoteDisplay.call(this));
+    this.element.appendChild(getQuestionScore.call(this));
     this.element.appendChild(getSiteIcon.call(this));
     this.element.appendChild(getPostTitle.call(this));
     this.element.appendChild(getPostBody.call(this));
@@ -139,15 +142,16 @@
   }
   function processStatus() {
     if (this.post.questionData.closed_date !== undefined && this.pluginSettings.getSetting('showCloseStatus')) {
-      this.postTitleAnchor.appendChild(this.document.createTextNode(' [closed]'));
-      this.post.contentElement.className += ' cvhelper-closed';
+      this.setStatusText('closed');
     }
   }
   function processFormatting() {
     processHeight.call(this);
     processStatus.call(this);
 
-    $('html, body', document).animate({ scrollTop: $(document).height() }, 'slow');
+    $('html, body', document).animate({
+      scrollTop: $(document).height()
+    }, 'slow');
   }
 
   CvPlsHelper.OneBox = function(document, pluginSettings, avatarNotification, post) {
@@ -159,6 +163,8 @@
   };
 
   CvPlsHelper.OneBox.prototype.element = null;
+  CvPlsHelper.OneBox.prototype.statusTextNode = null;
+  CvPlsHelper.OneBox.prototype.scoreTextNode = null;
 
   CvPlsHelper.OneBox.prototype.refreshDisplay = function() {
     this.hide();
@@ -172,6 +178,14 @@
 
   CvPlsHelper.OneBox.prototype.hide = function() {
     this.element.parentNode.removeChild(this.element);
+  };
+
+  CvPlsHelper.OneBox.prototype.setStatusText = function(statusText) {
+    this.statusTextNode.data = ' [' + statusText + ']';
+  };
+
+  CvPlsHelper.OneBox.prototype.setScore = function(score) {
+    this.scoreTextNode.data = String(score);
   };
 
 }());

@@ -26,35 +26,31 @@
     o.pluginSettings = new constructors.SettingsDataAccessor(new constructors.SettingsDataStore(), constructors.DefaultSettings);
 
     o.collectionFactory = new CvPlsHelper.CollectionFactory();
+    o.postsOnScreen = o.collectionFactory.create();
 
     // Vote request processing
     o.audioPlayer = new CvPlsHelper.AudioPlayer(document, 'http://or.cdn.sstatic.net/chat/so.mp3');
     o.desktopNotificationDispatcher = new constructors.DesktopNotificationDispatcher();
-    o.desktopNotification = CvPlsHelper.DesktopNotification(o.pluginSettings, o.desktopNotificationDispatcher);
-    o.stackApi = new CvPlsHelper.StackApi();
+    o.desktopNotification = new CvPlsHelper.DesktopNotification(o.pluginSettings, o.desktopNotificationDispatcher);
+    o.stackApi = new CvPlsHelper.StackApi(o.collectionFactory);
 
     o.avatarNotificationStack = o.collectionFactory.create();
-    o.avatarNotificationDisplayFactory = CvPlsHelper.AvatarNotificationDisplayFactory(document);
+    o.avatarNotificationDisplayFactory = new CvPlsHelper.AvatarNotificationDisplayFactory(document);
     o.avatarNotificationManager = new CvPlsHelper.AvatarNotificationManager(document, o.avatarNotificationStack, o.avatarNotificationDisplayFactory, o.pluginSettings);
-    o.voteRequestFormatter = new CvPlsHelper.VoteRequestFormatter(document, o.pluginSettings, o.avatarNotificationManager);
-    o.voteRequestProcessor = new CvPlsHelper.VoteRequestProcessor(o.pluginSettings, o.voteRequestFormatter, o.audioPlayer, o.avatarNotificationManager);
-    o.voteRemoveProcessor = new CvPlsHelper.VoteRemoveProcessor(o.pluginSettings, o.avatarNotificationManager);
-    o.voteQueueProcessor = new CvPlsHelper.VoteQueueProcessor(o.stackApi, o.voteRequestProcessor);
+
+    // Question status processors
+    o.apiResponseProcessor = new CvPlsHelper.ApiResponseProcessor(o.pluginSettings, o.audioPlayer);
+    o.pollQueueProcessor = new CvPlsHelper.VoteQueueProcessor(o.stackApi, o.apiResponseProcessor);
+    o.voteRequestBufferFactory = new CvPlsHelper.VoteRequestBufferFactory(o.collectionFactory);
+    o.questionStatusPoller = new CvPlsHelper.QuestionStatusPoller(o.pluginSettings, o.postsOnScreen, o.voteRequestBufferFactory, o.pollQueueProcessor);
 
     // Vote request listening
     o.mutationListenerFactory = new DOMChildListMutationListenerFactory();
     o.chatRoom = new CvPlsHelper.ChatRoom(document, o.mutationListenerFactory);
     o.oneBoxFactory = new CvPlsHelper.OneBoxFactory(document, o.pluginSettings, o.avatarNotificationManager);
-    o.postFactory = new CvPlsHelper.PostFactory(document, o.chatRoom, o.oneBoxFactory);
-    o.voteRequestBufferFactory = new CvPlsHelper.VoteRequestBufferFactory();
-    o.postsOnScreen = o.collectionFactory.create();
-    o.voteRequestListener = new CvPlsHelper.VoteRequestListener(o.chatRoom, o.mutationListenerFactory, o.postFactory, o.voteRequestBufferFactory, o.postsOnScreen, o.voteQueueProcessor, o.voteRemoveProcessor);
-
-    // Vote status processors
-    o.pollMessageQueue = o.collectionFactory.create();
-    o.statusRequestProcessor = new CvPlsHelper.StatusRequestProcessor(o.pluginSettings, o.voteRequestFormatter, o.avatarNotificationManager);
-    o.pollQueueProcessor = new CvPlsHelper.VoteQueueProcessor(o.stackApi, o.statusRequestProcessor);
-    o.statusPolling = new CvPlsHelper.StatusPolling(o.pluginSettings, o.postsOnScreen, o.voteRequestBufferFactory, o.pollMessageQueue, o.pollQueueProcessor);
+    o.postFactory = new CvPlsHelper.PostFactory(document, o.pluginSettings, o.chatRoom, o.oneBoxFactory, o.avatarNotificationManager);
+    o.voteRemoveProcessor = new CvPlsHelper.VoteRemoveProcessor(o.pluginSettings, o.avatarNotificationManager);
+    o.voteRequestListener = new CvPlsHelper.VoteRequestListener(o.chatRoom, o.mutationListenerFactory, o.postFactory, o.postsOnScreen, o.voteRemoveProcessor, o.questionStatusPoller);
 
     // UI enchancement
     o.buttonsManager = new CvPlsHelper.ButtonsManager(document, o.pluginSettings);
@@ -69,7 +65,7 @@
 
       // Start background processes
       o.voteRequestListener.start();
-      o.statusPolling.start();
+      o.questionStatusPoller.schedulePoll();
 
       // Initialisation callback
       if (typeof onInit === 'function') {

@@ -53,6 +53,10 @@
     }
   };
 
+  CvPlsHelper.Collection.prototype.contains = function(item) {
+    return this.items.indexOf(item) > -1;
+  };
+
   CvPlsHelper.Collection.prototype.match = function(property, search) {
     var i, l, result = null, isRegexp = search instanceof RegExp;
     for (i = 0, l = this.items.length; i < l; i++) {
@@ -66,7 +70,7 @@
   };
 
   CvPlsHelper.Collection.prototype.matchAll = function(property, search) {
-    var i, l, result = null, isRegexp = search instanceof RegExp;
+    var i, l, result = [], isRegexp = search instanceof RegExp;
     for (i = 0, l = this.items.length; i < l; i++) {
       if ((!isRegexp && this.items[i][property] == search) || (isRegexp && search.test(this.items[i][property]))) {
         result.push(this.items[i]);

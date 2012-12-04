@@ -1,5 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true, devel: true */
-/*global CvPlsHelper, $ */
+/*global CvPlsHelper */
 
 (function() {
 
@@ -22,37 +22,59 @@
     });
     return result;
   }
+  function buildQueryString(map, prefix) {
+    var key, result = [];
+    prefix = prefix || false;
+    function getPrefix() {
+      return prefix ? prefix+'['+key+']' : key;
+    }
+
+    for (key in map) {
+      if (map.hasOwnProperty(key)) {
+        if (typeof map[key] === 'object') {
+          result.push(buildQueryString(map[key], getPrefix()));
+        } else {
+          result.push(encodeURIComponent(getPrefix()) + '=' + encodeURIComponent(map[key]));
+        }
+      }
+    }
+
+    return result.join('&');
+  }
 
   CvPlsHelper.StackApi = function(collectionFactory) {
     this.collectionFactory = collectionFactory;
   };
 
-  CvPlsHelper.StackApi.prototype.makeRequest = function(type, buffer, site, filter, callBack) {
-    var questionIds, query, url, xhr, response;
-    
+  CvPlsHelper.StackApi.prototype.makeRequest = function(type, buffer, site, filter, apiResponseProcessor) {
+    var questionIds, query, url, xhr, self = this;
+  
     questionIds = getQuestionIdsFromBuffer(buffer);
     if (!questionIds.length) {
       return;
     }
 
-    query = "?site=" + site
-          + "&filter=" + filter
-          + "&pagesize=" + questionIds.length
-          + "&key=" + apiKey;
-    url = baseUrl + requestMethods[type].urlPath + questionIds.join(';') + query;
+    query = {
+      site: site,
+      filter: filter,
+      pagesize: questionIds.length,
+      key: apiKey
+    };
+    url = baseUrl + requestMethods[type].urlPath + questionIds.join(';') + '?' + buildQueryString(query);
 
     xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onreadystatechange = function() {
+      var response;
       if (xhr.readyState === 4) {
         try {
-          response = this.collectionFactory.create();
+          response = self.collectionFactory.create();
           response.items = JSON.parse(xhr.responseText).items;
-          callBack(buffer, response);
         } catch(e) {
-          // If we get here, something is probably wrong Stack Exchange and chances are chat won't be working either.
-          console.log('Something went *badly* wrong. Shit happens.');
+          // If we get here, something is probably wrong at Stack Exchange and chances are chat won't be working either.
+          return;
         }
+        apiResponseProcessor.processResponse(buffer, response);
       }
     };
     xhr.send(null);

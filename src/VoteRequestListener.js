@@ -37,7 +37,6 @@
     return Boolean(element.querySelector('span.deleted'));
   }
 
-
   function getMessageId(node) {
     return parseInt(node.getAttribute('id').match(/^message-(\d+)$/i)[1], 10);
   }
@@ -45,23 +44,33 @@
   // Process the postsOnScreen
   function processQueue() {
     this.queueProcessPending = false;
-    if (this.postsOnScreen.length() > 0) {
-      this.voteQueueProcessor.processQueue(this.voteRequestBufferFactory.create(this.postsOnScreen));
+    this.questionStatusPoller.poll();
+  }
+
+  // Schedule the queue process action
+  function scheduleQueueProcess() {
+    var self = this;
+    if (!this.queueProcessPending) {
+      setTimeout(function() {
+        processQueue.call(self);
+      }, 0);
+      this.queueProcessPending = true;
     }
   }
 
   // Event listener for NodeAdded event
   function nodeAddedListener(node) {
-    var post = this.postFactory.create(node),
-        self = this;
-    if (post.isVoteRequest && !post.isOwnPost) {
-      this.postsOnScreen.push(post);
-      if (!this.queueProcessPending) {
-        setTimeout(function() {
-          processQueue.call(self);
-        }, 0);
-        this.queueProcessPending = true;
+    var existingPost, newPost = this.postFactory.create(node);
+    if (newPost.isVoteRequest) {
+      existingPost = this.postsOnScreen.query(function(post) {
+        return post.hasQuestionData && post.questionId === newPost.questionId;
+      }).shift();
+      if (existingPost) {
+        newPost.setQuestionData(existingPost.questionData);
+      } else {
+        scheduleQueueProcess.call(this);
       }
+      this.postsOnScreen.push(newPost);
     }
   }
 
@@ -81,23 +90,35 @@
     var self = this,
         postId = getMessageId(oldNode),
         newPost = this.postFactory.create(newNode),
-        oldPost = this.postsOnScreen.match('postId', postId);
+        oldPost = this.postsOnScreen.match('postId', postId),
+        existingQuestionPost;
     if (oldPost) {
-      if (!newPost.isVoteRequest || newPost.isOwnPost) {
-        oldPost.isOnScreen = false;
+      if (!newPost.isVoteRequest) {
         this.postsOnScreen.remove(oldPost);
-        this.voteRemoveProcessor.removeLost(oldPost);
+        this.voteRemoveProcessor.remove(oldPost);
+      } else if (newPost.questionId === oldPost.questionId) {
+        oldPost.replaceElement(newNode, true);
       } else {
-        oldPost.replaceElement(newNode);
+        existingQuestionPost = this.postsOnScreen.query(function(post) {
+          return post.hasQuestionData && post.questionId === newPost.questionId;
+        }).shift();
+        oldPost.replaceElement(newNode, false);
+        if (existingQuestionPost) {
+          oldPost.setQuestionData(existingQuestionPost.questionData);
+        } else {
+          scheduleQueueProcess.call(this);
+        }
       }
-    } else if (newPost.isVoteRequest && !newPost.isOwnPost) {
+    } else if (newPost.isVoteRequest) {
+      existingQuestionPost = this.postsOnScreen.query(function(post) {
+        return post.hasQuestionData && post.questionId === newPost.questionId;
+      }).shift();
+      if (existingQuestionPost) {
+        newPost.setQuestionData(existingQuestionPost.questionData);
+      } else {
+        scheduleQueueProcess.call(this);
+      }
       this.postsOnScreen.push(newPost);
-      if (!this.queueProcessPending) {
-        setTimeout(function() {
-          processQueue.call(self);
-        }, 0);
-        this.queueProcessPending = true;
-      }
     }
   }
 
@@ -132,15 +153,14 @@
     }
   }
 
-  // Too many args for this constructor? Probably
-  CvPlsHelper.VoteRequestListener = function(chatRoom, mutationListenerFactory, postFactory, voteRequestBufferFactory, postsOnScreen, voteQueueProcessor, voteRemoveProcessor) {
+  // Too many args for this constructor? Probably, but I can't work out how to reduce it.
+  CvPlsHelper.VoteRequestListener = function(chatRoom, mutationListenerFactory, postFactory, postsOnScreen, voteRemoveProcessor, questionStatusPoller) {
     this.chatRoom = chatRoom;
     this.mutationListenerFactory = mutationListenerFactory;
     this.postFactory = postFactory;
-    this.voteRequestBufferFactory = voteRequestBufferFactory;
     this.postsOnScreen = postsOnScreen;
-    this.voteQueueProcessor = voteQueueProcessor; 
     this.voteRemoveProcessor = voteRemoveProcessor;
+    this.questionStatusPoller = questionStatusPoller;
   };
   CvPlsHelper.VoteRequestListener.prototype.queueProcessPending = false;
 

@@ -10,14 +10,11 @@
   };
 
   CvPlsHelper.VoteRequestBufferFactory.prototype.create = function(queue) {
-    var buffer = this.collectionFactory.create();
-    queue.forEach(function(post, i) {
-      if (i > 100) {
-        return false;
-      }
-      buffer.push(post);
-    });
-    return queue;
+    var i, l, buffer = this.collectionFactory.create();
+    for (i = 0, l = queue.length; i < 100 && i < l; i++) {
+      buffer.push(queue.shift());
+    }
+    return buffer;
   };
 
 }());

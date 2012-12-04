@@ -71,12 +71,12 @@
     this.voteType = this.voteTypes[this.matchTag(/^(cv|delv)-(pls|maybe)$/).split('-').shift().toUpperCase()];
 
     if (!this.contentElement.querySelector('span.cvhelper-vote-request-text')) { // Required for strikethrough to work
-      this.textElement = this.document.createElement('span');
-      this.textElement.setAttribute('class', 'cvhelper-vote-request-text');
-      for (i = 0, l = this.contentElement.childNodes.length; i < l; i++) {
-        this.textElement.appendChild(this.contentElement.removeChild(this.contentElement.childNodes[i]));
+      this.contentWrapperElement = this.document.createElement('span');
+      this.contentWrapperElement.setAttribute('class', 'cvhelper-vote-request-text');
+      while (this.contentElement.firstChild) {
+        this.contentWrapperElement.appendChild(this.contentElement.removeChild(this.contentElement.firstChild));
       }
-      this.contentElement.appendChild(this.textElement);
+      this.contentElement.appendChild(this.contentWrapperElement);
     }
   }
 
@@ -84,15 +84,21 @@
   function setQuestionId() {
     var questionLinks, i, l, parts;
 
-    questionLinks = this.contentElement.querySelector('a[href^="http://stackoverflow.com/questions/"], a[href^="http://stackoverflow.com/q/');
+    questionLinks = this.contentElement.querySelectorAll('a[href^="http://stackoverflow.com/questions/"], a[href^="http://stackoverflow.com/q/"]');
 
     for (i = 0, l = questionLinks.length; i < l; i++) {
       parts = questionLinks[i].getAttribute('href').match(/^http:\/\/stackoverflow\.com\/questions\/(\d+)/);
       if (parts) {
         this.questionId = parseInt(parts[1], 10);
+        this.questionLinkElement = questionLinks[i];
         addClass(questionLinks[i], 'cvhelper-question-link');
         break;
       }
+    }
+
+    if (!this.questionId) {
+      this.isVoteRequest = false;
+      this.voteType = null;
     }
   }
 
@@ -118,11 +124,60 @@
     this.$post = $(this.contentElement); // Remove asap
   }
 
+  function initQuestionData() {
+    this.avatarNotificationManager.enqueue(this);
+    if (this.pluginSettings.getSetting('oneBox') && !this.oneBox) {
+      this.addOneBox();
+    }
+    this.hasPendingNotification = true;
+  }
+
+  function updateOneBoxDisplay() {
+    if (this.oneBox) {
+      this.oneBox.setScore(this.questionData.score);
+      if (this.pluginSettings.getSetting('showCloseStatus')) {
+        switch (this.questionStatus) {
+          case this.questionStatuses.CLOSED:
+            this.oneBox.setStatusText('closed');
+            break;
+          case this.questionStatuses.DELETED:
+            this.oneBox.setStatusText('deleted');
+            break;
+        }
+      }
+    }
+  }
+
+  function markCompleted() {
+    this.isOutstandingRequest = false;
+    if (this.questionStatus === this.questionStatuses.UNKNOWN) {
+      if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
+        this.avatarNotificationManager.enqueue(this);
+        this.hasPendingNotification = true;
+      }
+      if (this.questionData && this.pluginSettings.getSetting('oneBox') && !this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+        this.addOneBox();
+      }
+    } else {
+      if (this.pluginSettings.getSetting('removeCompletedNotifications')) {
+        this.avatarNotificationManager.dequeue(this);
+      }
+      if (this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+        this.removeOneBox();
+      }
+    }
+    if (this.pluginSettings.getSetting('strikethroughCompleted')) {
+      this.strikethrough();
+    }
+  }
+
   // Constructor
-  CvPlsHelper.Post = function(document, chatRoom, oneBoxFactory, messageElement) {
+  CvPlsHelper.Post = function(document, pluginSettings, chatRoom, oneBoxFactory, avatarNotificationManager, messageElement) {
     this.document = document;
+    this.pluginSettings = pluginSettings;
     this.chatRoom = chatRoom;
     this.oneBoxFactory = oneBoxFactory;
+    this.avatarNotificationManager = avatarNotificationManager;
     setPostElements.call(this, messageElement);
 
     // These are outside initPost to avoid over-processing a replacement element
@@ -132,41 +187,53 @@
     initPost.call(this);
   };
 
-  // Type Enums
+  // Status Enums
   CvPlsHelper.Post.voteTypes = CvPlsHelper.Post.prototype.voteTypes = {
     CV: 1,
     DELV: 2
   };
+  CvPlsHelper.Post.questionStatuses = CvPlsHelper.Post.prototype.questionStatuses = {
+    UNKNOWN: 0,
+    OPEN: 1,
+    CLOSED: 2,
+    DELETED: 3
+  };
+
+  // Public properties
+  CvPlsHelper.Post.prototype.messageElement = null;
+  CvPlsHelper.Post.prototype.contentElement = null;
+  CvPlsHelper.Post.prototype.contentWrapperElement = null;
+  CvPlsHelper.Post.prototype.questionLinkElement = null;
+
+  CvPlsHelper.Post.prototype.oneBox = null;
+
+  CvPlsHelper.Post.prototype.postId = null;
+  CvPlsHelper.Post.prototype.questionId = null;
+
+  CvPlsHelper.Post.prototype.hasQuestionData = false;
+  CvPlsHelper.Post.prototype.questionData = null;
+  CvPlsHelper.Post.prototype.questionStatus = 0;
+
+  CvPlsHelper.Post.prototype.voteType = null;
+  CvPlsHelper.Post.prototype.postType = 0;
+  CvPlsHelper.Post.prototype.isVoteRequest = false;
+  CvPlsHelper.Post.prototype.isOutstandingRequest = true;
+  CvPlsHelper.Post.prototype.isOwnPost = false;
+  CvPlsHelper.Post.prototype.isOnScreen = true;
+
+  CvPlsHelper.Post.prototype.hasPendingNotification = false;
+  CvPlsHelper.Post.prototype.hasAvatarNotification = false;
+
+  // Pending burnination
+  CvPlsHelper.Post.prototype.id = null; // This will be replaced by .postId
+  CvPlsHelper.Post.prototype.element = null; // This will be replaced by .contentElement
+  CvPlsHelper.Post.prototype.$post = null;
   CvPlsHelper.Post.postTypes = CvPlsHelper.Post.prototype.postTypes = {
     EXISTING: 0,
     NEW: 1,
     EDIT: 2,
     REMOVE: 3
   };
-
-  // Public properties
-  CvPlsHelper.Post.prototype.messageElement = null;
-  CvPlsHelper.Post.prototype.contentElement = null; // This will replace .element asap
-  CvPlsHelper.Post.prototype.textElement = null;
-
-  CvPlsHelper.Post.prototype.oneBox = null;
-  CvPlsHelper.Post.prototype.questionData = null;
-
-  CvPlsHelper.Post.prototype.postId = null; // This will replace .id asap
-  CvPlsHelper.Post.prototype.questionId = null;
-
-  CvPlsHelper.Post.prototype.voteType = null;
-  CvPlsHelper.Post.prototype.postType = 0;
-  CvPlsHelper.Post.prototype.isVoteRequest = false;
-  CvPlsHelper.Post.prototype.isOwnPost = false;
-  CvPlsHelper.Post.prototype.isOnScreen = true;
-
-  CvPlsHelper.Post.prototype.hasAvatarNotification = false;
-
-  // Pending burnination
-  CvPlsHelper.Post.prototype.id = null;
-  CvPlsHelper.Post.prototype.element = null;
-  CvPlsHelper.Post.prototype.$post = null;
 
   // Public methods
 
@@ -187,24 +254,54 @@
     return result;
   };
 
-  CvPlsHelper.Post.prototype.replaceElement = function(newNode) {
+  CvPlsHelper.Post.prototype.replaceElement = function(newNode, isSameQuestionId) {
+    isSameQuestionId = isSameQuestionId || false;
+
     this.isVoteRequest = this.voteType = this.questionId = null;
     setPostElements.call(this, newNode);
 
-    if (this.oneBox) {
-      this.oneBox.refreshDisplay(this.contentElement);
+    if (isSameQuestionId) {
+      if (this.oneBox) {
+        this.oneBox.refreshDisplay(this.contentElement);
+      }
+    } else {
+      this.questionData = this.oneBox = null;
     }
 
     initPost.call(this);
   };
 
+  CvPlsHelper.Post.prototype.setQuestionData = function(data) {
+    this.questionData = data;
+    this.hasQuestionData = true;
+
+    if (!data) { // Question is deleted
+      markCompleted.call(this);
+      this.questionStatus = this.questionStatuses.DELETED;
+    } else if (data.closed_date !== undefined) { // Question is closed
+      if (this.voteType === this.voteTypes.DELV) {
+        if (this.questionStatus === this.questionStatuses.UNKNOWN) {
+          initQuestionData.call(this);
+        }
+      } else {
+        markCompleted.call(this);
+      }
+      this.questionStatus = this.questionStatuses.CLOSED;
+    } else { // Question is open
+      initQuestionData.call(this);
+      this.questionStatus = this.questionStatuses.OPEN;
+    }
+
+    updateOneBoxDisplay.call(this);
+  };
+
   CvPlsHelper.Post.prototype.strikethrough = function() {
-    this.textElement.style.textDecoration = 'line-through';
-    this.textElement.style.color = '#222';
+    this.contentWrapperElement.style.textDecoration = 'line-through';
+    this.contentWrapperElement.style.color = '#222';
   };
 
   CvPlsHelper.Post.prototype.addOneBox = function() {
-    if (!this.oneBox && this.questionData) {
+    if (!this.isOwnPost && !this.oneBox && this.questionData) {
       this.oneBox = this.oneBoxFactory.create(this);
       this.oneBox.show();
     }
@@ -222,7 +319,7 @@
     if (this.isOnScreen) {
       $lastCvRequestContainer = $(this.messageElement);
       originalBackgroundColor = $lastCvRequestContainer.parents('.messages').css('backgroundColor');
-      $lastCvRequestContainer.css('background', 'yellow');
+      $lastCvRequestContainer.css('backgroundColor', '#FFFF00');
 
       $('html, body', document).animate({scrollTop: $lastCvRequestContainer.offset().top}, 500, function() {
         $lastCvRequestContainer.animate({

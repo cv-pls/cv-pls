@@ -1,5 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global CvPlsHelper, $ */
+/*global CvPlsHelper */
 
 (function() {
 
@@ -15,25 +15,19 @@
   // Adds a post to the queue
   CvPlsHelper.AvatarNotificationManager.prototype.enqueue = function(post) {
     var self = this;
-    this.notificationStack.push(post);
-    post.element.querySelector('a.cvhelper-question-link').addEventListener('click', function() {
-      self.notificationStack.remove(post);
-    });
-    this.updateNotificationDisplay();
+    if (!post.isOwnPost && !this.notificationStack.contains(post)) {
+      this.notificationStack.push(post);
+      post.questionLinkElement.addEventListener('click', function() {
+        self.notificationStack.remove(post);
+      });
+      this.updateNotificationDisplay();
+    }
   };
 
   // Removes a post from the queue by post ID
-  CvPlsHelper.AvatarNotificationManager.prototype.dequeue = function(idOrPost) {
-    var post;
-    if (typeof idOrPost === 'number') {
-      post = this.notificationStack.match('postId', idOrPost);
-    } else if (typeof idOrPost === 'object') {
-      post = idOrPost;
-    }
-    if (post) {
-      this.notificationStack.remove(post);
-      this.updateNotificationDisplay();
-    }
+  CvPlsHelper.AvatarNotificationManager.prototype.dequeue = function(post) {
+    this.notificationStack.remove(post);
+    this.updateNotificationDisplay();
   };
 
   // Checks that all posts in the queue are still on the DOM

@@ -6,12 +6,12 @@
   'use strict';
 
   function makeRequest(voteRequestBuffer) {
-    this.stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', this.voteRequestProcessor.processResponse);
+    this.stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', this.apiResponseProcessor);
   }
 
-  CvPlsHelper.VoteQueueProcessor = function(stackApi, voteRequestProcessor) {
+  CvPlsHelper.VoteQueueProcessor = function(stackApi, apiResponseProcessor) {
     this.stackApi = stackApi;
-    this.voteRequestProcessor = voteRequestProcessor;
+    this.apiResponseProcessor = apiResponseProcessor;
   };
 
   CvPlsHelper.VoteQueueProcessor.prototype.processQueue = function(voteRequestBuffer) {

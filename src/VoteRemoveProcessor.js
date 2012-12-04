@@ -1,9 +1,6 @@
 /*jslint plusplus: true, white: true, browser: true */
 /*global CvPlsHelper */
 
-// This whole object is kind of pointless
-// It's only really here as an LoD buffer
-// I still can't decide if it's actually necessary
 (function() {
 
   'use strict';
@@ -13,10 +10,27 @@
     this.avatarNotification = avatarNotification;
   };
 
+  CvPlsHelper.VoteRemoveProcessor.prototype.reconcilePending = false;
+
+  CvPlsHelper.VoteRemoveProcessor.prototype.reconcileQueue = function() {
+    var self = this;
+    if (!this.reconcilePending) {
+      this.reconcilePending = true;
+      setTimeout(function() {
+        self.avatarNotification.reconcileQueue.call(self.avatarNotification);
+        self.reconcilePending = false;
+      }, 0);
+    }
+  };
+
+  CvPlsHelper.VoteRemoveProcessor.prototype.remove = function(post) {
+    this.avatarNotification.dequeue(post);
+    this.reconcileQueue();
+  };
+
   CvPlsHelper.VoteRemoveProcessor.prototype.removeLost = function(post) {
-    if (this.pluginSettings.getSetting("removeLostNotifications")) {
-      this.avatarNotification.dequeue(post.id);
-      this.avatarNotification.reconcileQueue();
+    if (this.pluginSettings.getSetting('removeLostNotifications')) {
+      this.remove(post);
     }
   };
 

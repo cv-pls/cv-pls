@@ -1,5 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global CvPlsHelper, $ */
+/*global CvPlsHelper */
 
 (function() {
 
@@ -9,7 +9,9 @@
     var css, replyCountEl, notificationManager = this.notificationManager;
 
     css = 'position: absolute; z-index: 4; top: 7px; left: 24px; '
-        + 'color: white !important; background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417)); '
+        + 'color: white !important; '
+        + 'background-color: #F11717; '
+     //   + 'background: -webkit-gradient(linear, left top, left bottom, from(#F11717), to(#F15417)); '
         + 'border-radius: 20px; -webkit-box-shadow: 1px 1px 2px #555; border: 3px solid white; cursor: pointer; '
         + 'font-family: arial,helvetica,sans-serif; font-size: 15px; font-weight: bold; text-align: center; '
         + 'height: 20px; line-height: 20px; min-width: 12px; padding: 0 4px; opacity: 0;';
@@ -25,6 +27,27 @@
 
     replyCountEl = this.document.getElementById('reply-count');
     replyCountEl.parentNode.insertBefore(this.displayElement, replyCountEl.nextSibling);
+  }
+
+  function updateDisplay() {
+    // Prevent multiple calls in quick succession from causing missing notifications
+    if (this.animating) {
+      this.updateQueued = true;
+      return null;
+    }
+    this.updateQueued = false;
+
+    // Create the avatar notification element and add it to the DOM
+    if (this.displayElement === null) {
+      createNotificationElement.call(this);
+    }
+
+    this.displayElement.firstChild.data = String(this.value);
+    if (!this.visible && this.value > 0) {
+      showNotification.call(this);
+    } else if (this.visible && this.value < 1) {
+      hideNotification.call(this);
+    }
   }
 
   // Animation functions
@@ -44,7 +67,7 @@
       self.visible = true;
       self.animating = false;
       if (self.updateQueued) {
-        self.updateNotificationDisplay();
+        updateDisplay.call(self);
       }
     }
   }
@@ -64,7 +87,7 @@
       self.visible = false;
       self.animating = false;
       if (self.updateQueued) {
-        self.updateNotificationDisplay();
+        updateDisplay.call(self);
       }
     }
   }
@@ -84,25 +107,7 @@
   // Updates the avatar notification display
   CvPlsHelper.AvatarNotificationDisplay.prototype.update = function(value) {
     this.value = value;
-
-    // Prevent multiple calls in quick succession from causing missing notifications
-    if (this.animating) {
-      this.updateQueued = true;
-      return null;
-    }
-    this.updateQueued = false;
-
-    // Create the avatar notification element and add it to the DOM
-    if (this.displayElement === null) {
-      createNotificationElement.call(this);
-    }
-
-    this.displayElement.firstChild.data = String(this.value);
-    if (!this.visible && this.value > 0) {
-      showNotification.call(this);
-    } else if (this.visible && this.value < 1) {
-      hideNotification.call(this);
-    }
+    updateDisplay.call(this);
   };
 
 }());
