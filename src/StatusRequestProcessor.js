@@ -1,34 +1,39 @@
-CvPlsHelper.StatusRequestProcessor = function(pluginSettings, voteRequestFormatter, avatarNotification) {
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper, $ */
 
-  "use strict";
+(function() {
 
-  var self = this;
-  this.voteRequestFormatter = voteRequestFormatter;
-  this.avatarNotification = avatarNotification;
+  'use strict';
 
-  this.process = function(buffer, items) {
-    var i, question, post, $title;
+  CvPlsHelper.StatusRequestProcessor = function(pluginSettings, voteRequestFormatter, avatarNotificationManager) {
+    this.pluginSettings = pluginSettings;
+    this.voteRequestFormatter = voteRequestFormatter;
+    this.avatarNotificationManager = avatarNotificationManager;
+  };
 
-    for (i = 0; i < buffer.items; i++) {
-      post = buffer.posts[i];
-      question = self.getQuestionById(items, post.questionId);
 
-      if (question) {
-        if (question.closed_date !== undefined) { // question is closed
+  CvPlsHelper.StatusRequestProcessor.prototype.processResponse = function(buffer, response) {
+    buffer.forEach(function(post) {
+      var $title;
+
+      post.questionData = response.match(post.questionId);
+
+      if (post.questionData) {
+        if (post.questionData.closed_date !== undefined) { // question is closed
 
           if (post.voteType === post.voteTypes.CV) {
-            if (pluginSettings.getSetting("removeCompletedNotifications")) {
-              self.avatarNotification.dequeue(post.id);
+            if (this.pluginSettings.getSetting('removeCompletedNotifications')) {
+              this.avatarNotificationManager.dequeue(post);
             }
-            if (pluginSettings.getSetting("removeCompletedOneboxes")) {
-              self.voteRequestFormatter.removeOnebox(post);
+            if (this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+              post.removeOneBox();
             }
-            if (pluginSettings.getSetting("strikethroughCompleted")) {
-              self.voteRequestFormatter.strikethrough(post);
+            if (this.pluginSettings.getSetting('strikethroughCompleted')) {
+              post.strikethrough();
             }
           }
 
-          if (pluginSettings.getSetting("showCloseStatus") && !post.$post.hasClass('cvhelper-closed')) {
+          if (this.pluginSettings.getSetting('showCloseStatus') && !post.$post.hasClass('cvhelper-closed')) {
             $title = $('.onebox .cvhelper-question-link', post.$post);
             $title.html($title.html() + ' [closed]');
             post.$post.addClass('cvhelper-closed');
@@ -37,30 +42,18 @@ CvPlsHelper.StatusRequestProcessor = function(pluginSettings, voteRequestFormatt
 
       } else { // question is deleted
 
-        if (pluginSettings.getSetting("removeCompletedNotifications")) {
-          self.avatarNotification.dequeue(post.id);
+        if (this.pluginSettings.getSetting('removeCompletedNotifications')) {
+          this.avatarNotificationManager.dequeue(post);
         }
-        if (pluginSettings.getSetting("removeCompletedOneboxes")) {
-          self.voteRequestFormatter.removeOnebox(post);
+        if (this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+          post.removeOneBox();
         }
-        if (pluginSettings.getSetting("strikethroughCompleted")) {
-          self.voteRequestFormatter.strikethrough(post);
+        if (this.pluginSettings.getSetting('strikethroughCompleted')) {
+          post.strikethrough();
         }
 
       }
-    }
+    }, this);
   };
 
-  // Fetches a question from the returned JSON object by question ID
-  this.getQuestionById = function(items, questionId) {
-    var length = items.length, i;
-    for (i = 0; i < length; i++) {
-      if (items[i].question_id === questionId) {
-        return items[i];
-      }
-    }
-
-    return null;
-  };
-
-};
+}());

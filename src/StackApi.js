@@ -1,48 +1,61 @@
-/*jslint plusplus: true, white: true, browser: true */
-/*global $ */
+/*jslint plusplus: true, white: true, browser: true, devel: true */
+/*global CvPlsHelper, $ */
 
-CvPlsHelper.StackApi = function() {
+(function() {
 
   "use strict";
 
-  var self = this;
+  var baseUrl = 'http://api.stackexchange.com/2.0/',
+      apiKey = 'ILSB6JuDQcCfYhS7KP2lqQ((',
+      requestMethods = {
+        questions: {
+          urlPath: 'questions/'
+        }
+      };
 
-  this.baseUrl = 'http://api.stackexchange.com/2.0/';
-  this.requestMethods = {
-    questions: {
-      urlPath: 'questions/'
-    }
+  function getQuestionIdsFromBuffer(buffer) {
+    var result = [];
+    buffer.forEach(function(post) {
+      if (post.questionId > 0 && result.indexOf(post.questionId) < 0) {
+        result.push(post.questionId);
+      }
+    });
+    return result;
+  }
+
+  CvPlsHelper.StackApi = function(collectionFactory) {
+    this.collectionFactory = collectionFactory;
   };
 
-  this.makeRequest = function(type, buffer, site, filter, responseProcessor) {
-    var url, requestData, requestSettings;
+  CvPlsHelper.StackApi.prototype.makeRequest = function(type, buffer, site, filter, callBack) {
+    var questionIds, query, url, xhr, response;
+    
+    questionIds = getQuestionIdsFromBuffer(buffer);
+    if (!questionIds.length) {
+      return;
+    }
 
-    url = self.baseUrl + self.requestMethods[type].urlPath + self.parseIds(buffer.questionIds);
-    requestData = {
-      site: site,
-      filter: filter,
-      pagesize: buffer.items,
-      key: 'ILSB6JuDQcCfYhS7KP2lqQ(('
-    };
-    requestSettings = {
-      url: url,
-      data: requestData,
-      error: function() {
-        // request error, this should be taken care of :)
-        // e.g. request quota reached
-      },
-      success: function(data) {
-        if (data.items !== undefined && data.items.length) {
-          responseProcessor.process(buffer, data.items);
+    query = "?site=" + site
+          + "&filter=" + filter
+          + "&pagesize=" + questionIds.length
+          + "&key=" + apiKey;
+    url = baseUrl + requestMethods[type].urlPath + questionIds.join(';') + query;
+
+    xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        try {
+          response = this.collectionFactory.create();
+          response.items = JSON.parse(xhr.responseText).items;
+          callBack(buffer, response);
+        } catch(e) {
+          // If we get here, something is probably wrong Stack Exchange and chances are chat won't be working either.
+          console.log('Something went *badly* wrong. Shit happens.');
         }
       }
     };
-
-    $.ajax(requestSettings);
+    xhr.send(null);
   };
 
-  this.parseIds = function(ids) {
-    return ids.join(';');
-  };
-
-};
+}());

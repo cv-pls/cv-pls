@@ -1,38 +1,51 @@
-CvPlsHelper.StatusPolling = function(document, pluginSettings, postFactory, voteRequestBufferFactory, pollMessageQueue, pollQueueProcessor) {
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper */
 
-  "use strict";
+(function() {
 
-  var self, timeout;
-
-  self = this;
-  timeout = null;
+  'use strict';
 
   function pollStatus() {
-    if (!pluginSettings.getSetting('pollCloseStatus')) {
-      return false;
-    }
-    
-    $('.cvhelper-vote-request', document).each(function() {
-      pollMessageQueue.enqueue(postFactory.create($(this)));
-    });
+    var self = this;
 
-    pollQueueProcessor.processQueue(voteRequestBufferFactory.create(pollMessageQueue));
+    if (this.pluginSettings.getSetting('pollCloseStatus') && this.pluginSettings.getSetting('pollInterval') > 0) {
+      this.postsOnScreen.forEach(function(post) {
+        this.pollMessageQueue.enqueue(post);
+      }, this);
 
-    if (timeout !== null) {
-      timeout = setTimeout(pollStatus, pluginSettings.getSetting('pollInterval') * 60000);
+      this.pollQueueProcessor.processQueue(this.voteRequestBufferFactory.create(this.pollMessageQueue));
+
+      if (this.timeout !== null) {
+        this.timeout = setTimeout(function() {
+          pollStatus.call(self);
+        }, this.pluginSettings.getSetting('pollInterval') * 60000);
+      }
     }
   }
 
-  this.start = function() {
-     // Wait 1 minute before polling to prevent getting kicked from stack api
-     timeout = setTimeout(pollStatus, 60000);
+  CvPlsHelper.StatusPolling = function(pluginSettings, postsOnScreen, voteRequestBufferFactory, pollMessageQueue, pollQueueProcessor) {
+    this.pluginSettings = pluginSettings;
+    this.postsOnScreen = postsOnScreen;
+    this.voteRequestBufferFactory = voteRequestBufferFactory;
+    this.pollMessageQueue = pollMessageQueue;
+    this.pollQueueProcessor = pollQueueProcessor;
   };
 
-  this.stop = function() {
-    if (timeout !== null) {
-      clearTimeout(timeout);
-      timeout = null;
+  CvPlsHelper.StatusPolling.prototype.timeout = null;
+
+  CvPlsHelper.StatusPolling.prototype.start = function() {
+    var self = this;
+    // Wait 1 minute before polling to prevent getting kicked from stack api
+    this.timeout = setTimeout(function() {
+      pollStatus.call(self);
+    }, 60000);
+  };
+
+  CvPlsHelper.StatusPolling.prototype.stop = function() {
+    if (this.timeout !== null) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
     }
   };
 
-};
+}());

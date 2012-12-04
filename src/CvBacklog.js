@@ -1,23 +1,19 @@
-CvPlsHelper.CvBacklog = function(document, pluginSettings, backlogUrl) {
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper, $ */
 
-  "use strict";
+(function() {
 
-  var self,
-      descriptionElement, originalDescription,
-      timeout;
-
-  self = this;
-  timeout = null;
+  'use strict';
 
   function buildCvLink(cvRequest) {
     var div, a, requestType;
 
     requestType = (cvRequest.closed_date !== undefined) ? 'delv' : 'cv';
 
-    div = document.createElement('div');
-    div.appendChild(document.createTextNode('[' + requestType + '-pls] '));
+    div = this.document.createElement('div');
+    div.appendChild(this.document.createTextNode('[' + requestType + '-pls] '));
 
-    a = div.appendChild(document.createElement('a'));
+    a = div.appendChild(this.document.createElement('a'));
     a.setAttribute('href', cvRequest.link);
     a.setAttribute('target', '_blank');
     a.innerHTML = cvRequest.title;
@@ -26,63 +22,69 @@ CvPlsHelper.CvBacklog = function(document, pluginSettings, backlogUrl) {
   }
 
   function processBacklogResponse(data) {
-    var backlogAmount, i, length;
+    var backlogAmount, i, l;
 
-    while (descriptionElement.hasChildNodes()) {
-      descriptionElement.removeChild(descriptionElement.lastChild);
+    while (this.descriptionElement.hasChildNodes()) {
+      this.descriptionElement.removeChild(this.descriptionElement.lastChild);
     }
 
-    backlogAmount = parseInt(pluginSettings.getSetting('backlogAmount'), 10);
-    length = data.length;
-    for (i = 0; i < length && i < backlogAmount; i++) {
-      descriptionElement.appendChild(buildCvLink(data[i]));
+    backlogAmount = parseInt(this.pluginSettings.getSetting('backlogAmount'), 10);
+    for (i = 0, l = data.length; i < l && i < backlogAmount; i++) {
+      this.descriptionElement.appendChild(buildCvLink.call(this, data[i]));
     }
   }
 
-  this.refresh = function() {
-    var xhr;
+  CvPlsHelper.CvBacklog = function(document, pluginSettings, backlogUrl) {
+    this.document = document;
+    this.pluginSettings = pluginSettings;
+    this.backlogUrl = backlogUrl;
+  };
 
-    timeout = null;
+  CvPlsHelper.CvBacklog.prototype.descriptionElement = null;
+  CvPlsHelper.CvBacklog.prototype.originalDescription = null;
+  CvPlsHelper.CvBacklog.prototype.timeout = null;
 
-    if (!pluginSettings.getSetting('backlogEnabled')) {
+  CvPlsHelper.CvBacklog.prototype.refresh = function() {
+    var xhr, self = this;
+
+    this.timeout = null;
+
+    if (!this.pluginSettings.getSetting('backlogEnabled')) {
       return null;
     }
 
     xhr = new XMLHttpRequest();
-    xhr.open("GET", backlogUrl, true);
+    xhr.open("GET", this.backlogUrl, true);
     xhr.setRequestHeader('Accept', 'application/json; charset=utf-8');
 
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4 && xhr.status === 200) {
-
         try {
-          processBacklogResponse(JSON.parse(xhr.responseText));
+          processBacklogResponse.call(self, JSON.parse(xhr.responseText));
         } catch(e) { /* probably a JSON parse error occured, ignore it */ }
 
-        if (pluginSettings.getSetting('backlogRefresh')) {
-          timeout = setTimeout(self.refresh, (pluginSettings.getSetting('backlogRefreshInterval') * 60 * 1000));
+        if (self.pluginSettings.getSetting('backlogRefresh')) {
+          self.timeout = setTimeout(self.refresh, (self.pluginSettings.getSetting('backlogRefreshInterval') * 60 * 1000));
         }
-
       }
     };
 
     xhr.send(null);
   };
 
-  this.show = function() {
-    descriptionElement = document.getElementById('roomdesc');
-    originalDescription = descriptionElement.innerHTML;
-    self.refresh();
+  CvPlsHelper.CvBacklog.prototype.show = function() {
+    this.descriptionElement = this.document.getElementById('roomdesc');
+    this.originalDescription = this.descriptionElement.innerHTML;
+    this.refresh();
   };
 
-  this.hide = function() {
-    if (timeout !== null) {
-      clearTimeout();
+  CvPlsHelper.CvBacklog.prototype.hide = function() {
+    if (this.timeout !== null) {
+      clearTimeout(this.timeout);
     }
-    if (originalDescription !== undefined) {
-      descriptionElement.innerHTML = originalDescription;
+    if (this.originalDescription !== null) {
+      this.descriptionElement.innerHTML = this.originalDescription;
     }
   };
 
-
-};
+}());

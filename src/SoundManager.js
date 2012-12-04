@@ -1,19 +1,11 @@
-CvPlsHelper.SoundManager = function(document, pluginSettings) {
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper */
 
-  "use strict";
+(function() {
 
-  var self = this;
+  'use strict';
 
-  // Toggle sound setting
-  function toggleSound(event) {
-    var value = pluginSettings.getSetting('soundNotification');
-    event.preventDefault();
-    pluginSettings.saveSetting('soundNotification', !value);
-    this.firstChild.data = value ? 'cv-pls (disabled)' : 'cv-pls (enabled)';
-  }
-
-  // Constructs and inserts toggle link
-  function insertToggleLink(popup, status) {
+  function insertToggleLink(document, popup, status) {
     var hr, ul, li, a;
 
     hr = document.createElement('hr');
@@ -23,35 +15,50 @@ CvPlsHelper.SoundManager = function(document, pluginSettings) {
     a = li.appendChild(document.createElement('a'));
     a.setAttribute('href', '#');
     a.appendChild(document.createTextNode('cv-pls (' + status + ')'));
-    a.addEventListener('click', toggleSound);
+    a.addEventListener('click', function(event) {
+      var value = this.pluginSettings.getSetting('soundNotification');
+      event.preventDefault();
+      this.pluginSettings.saveSetting('soundNotification', !value);
+      this.firstChild.data = value ? 'cv-pls (disabled)' : 'cv-pls (enabled)';
+    });
 
     popup.appendChild(hr);
     popup.appendChild(ul);
   }
 
-  // Sound settings popup listener
   function watchPopup() {
-    var xpathQuery, xpathResult, popup, status = 'disabled';
+    var self = this,
+        popup = this.document.getElementById('chat-body').querySelector('div.popup'),
+        status = 'disabled';
 
-    xpathQuery = "./div[contains(concat(' ', @class, ' '),' popup ')]";
-    xpathResult = document.evaluate(xpathQuery, document.getElementById('chat-body'), null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
-    popup = xpathResult.iterateNext();
     if (popup === null) {
-      setTimeout(watchPopup, 0);
+      setTimeout(function() {
+        watchPopup.call(self);
+      }, 0);
     }
 
-    if (pluginSettings.getSetting("soundNotification")) {
+    if (this.pluginSettings.getSetting("soundNotification")) {
       status = 'enabled';
     }
-    insertToggleLink(popup, status);
+    insertToggleLink.call(this, this.document, popup, status);
   }
 
-  this.init = function() {
-    if (document.getElementById('sound')) {
-      document.getElementById('sound').addEventListener('click', watchPopup);
+  CvPlsHelper.SoundManager = function(document, pluginSettings) {
+    this.document = document;
+    this.pluginSettings = pluginSettings;
+  };
+
+  CvPlsHelper.SoundManager.prototype.init = function() {
+    var self = this;
+    if (this.document.getElementById('sound')) {
+      this.document.getElementById('sound').addEventListener('click', function() {
+        watchPopup.call(self);
+      });
     } else {
-      setTimeout(self.init, 0);
+      setTimeout(function() {
+        self.init();
+      }, 0);
     }
   };
 
-};
+}());

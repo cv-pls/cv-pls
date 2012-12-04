@@ -1,54 +1,135 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global CvPlsHelper */
+/*global CvPlsHelper, $ */
 
 // Represents a post in the chatroom
 (function() {
 
+  'use strict';
+
+  // Get classes of element as array
+  function getClassNameArray(element) {
+    var raw, current, result = [];
+    if (element && element.className) {
+      raw = element.className.split(/\s+/g);
+      while (raw.length) {
+        current = raw.shift();
+        if (current.length && result.indexOf(current) < 0) {
+          result.push(current);
+        }
+      }
+    }
+    return result;
+  }
+
   // Adds a class name to an element
   function addClass(element, className) {
-    var classes = (element.getAttribute('class') || "").split(/\s+/g);
+    var classes = getClassNameArray(element);
     if (classes.indexOf(className) < 0) {
       classes.push(className);
-      element.setAttribute('class', classes.join(' ').replace(/^\s+|\s+$/g, ''));
+      element.className = classes.join(' ');
     }
-  };
+  }
+
+  // Tests whether an element has a class name
+  function hasClass(element, className) {
+    return getClassNameArray(element).indexOf(className) >= 0;
+  }
 
   // Sets the message ID of the post
   function setPostId() {
-    if (this.element.parentNode && this.element.parentNode.ownerDocument && this.element.parentNode.nodeType !== 11) {
-      this.id = this.postId = (this.element.parentNode.getAttribute('id') || "").substr(8) || null;
-    }
-  };
+    this.postId = parseInt((this.messageElement.getAttribute('id') || '').match(/message-(\d+)/)[1], 10);
+    this.id = this.postId; // Remove asap
+  }
 
   // Determines whether the post was added by the active user
   function setIsOwnPost() {
-    var xpathQuery, xpathResult;
-    if (this.postId && this.element.parentNode.parentNode) {
-      xpathQuery = "./a[contains(concat(' ', @class, ' '), ' " + activeUserClass + " ')]";
-      xpathResult = document.evaluate(xpathQuery, this.element.parentNode.parentNode.parentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-      this.isOwnPost = Boolean(xpathResult.snapshotLength);
+    if (this.postId && this.messageElement.parentNode && this.messageElement.parentNode.parentNode) {
+      this.isOwnPost = hasClass(this.messageElement.parentNode.parentNode, this.chatRoom.activeUserClass);
     }
-  };
+  }
+
+  // Parses all tags into an array
+  function loadTags() {
+    var i, tagElements = this.contentElement.querySelectorAll('a span.ob-post-tag');
+    this.tags = [];
+    for (i = 0; i < tagElements.length; i++) {
+      this.tags.push(tagElements[i].firstChild.data.toLowerCase());
+    }
+  }
+
+  function setIsVoteRequest() {
+    this.isVoteRequest = Boolean(this.matchTag(/^(cv|delv)-(pls|maybe)$/));
+    if (this.isVoteRequest) {
+      addClass(this.contentElement, 'cvhelper-vote-request');
+    }
+  }
+
+  // Sets the vote type of the post and manipulates vote post structure for easy reference later on
+  function setVoteType() {
+    var i, l;
+
+    this.voteType = this.voteTypes[this.matchTag(/^(cv|delv)-(pls|maybe)$/).split('-').shift().toUpperCase()];
+
+    if (!this.contentElement.querySelector('span.cvhelper-vote-request-text')) { // Required for strikethrough to work
+      this.textElement = this.document.createElement('span');
+      this.textElement.setAttribute('class', 'cvhelper-vote-request-text');
+      for (i = 0, l = this.contentElement.childNodes.length; i < l; i++) {
+        this.textElement.appendChild(this.contentElement.removeChild(this.contentElement.childNodes[i]));
+      }
+      this.contentElement.appendChild(this.textElement);
+    }
+  }
+
+  // Sets the question ID based on the first question link in the post
+  function setQuestionId() {
+    var questionLinks, i, l, parts;
+
+    questionLinks = this.contentElement.querySelector('a[href^="http://stackoverflow.com/questions/"], a[href^="http://stackoverflow.com/q/');
+
+    for (i = 0, l = questionLinks.length; i < l; i++) {
+      parts = questionLinks[i].getAttribute('href').match(/^http:\/\/stackoverflow\.com\/questions\/(\d+)/);
+      if (parts) {
+        this.questionId = parseInt(parts[1], 10);
+        addClass(questionLinks[i], 'cvhelper-question-link');
+        break;
+      }
+    }
+  }
+
+  // Adds a class to the element to indicate that it has been processed
+  function markProcessed() {
+    addClass(this.contentElement, 'cvhelper-processed');
+  }
+
+  function initPost() {
+    loadTags.call(this);
+    setIsVoteRequest.call(this);
+    if (this.isVoteRequest) {
+      setVoteType.call(this);
+      setQuestionId.call(this);
+    }
+    markProcessed.call(this);
+  }
+
+  function setPostElements(messageElement) {
+    this.messageElement = messageElement;
+    this.contentElement = messageElement.querySelector('div.content');
+    this.element = this.contentElement;  // Remove asap
+    this.$post = $(this.contentElement); // Remove asap
+  }
 
   // Constructor
-  CvPlsHelper.Post = function(document, chatRoom, $post) {
+  CvPlsHelper.Post = function(document, chatRoom, oneBoxFactory, messageElement) {
     this.document = document;
     this.chatRoom = chatRoom;
-    if ($post) {
-      this.$post = $post;
-      this.element = $post[0];
+    this.oneBoxFactory = oneBoxFactory;
+    setPostElements.call(this, messageElement);
 
-      setPostId.call(this);
-      setIsOwnPost.call(this);
-      setQuestionId.call(this);
-      setVoteType.call(this);
-      markProcessed.call(this);
-    }
-  };
+    // These are outside initPost to avoid over-processing a replacement element
+    setPostId.call(this);
+    setIsOwnPost.call(this);
 
-  // Factory method
-  CvPlsHelper.Post.prototype.create = function($post) {
-    return new this.constructor(this.document, this.chatRoom, $post);
+    initPost.call(this);
   };
 
   // Type Enums
@@ -64,10 +145,13 @@
   };
 
   // Public properties
-  CvPlsHelper.Post.prototype.$post = null;
-  CvPlsHelper.Post.prototype.element = null;
+  CvPlsHelper.Post.prototype.messageElement = null;
+  CvPlsHelper.Post.prototype.contentElement = null; // This will replace .element asap
+  CvPlsHelper.Post.prototype.textElement = null;
 
-  CvPlsHelper.Post.prototype.id = null;
+  CvPlsHelper.Post.prototype.oneBox = null;
+  CvPlsHelper.Post.prototype.questionData = null;
+
   CvPlsHelper.Post.prototype.postId = null; // This will replace .id asap
   CvPlsHelper.Post.prototype.questionId = null;
 
@@ -75,93 +159,79 @@
   CvPlsHelper.Post.prototype.postType = 0;
   CvPlsHelper.Post.prototype.isVoteRequest = false;
   CvPlsHelper.Post.prototype.isOwnPost = false;
+  CvPlsHelper.Post.prototype.isOnScreen = true;
 
-}());
+  CvPlsHelper.Post.prototype.hasAvatarNotification = false;
 
-CvPlsHelper.Post = function(document, $post, activeUserClass) {
+  // Pending burnination
+  CvPlsHelper.Post.prototype.id = null;
+  CvPlsHelper.Post.prototype.element = null;
+  CvPlsHelper.Post.prototype.$post = null;
 
-  "use strict";
+  // Public methods
 
-  var self = this;
-
-  // Type Enums
-  this.voteTypes = {
-    CV: 1,
-    DELV: 2
-  };
-  this.postTypes = {
-    EXISTING: 0,
-    NEW: 1,
-    EDIT: 2,
-    REMOVE: 3
-  };
-
-  // An attempt at a factory pattern implementation. I do not like this approach, but it works for now.
-  if (activeUserClass === undefined) {
-    activeUserClass = document.getElementById('active-user').className.match(/user-\d+/)[0];
-    this.create = function($post) {
-      return new self.constructor($post, document, activeUserClass);
-    };
-    return;
-  }
-
-  // Sets the question ID based on the first question link in the post
-  this.setQuestionId = function() {
-    var xpathQuery, xpathResult, i, parts, parsedId;
-
-    xpathQuery = ".//a[starts-with(@href, 'http://stackoverflow.com/questions/') or starts-with(@href, 'http://stackoverflow.com/q/')]";
-    xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-
-    for (i = 0; i < xpathResult.snapshotLength; i++) {
-      parts = xpathResult.snapshotItem(i).getAttribute('href').split('/');
-      if (parts.length > 4) {
-        parsedId = parseInt(parts[4], 10);
-        if (!isNaN(parsedId)) {
-          self.questionId = parsedId;
+  // Matches tags against the given expr (string or RegExp) and returns the first match
+  CvPlsHelper.Post.prototype.matchTag = function(expr) {
+    var i, l, matches, result = null;
+    if (typeof expr === 'string' && this.tags.indexOf(String(expr).toLowerCase()) >= 0) {
+      result = expr;
+    } else if (expr instanceof RegExp) {
+      for (i = 0, l = this.tags.length; i < l; i++) {
+        matches = this.tags[i].match(expr);
+        if (matches) {
+          result = matches[0];
           break;
         }
       }
     }
-
-  };  
-
-  // Sets the vote type of the post and manipulates vote post structure for easy reference later on
-  this.setVoteType = function() {
-    var xpathQuery, xpathResult;
-
-    if (self.questionId === null) {
-      return null;
-    }
-
-    xpathQuery = ".//a/span[contains(concat(' ', @class, ' '), ' ob-post-tag ') and contains(' cv-pls cv-maybe delv-pls delv-maybe ', concat(' ', text(), ' '))]";
-    xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-
-    if (xpathResult.snapshotLength) {
-
-      self.isVoteRequest = true;
-      self.voteType = self.voteTypes[xpathResult.snapshotItem(0).firstChild.data.split('-').shift().toUpperCase()];
-
-      self.addClass(self.element, 'cvhelper-vote-request');
-
-      xpathQuery = ".//span[contains(concat(' ', @class, ' '), ' cvhelper-vote-request-text ')]";
-      xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-      if (!xpathResult.snapshotLength) {
-        self.element.innerHTML = '<span class="cvhelper-vote-request-text">' + self.element.innerHTML + '</span>'; // Required for strikethrough to work
-      }
-
-      xpathQuery = ".//a[starts-with(@href, 'http://stackoverflow.com/questions/" + self.questionId + "') or starts-with(@href, 'http://stackoverflow.com/q/" + self.questionId + "')]";
-      xpathResult = document.evaluate(xpathQuery, self.element, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
-      self.addClass(xpathResult.iterateNext(), 'cvhelper-question-link');
-
-    }
-
+    return result;
   };
 
-  // Adds a class to the element to indicate that it has been processed
-  this.markProcessed = function() {
-    self.addClass(self.element, 'cvhelper-processed');
+  CvPlsHelper.Post.prototype.replaceElement = function(newNode) {
+    this.isVoteRequest = this.voteType = this.questionId = null;
+    setPostElements.call(this, newNode);
+
+    if (this.oneBox) {
+      this.oneBox.refreshDisplay(this.contentElement);
+    }
+
+    initPost.call(this);
   };
 
-  self.init();
+  CvPlsHelper.Post.prototype.strikethrough = function() {
+    this.textElement.style.textDecoration = 'line-through';
+    this.textElement.style.color = '#222';
+  };
 
-};
+  CvPlsHelper.Post.prototype.addOneBox = function() {
+    if (!this.oneBox && this.questionData) {
+      this.oneBox = this.oneBoxFactory.create(this);
+      this.oneBox.show();
+    }
+  };
+
+  CvPlsHelper.Post.prototype.removeOneBox = function() {
+    if (this.oneBox) {
+      this.oneBox.hide();
+    }
+  };
+
+  CvPlsHelper.Post.prototype.scrollTo = function() {
+    var $lastCvRequestContainer, originalBackgroundColor;
+
+    if (this.isOnScreen) {
+      $lastCvRequestContainer = $(this.messageElement);
+      originalBackgroundColor = $lastCvRequestContainer.parents('.messages').css('backgroundColor');
+      $lastCvRequestContainer.css('background', 'yellow');
+
+      $('html, body', document).animate({scrollTop: $lastCvRequestContainer.offset().top}, 500, function() {
+        $lastCvRequestContainer.animate({
+          backgroundColor: originalBackgroundColor
+        }, 5000);
+      });
+    } else {
+      window.open('http://chat.stackoverflow.com/transcript/message/' + this.postId + '#' + this.postId, '_blank');
+    }
+  };
+
+}());

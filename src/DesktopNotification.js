@@ -1,13 +1,21 @@
-CvPlsHelper.DesktopNotification = function(pluginSettings, desktopNotificationDispatcher) {
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper */
 
-  "use strict";
+(function() {
 
-  this.show = function(title, message) {
-    if (!pluginSettings.getSetting("desktopNotification")) {
+  'use strict';
+
+  CvPlsHelper.DesktopNotification = function(pluginSettings, desktopNotificationDispatcher) {
+    this.pluginSettings = pluginSettings;
+    this.desktopNotificationDispatcher = desktopNotificationDispatcher;
+  };
+
+  CvPlsHelper.DesktopNotification.prototype.show = function(title, message) {
+    if (!this.pluginSettings.getSetting("desktopNotification")) {
       return null;
     }
 
-    desktopNotificationDispatcher.dispatch(title, message);
+    this.desktopNotificationDispatcher.dispatch(title, message);
   };
 
-};
+}());

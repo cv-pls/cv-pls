@@ -1,25 +1,20 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global Audio, chrome */
+/*global CvPlsHelper, Audio */
 
-CvPlsHelper.AudioPlayer = function(document, audioFile) {
+(function() {
 
-  "use strict";
-
-  var self = this,
-      enabled = false,
-      player;
+  'use strict';
 
   function initializeNativeAudioSupport() {
     try {
-      player = new Audio();
-      if (!player.canPlayType('audio/mp3')) {
-        throw {};
+      this.player = new Audio();
+      if (this.player.canPlayType('audio/mp3')) {
+        this.player.src = this.audioFile;
+        return true;
       }
-      player.src = audioFile;
-      return true;
     } catch (e) {}
     return false;
-  };
+  }
 
   function initializeJplayerSupport() {
     var notificationDiv, notificationEvent,
@@ -27,47 +22,50 @@ CvPlsHelper.AudioPlayer = function(document, audioFile) {
         notificationDivId = 'cvpls-jplayer',
         eventName = 'CvPlsJPlayerNotify';
 
-    notificationDiv = document.createElement('div');
+    notificationDiv = this.document.createElement('div');
     notificationDiv.setAttribute('id', notificationDivId);
 
     // This is dangerously close to eval(), but the Chrome extension model requires we do it this way
-    eventAttacherScript = "document.getElementById('" + notificationDivId + "').addEventListener('" + eventName + "', function() { $('#jplayer').jPlayer('play', 0); });"
+    eventAttacherScript = "document.getElementById('" + notificationDivId + "').addEventListener('" + eventName + "', function() { $('#jplayer').jPlayer('play', 0); });";
 
-    eventAttacherElement = document.createElement('script');
+    eventAttacherElement = this.document.createElement('script');
     eventAttacherElement.setAttribute('type', 'application/javascript');
-    eventAttacherElement.appendChild(document.createTextNode(eventAttacherScript));
+    eventAttacherElement.appendChild(this.document.createTextNode(eventAttacherScript));
 
-    document.body.appendChild(notificationDiv);
-    document.head.appendChild(eventAttacherElement);
+    this.document.body.appendChild(notificationDiv);
+    this.document.head.appendChild(eventAttacherElement);
 
-    notificationEvent = document.createEvent('Event');
+    notificationEvent = this.document.createEvent('Event');
     notificationEvent.initEvent('CustomJPlayerNotify', true, true);
 
-    player = {
+    this.player = {
       play: function() {
         notificationDiv.dispatchEvent(notificationEvent);
       }
     };
-  };
+  }
 
-  this.playNotification = function() {
-    if (enabled) {
-      player.play();
+  CvPlsHelper.AudioPlayer = function(document, audioFile) {
+    this.document = document;
+    this.audioFile = audioFile;
+    if (!initializeNativeAudioSupport.call(this)) {
+      initializeJplayerSupport.call(this);
     }
   };
 
-  this.enable = function() {
-    enabled = true;
-  };
+  CvPlsHelper.AudioPlayer.prototype.enabled = false;
 
-  this.disable = function() {
-    enabled = false;
-  };
-
-  (function() {
-    if (!initializeNativeAudioSupport()) {
-      initializeJplayerSupport();
+  CvPlsHelper.AudioPlayer.prototype.playNotification = function() {
+    if (this.enabled) {
+      this.player.play();
     }
-  }());
+  };
 
-};
+  CvPlsHelper.AudioPlayer.prototype.enable = function() {
+    this.enabled = true;
+  };
+  CvPlsHelper.AudioPlayer.prototype.disable = function() {
+    this.enabled = false;
+  };
+
+}());

@@ -1,8 +1,9 @@
-CvPlsHelper.ButtonsManager = function(document, pluginSettings) {
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper */
 
-  "use strict";
+(function() {
 
-  var self = this;
+  'use strict';
 
   function putCursorAtEnd(element) {
     var val;
@@ -18,7 +19,7 @@ CvPlsHelper.ButtonsManager = function(document, pluginSettings) {
     }
   }
 
-  function addButton(voteType) {
+  function addButton(document, voteType) {
     var newButton, cancelEditButton;
 
     voteType += '-pls';
@@ -47,13 +48,19 @@ CvPlsHelper.ButtonsManager = function(document, pluginSettings) {
     cancelEditButton.parentNode.insertBefore(newButton, cancelEditButton);
   }
 
-  this.init = function() {
-    if (pluginSettings.getSetting('cvPlsButton')) {
-      addButton('cv');
+  CvPlsHelper.ButtonsManager = function(document, pluginSettings) {
+    this.document = document;
+    this.pluginSettings = pluginSettings;
+  };
+
+  CvPlsHelper.ButtonsManager.prototype.init = function() {
+    if (this.pluginSettings.getSetting('cvPlsButton')) {
+      addButton(this.document, 'cv');
     }
 
-    if (pluginSettings.getSetting('delvPlsButton')) {
-      addButton('delv');
+    if (this.pluginSettings.getSetting('delvPlsButton')) {
+      addButton(this.document, 'delv');
     }
   };
-};
+
+}());

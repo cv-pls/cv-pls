@@ -6,14 +6,14 @@
 
   'use strict';
 
-  // Get classes of message as array, return empty array if element is not a <div>
+  // Get classes of element as array
   function getClassNameArray(element) {
     var raw, current, result = [];
     if (element && element.className) {
       raw = element.className.split(/\s+/g);
       while (raw.length) {
         current = raw.shift();
-        if (current) {
+        if (current.length && result.indexOf(current) < 0) {
           result.push(current);
         }
       }
@@ -37,22 +37,29 @@
     return Boolean(element.querySelector('span.deleted'));
   }
 
-  // Process the voteRequestMessageQueue
+
+  function getMessageId(node) {
+    return parseInt(node.getAttribute('id').match(/^message-(\d+)$/i)[1], 10);
+  }
+
+  // Process the postsOnScreen
   function processQueue() {
     this.queueProcessPending = false;
-    if (this.voteRequestMessageQueue.queue.length > 0) {
-      this.voteQueueProcessor.processQueue(this.voteRequestBufferFactory.create(this.voteRequestMessageQueue));
+    if (this.postsOnScreen.length() > 0) {
+      this.voteQueueProcessor.processQueue(this.voteRequestBufferFactory.create(this.postsOnScreen));
     }
   }
 
   // Event listener for NodeAdded event
   function nodeAddedListener(node) {
-    var post = this.postFactory.create($(node.querySelector('div.content')));
-    post.postType = post.postTypes.NEW; // this sucks. fix please
+    var post = this.postFactory.create(node),
+        self = this;
     if (post.isVoteRequest && !post.isOwnPost) {
-      this.voteRequestMessageQueue.enqueue(post);
+      this.postsOnScreen.push(post);
       if (!this.queueProcessPending) {
-        setTimeout(processQueue.bind(this), 0);
+        setTimeout(function() {
+          processQueue.call(self);
+        }, 0);
         this.queueProcessPending = true;
       }
     }
@@ -60,34 +67,37 @@
 
   // Event listener for DOMNodeRemoved event
   function nodeRemovedListener(node) {
-    var post = this.postFactory.create($(node.querySelector('div.content')));
-    post.postType = post.postTypes.REMOVE;
-    if (post.isVoteRequest && !post.isOwnPost) {
+    var post, postId = getMessageId(node);
+    post = this.postsOnScreen.match('postId', postId);
+    if (post) {
+      post.isOnScreen = false;
+      this.postsOnScreen.remove(post);
       this.voteRemoveProcessor.removeLost(post);
     }
   }
 
   // Event listener for DOMNodeRemoved event
   function nodeReplacedListener(oldNode, newNode) {
-    var oneBox,
-        oldPost = this.postFactory.create($(oldNode.querySelector('div.content'))),
-        newPost = this.postFactory.create($(newNode.querySelector('div.content')));
-    oldPost.postType = oldPost.postTypes.REMOVE;
-    newPost.postType = newPost.postTypes.EDIT;
-    if (newPost.isVoteRequest && !newPost.isOwnPost) {
-      oneBox = oldNode.querySelector('div.oneBox.cv-request');
-      if (oneBox && oldPost.questionId === newPost.questionId) {
-        oldNode.removeChild(oneBox);
-        newNode.appendChild(oneBox);
+    var self = this,
+        postId = getMessageId(oldNode),
+        newPost = this.postFactory.create(newNode),
+        oldPost = this.postsOnScreen.match('postId', postId);
+    if (oldPost) {
+      if (!newPost.isVoteRequest || newPost.isOwnPost) {
+        oldPost.isOnScreen = false;
+        this.postsOnScreen.remove(oldPost);
+        this.voteRemoveProcessor.removeLost(oldPost);
       } else {
-        this.voteRequestMessageQueue.enqueue(newPost);
-        if (!this.queueProcessPending) {
-          setTimeout(processQueue.bind(this), 0);
-          this.queueProcessPending = true;
-        }
+        oldPost.replaceElement(newNode);
       }
-    } else if (oldPost.isVoteRequest && !oldPost.isOwnPost) {
-      this.voteRemoveProcessor.removeLost(post);
+    } else if (newPost.isVoteRequest && !newPost.isOwnPost) {
+      this.postsOnScreen.push(newPost);
+      if (!this.queueProcessPending) {
+        setTimeout(function() {
+          processQueue.call(self);
+        }, 0);
+        this.queueProcessPending = true;
+      }
     }
   }
 
@@ -115,22 +125,20 @@
   function processAllPosts() {
     var posts, i, l;
 
-    posts = this.chatRoom.chatContainer.querySelectorAll('div.message:not(.pending) div.content:not(.cvhelper-processed)');
+    posts = this.chatRoom.chatContainer.querySelectorAll('div.message:not(.pending)');
 
     for (i = 0, l = posts.length; i < l; i++) {
-      processNewPost.call(this, posts[i]);
+      nodeAddedListener.call(this, posts[i]);
     }
-
-    processQueue.call(this);
   }
 
   // Too many args for this constructor? Probably
-  CvPlsHelper.VoteRequestListener = function(chatRoom, mutationListenerFactory, postFactory, voteRequestBufferFactory, voteRequestMessageQueue, voteQueueProcessor, voteRemoveProcessor) {
+  CvPlsHelper.VoteRequestListener = function(chatRoom, mutationListenerFactory, postFactory, voteRequestBufferFactory, postsOnScreen, voteQueueProcessor, voteRemoveProcessor) {
     this.chatRoom = chatRoom;
     this.mutationListenerFactory = mutationListenerFactory;
     this.postFactory = postFactory;
     this.voteRequestBufferFactory = voteRequestBufferFactory;
-    this.voteRequestMessageQueue = voteRequestMessageQueue;
+    this.postsOnScreen = postsOnScreen;
     this.voteQueueProcessor = voteQueueProcessor; 
     this.voteRemoveProcessor = voteRemoveProcessor;
   };

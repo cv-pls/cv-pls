@@ -8,19 +8,6 @@
   /*
    * Private methods
    */
-  function startListener() {
-    if (this.mutationListener && !this.mutationListener.isListening()) {
-      this.mutationListener.on('NodeRemoved', mutationListenerCallback.bind(this));
-    }
-  }
-
-  function stopListener() {
-    if (this.mutationListener.isListening()) {
-      this.mutationListener.off('NodeRemoved', mutationListenerCallback.bind(this));
-      this.mutationListener = null;
-    }
-  }
-
   function setRoomLoaded() {
     this.loaded = true;
     this.chatContainer = this.document.getElementById('chat');
@@ -34,6 +21,19 @@
   function mutationListenerCallback(node) {
     if (node.getAttribute && node.getAttribute('id') === 'loading') {
       setRoomLoaded.call(this);
+    }
+  }
+
+  function startListener() {
+    if (this.mutationListener && !this.mutationListener.isListening()) {
+      this.mutationListener.on('NodeRemoved', mutationListenerCallback.bind(this));
+    }
+  }
+
+  function stopListener() {
+    if (this.mutationListener.isListening()) {
+      this.mutationListener.off('NodeRemoved', mutationListenerCallback.bind(this));
+      this.mutationListener = null;
     }
   }
 

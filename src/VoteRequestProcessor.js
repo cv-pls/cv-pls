@@ -1,86 +1,72 @@
-CvPlsHelper.VoteRequestProcessor = function(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotification) {
+/*jslint plusplus: true, white: true */
+/*global CvPlsHelper */
 
-  "use strict";
+(function() {
 
-  var self = this;
+  'use strict';
 
-  this.process = function(buffer, items) {
-    var newQuestions = false, i, question, post;
-    
-    for (i = 0; i < buffer.items; i++) {
-      post = buffer.posts[i];
-      question = self.getQuestionById(items, buffer.questionIds[i]);
+  CvPlsHelper.VoteRequestProcessor = function(pluginSettings, voteRequestFormatter, audioPlayer, avatarNotificationManager) {
+    this.pluginSettings = pluginSettings;
+    this.voteRequestFormatter = voteRequestFormatter;
+    this.audioPlayer = audioPlayer;
+    this.avatarNotificationManager = avatarNotificationManager;
+  };
 
-      if (!question) { // Question is deleted
+  CvPlsHelper.VoteRequestProcessor.prototype.processResponse = function(buffer, response) {
+    var newQuestions = false;
 
-        if (!pluginSettings.getSetting("removeCompletedNotifications")) {
-          avatarNotification.enqueue(post);
+    buffer.forEach(function(post) {
+      post.questionData = response.match(post.questionId);
+
+      if (!post.questionData) { // Question is deleted
+
+        if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
+          this.avatarNotificationManager.enqueue(post);
         }
-        if (pluginSettings.getSetting("strikethroughCompleted")) {
-          voteRequestFormatter.strikethrough(post, question);
+        if (this.pluginSettings.getSetting('strikethroughCompleted')) {
+          post.strikethrough();
         }
 
-      } else if (question.closed_date !== undefined) { // Question is closed
+      } else if (post.questionData.closed_date !== undefined) { // Question is closed
 
         newQuestions = true;
 
         if (post.voteType === post.voteTypes.DELV) {
+          this.avatarNotificationManager.enqueue(post);
 
-          if (post.postType !== post.postTypes.EDIT) {
-            avatarNotification.enqueue(post);
+          if (this.pluginSettings.getSetting('oneBox')) {
+            post.addOnebox();
           }
-
-          if (pluginSettings.getSetting("oneBox")) {
-            voteRequestFormatter.addOnebox(post.$post, question);
-          }
-
         } else {
-
-          if (post.postType !== post.postTypes.EDIT && !pluginSettings.getSetting("removeCompletedNotifications")) {
-            avatarNotification.enqueue(post);
+          if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
+            this.avatarNotificationManager.enqueue(post);
           }
 
-          if (pluginSettings.getSetting("oneBox") && !pluginSettings.getSetting("removeCompletedOneboxes")) {
-            voteRequestFormatter.addOnebox(post.$post, question);
+          if (this.pluginSettings.getSetting('oneBox') && !this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+            post.addOnebox();
           }
 
-          if (pluginSettings.getSetting("strikethroughCompleted")) {
-            voteRequestFormatter.strikethrough(post, question);
+          if (this.pluginSettings.getSetting('strikethroughCompleted')) {
+            post.strikethrough();
           }
-
         }
 
       } else { // Question is open
-
         newQuestions = true;
+        this.avatarNotificationManager.enqueue(post);
 
-        if (post.postType !== post.postTypes.EDIT) {
-          avatarNotification.enqueue(post);
+        if (this.pluginSettings.getSetting('oneBox')) {
+          post.addOnebox();
         }
-
-        if (pluginSettings.getSetting("oneBox")) {
-          voteRequestFormatter.addOnebox(post.$post, question);
-        }
-
       }
 
-    }
+    }, this);
 
-    if (newQuestions && pluginSettings.getSetting("soundNotification")) {
-      audioPlayer.playNotification();
+    if (newQuestions && this.pluginSettings.getSetting('soundNotification')) {
+      this.audioPlayer.playNotification();
     }
     // enable audioplayer after initial load
-    audioPlayer.enable();
+    this.audioPlayer.enable();
   };
 
-  this.getQuestionById = function(items, questionId) {
-    var length = items.length, i;
-    for (i = 0; i < length; i++) {
-      if (items[i].question_id === questionId) {
-        return items[i];
-      }
-    }
-
-    return null;
-  };
-};
+}());

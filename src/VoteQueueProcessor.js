@@ -1,21 +1,23 @@
-CvPlsHelper.VoteQueueProcessor = function(stackApi, voteRequestProcessor) {
+/*jslint plusplus: true, white: true, browser: true */
+/*global CvPlsHelper */
 
-  "use strict";
+(function() {
 
-  var self = this;
+  'use strict';
 
-  this.stackApi = stackApi;
+  function makeRequest(voteRequestBuffer) {
+    this.stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', this.voteRequestProcessor.processResponse);
+  }
 
-  this.processQueue = function(voteRequestBuffer) {
-    // no vote requests ready to be processed, so end here
-    if (voteRequestBuffer.items === 0) {
-      return null;
+  CvPlsHelper.VoteQueueProcessor = function(stackApi, voteRequestProcessor) {
+    this.stackApi = stackApi;
+    this.voteRequestProcessor = voteRequestProcessor;
+  };
+
+  CvPlsHelper.VoteQueueProcessor.prototype.processQueue = function(voteRequestBuffer) {
+    if (voteRequestBuffer.length() > 0) {
+      makeRequest.call(this, voteRequestBuffer);
     }
-
-    self.makeRequest(voteRequestBuffer);
   };
 
-  this.makeRequest = function(voteRequestBuffer) {
-    stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', voteRequestProcessor);
-  };
-};
+}());
