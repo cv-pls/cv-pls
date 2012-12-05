@@ -5,14 +5,15 @@
 
   "use strict";
 
-  CvPlsHelper.OneBoxFactory = function(document, pluginSettings, avatarNotification) {
+  CvPlsHelper.OneBoxFactory = function(document, pluginSettings, avatarNotificationManager, animatorFactory) {
     this.document = document;
     this.pluginSettings = pluginSettings;
-    this.avatarNotification = avatarNotification;
+    this.avatarNotificationManager = avatarNotificationManager;
+    this.animator = animatorFactory.create(document.defaultView);
   };
 
   CvPlsHelper.OneBoxFactory.prototype.create = function(post) {
-    return new CvPlsHelper.OneBox(this.document, this.pluginSettings, this.avatarNotification, post);
+    return new CvPlsHelper.OneBox(this.document, this.pluginSettings, this.avatarNotificationManager, this.animator, post);
   };
 
 }());

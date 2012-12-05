@@ -87,15 +87,15 @@
   }
 
   function getGrippie() {
-    var style, grippie;
+    var style;
     style = 'margin-right: 0px; background-position: 321px -823px; border: 1px solid #DDD; border-width: 0pt 1px 1px;'
           + 'cursor: s-resize; height: 9px; overflow: hidden; background-color: #EEE; margin-right: -8px;'
           + 'background-image: url(\'http://cdn.sstatic.net/stackoverflow/img/sprites.png?v=5\'); background-repeat: no-repeat;'
           + 'margin-top: 10px; display: none; position: absolute; bottom: 0; width: 250px;';
-    grippie = this.document.createElement('div');
-    grippie.setAttribute('class', 'grippie');
-    grippie.setAttribute('style', style);
-    return grippie;
+    this.grippieElement = this.document.createElement('div');
+    this.grippieElement.setAttribute('class', 'grippie');
+    this.grippieElement.setAttribute('style', style);
+    return this.grippieElement;
   }
   function getClearDiv() {
     var clearDiv = this.document.createElement('div');
@@ -104,40 +104,46 @@
   }
 
   function createElement() {
-    this.element = this.document.createElement('div');
+    this.oneBoxElement = this.document.createElement('div');
 
-    this.element.className = 'onebox ob-post cv-request';
-    this.element.style.overflow = 'hidden';
-    this.element.style.position = 'relative';
+    this.oneBoxElement.className = 'onebox ob-post cv-request';
+    this.oneBoxElement.style.overflow = 'hidden';
+    this.oneBoxElement.style.position = 'relative';
 
-    this.element.appendChild(getQuestionScore.call(this));
-    this.element.appendChild(getSiteIcon.call(this));
-    this.element.appendChild(getPostTitle.call(this));
-    this.element.appendChild(getPostBody.call(this));
-    this.element.appendChild(getPostTags.call(this));
-    this.element.appendChild(getGrippie.call(this));
+    this.oneBoxElement.appendChild(getQuestionScore.call(this));
+    this.oneBoxElement.appendChild(getSiteIcon.call(this));
+    this.oneBoxElement.appendChild(getPostTitle.call(this));
+    this.oneBoxElement.appendChild(getPostBody.call(this));
+    this.oneBoxElement.appendChild(getPostTags.call(this));
+    this.oneBoxElement.appendChild(getGrippie.call(this));
+  }
+
+  function getCurrentStyle(element, property) {
+    return element.ownerDocument.defaultView.getComputedStyle(element, null).getPropertyValue(property);
   }
 
   function processHeight() {
-    var totalWidth, grippieX, currentY,
-        $onebox = $(this.element),
-        $grippie = $('.grippie', this.element);
+    var totalWidth, grippieX, currentY;
 
-    $grippie.width($onebox.width());
+    this.grippieElement.style.width = getCurrentStyle(this.oneBoxElement, 'width');
 
-    if (this.pluginSettings.getSetting('oneBoxHeight') !== null && this.pluginSettings.getSetting('oneBoxHeight') < $onebox[0].scrollHeight) {
-      $onebox.height(this.pluginSettings.getSetting('oneBoxHeight'));
-      $onebox.css('padding-bottom', '10px');
-      $onebox.gripHandler({
+    if (this.pluginSettings.getSetting('oneBoxHeight') !== null && this.pluginSettings.getSetting('oneBoxHeight') < this.oneBoxElement.scrollHeight) {
+      this.oneBoxElement.style.height = this.pluginSettings.getSetting('oneBoxHeight') + 'px';
+      this.oneBoxElement.style.paddingBottom = '10px';
+
+      $(this.oneBoxElement).gripHandler({
         cursor: 'n-resize',
         gripClass: 'grippie'
       });
 
-      totalWidth = $grippie.width();
       // grippie width = 27px
-      grippieX = Math.ceil((totalWidth-27) / 2);
-      currentY = $grippie.css('backgroundPosition').split('px ')[1];
-      $grippie.css('backgroundPosition', grippieX + 'px ' + currentY).show();
+      // I don't know what CSS the 27px comment is supposed to relate to?
+      totalWidth = getCurrentStyle(this.grippieElement, 'width');
+      grippieX = Math.ceil((totalWidth - 27) / 2);
+
+      currentY = getCurrentStyle(this.grippieElement, 'background-position').split('px')[1];
+      this.grippieElement.style.backgroundPosition = grippieX + 'px ' + currentY + 'px';
+      this.grippieElement.style.display = 'block';
     }
   }
   function processStatus() {
@@ -146,24 +152,36 @@
     }
   }
   function processFormatting() {
-    var height;
-
     processHeight.call(this);
     processStatus.call(this);
-
-    height = $(this.document).height();
-    $('html, body', this.document).animate({ scrollTop: height }, 'slow');
+    scrollToBottom.call(this);
   }
 
-  CvPlsHelper.OneBox = function(document, pluginSettings, avatarNotification, post) {
+  function scrollToBottom() {
+    var start = this.document.defaultView.scrollY,
+        end = this.document.documentElement.scrollHeight - this.document.documentElement.clientHeight;
+    this.animator.animate({
+      startValue: start,
+      endValue: end,
+      totalTime: 1000,
+      frameFunc: function(newValue, animation) {
+        this.scroll(this.scrollX, newValue);
+      },
+      easing: 'decel'
+    });
+  }
+
+  CvPlsHelper.OneBox = function(document, pluginSettings, avatarNotification, animator, post) {
     this.document = document;
     this.pluginSettings = pluginSettings;
     this.avatarNotification = avatarNotification;
+    this.animator = animator;
     this.post = post;
     createElement.call(this);
   };
 
-  CvPlsHelper.OneBox.prototype.element = null;
+  CvPlsHelper.OneBox.prototype.oneBoxElement = null;
+  CvPlsHelper.OneBox.prototype.grippieElement = null;
   CvPlsHelper.OneBox.prototype.statusTextNode = null;
   CvPlsHelper.OneBox.prototype.scoreTextNode = null;
 
@@ -173,12 +191,12 @@
   };
 
   CvPlsHelper.OneBox.prototype.show = function() {
-    this.post.contentElement.appendChild(this.element);
+    this.post.contentElement.appendChild(this.oneBoxElement);
     processFormatting.call(this);
   };
 
   CvPlsHelper.OneBox.prototype.hide = function() {
-    this.element.parentNode.removeChild(this.element);
+    this.oneBoxElement.parentNode.removeChild(this.oneBoxElement);
   };
 
   CvPlsHelper.OneBox.prototype.setStatusText = function(statusText) {
