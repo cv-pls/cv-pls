@@ -1,5 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global CvPlsHelper, $ */
+/*global CvPlsHelper */
 
 // Represents a post in the chatroom
 (function() {
@@ -38,7 +38,6 @@
   // Sets the message ID of the post
   function setPostId() {
     this.postId = parseInt((this.messageElement.getAttribute('id') || '').match(/message-(\d+)/)[1], 10);
-    this.id = this.postId; // Remove asap
   }
 
   // Determines whether the post was added by the active user
@@ -120,8 +119,10 @@
   function setPostElements(messageElement) {
     this.messageElement = messageElement;
     this.contentElement = messageElement.querySelector('div.content');
-    this.element = this.contentElement;  // Remove asap
-    this.$post = $(this.contentElement); // Remove asap
+    this.animator = this.animatorFactory.create(messageElement);
+    if (messageElement.parentNode) {
+      this.messagesElement = messageElement.parentNode;
+    }
   }
 
   function initQuestionData() {
@@ -172,12 +173,13 @@
   }
 
   // Constructor
-  CvPlsHelper.Post = function(document, pluginSettings, chatRoom, oneBoxFactory, avatarNotificationManager, messageElement) {
+  CvPlsHelper.Post = function(document, pluginSettings, chatRoom, oneBoxFactory, avatarNotificationManager, animatorFactory, messageElement) {
     this.document = document;
     this.pluginSettings = pluginSettings;
     this.chatRoom = chatRoom;
     this.oneBoxFactory = oneBoxFactory;
     this.avatarNotificationManager = avatarNotificationManager;
+    this.animatorFactory = animatorFactory;
     setPostElements.call(this, messageElement);
 
     // These are outside initPost to avoid over-processing a replacement element
@@ -201,11 +203,13 @@
 
   // Public properties
   CvPlsHelper.Post.prototype.messageElement = null;
+  CvPlsHelper.Post.prototype.messagesElement = null;
   CvPlsHelper.Post.prototype.contentElement = null;
   CvPlsHelper.Post.prototype.contentWrapperElement = null;
   CvPlsHelper.Post.prototype.questionLinkElement = null;
 
   CvPlsHelper.Post.prototype.oneBox = null;
+  CvPlsHelper.Post.prototype.animator = null;
 
   CvPlsHelper.Post.prototype.postId = null;
   CvPlsHelper.Post.prototype.questionId = null;
@@ -223,17 +227,6 @@
 
   CvPlsHelper.Post.prototype.hasPendingNotification = false;
   CvPlsHelper.Post.prototype.hasAvatarNotification = false;
-
-  // Pending burnination
-  CvPlsHelper.Post.prototype.id = null; // This will be replaced by .postId
-  CvPlsHelper.Post.prototype.element = null; // This will be replaced by .contentElement
-  CvPlsHelper.Post.prototype.$post = null;
-  CvPlsHelper.Post.postTypes = CvPlsHelper.Post.prototype.postTypes = {
-    EXISTING: 0,
-    NEW: 1,
-    EDIT: 2,
-    REMOVE: 3
-  };
 
   // Public methods
 
@@ -314,17 +307,61 @@
   };
 
   CvPlsHelper.Post.prototype.scrollTo = function() {
-    var $lastCvRequestContainer, originalBackgroundColor;
+    var originalBackgroundColor, scrollEnd, scrollTarget, rgbEnd, rgbDiff;
+
+    function parseRGB(value) {
+      var parts, result = {};
+      parts = value.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+      if (parts) {
+        result.r = parseInt(parts[1], 16);
+        result.g = parseInt(parts[2], 16);
+        result.b = parseInt(parts[3], 16);
+        return result;
+      }
+      parts = value.match(/^\s*rgba?\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*(?:,\s*([0-9]{1,3})\s*)?\)\s*$/i);
+      if (parts) {
+        result.r = parseInt(parts[1], 10);
+        result.g = parseInt(parts[2], 10);
+        result.b = parseInt(parts[3], 10);
+        return result;
+      }
+    }
 
     if (this.isOnScreen) {
-      $lastCvRequestContainer = $(this.messageElement);
-      originalBackgroundColor = $lastCvRequestContainer.parents('.messages').css('backgroundColor');
-      $lastCvRequestContainer.css('backgroundColor', '#FFFF00');
+      scrollEnd = this.messageElement.offsetTop;
+      scrollTarget = this.document.defaultView;
+      originalBackgroundColor = this.document.defaultView.getComputedStyle(this.messagesElement, null).getPropertyValue('background-color');
 
-      $('html, body', document).animate({scrollTop: $lastCvRequestContainer.offset().top}, 500, function() {
-        $lastCvRequestContainer.animate({
-          backgroundColor: originalBackgroundColor
-        }, 5000);
+      rgbEnd = parseRGB(originalBackgroundColor);
+      rgbDiff = {
+        r: rgbEnd.r - 255,
+        g: rgbEnd.g - 255,
+        b: rgbEnd.b
+      };
+
+      this.messageElement.style.backgroundColor = '#FFFF00';
+      this.animator.animate({
+        startValue: scrollTarget.scrollY,
+        endValue: scrollEnd,
+        totalTime: 500,
+        frameFunc: function(newValue, animation) {
+          scrollTarget.scroll(scrollTarget.scrollX, newValue);
+        },
+        easing: 'decel',
+        complete: function() {
+          this.animate({
+            startValue: 0,
+            endValue: 1,
+            totalTime: 5000,
+            frameFunc: function(newValue, animation) {
+              var r, g, b;
+              r = 255 + Math.floor(newValue * rgbDiff.r);
+              g = 255 + Math.floor(newValue * rgbDiff.g);
+              b = Math.floor(newValue * rgbDiff.b);
+              this.style.backgroundColor = 'rgb('+r+', '+g+', '+b+')';
+            }
+          });
+        }
       });
     } else {
       window.open('http://chat.stackoverflow.com/transcript/message/' + this.postId + '#' + this.postId, '_blank');

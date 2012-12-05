@@ -1,5 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global CvPlsHelper, $ */
+/*global CvPlsHelper */
 
 (function() {
 

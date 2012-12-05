@@ -146,12 +146,13 @@
     }
   }
   function processFormatting() {
+    var height;
+
     processHeight.call(this);
     processStatus.call(this);
 
-    $('html, body', document).animate({
-      scrollTop: $(document).height()
-    }, 'slow');
+    height = $(this.document).height();
+    $('html, body', this.document).animate({ scrollTop: height }, 'slow');
   }
 
   CvPlsHelper.OneBox = function(document, pluginSettings, avatarNotification, post) {
