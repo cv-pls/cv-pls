@@ -22,14 +22,13 @@
   }
 
   function processBacklogResponse(data) {
-    var backlogAmount, i, l;
+    var i, l;
 
     while (this.descriptionElement.hasChildNodes()) {
       this.descriptionElement.removeChild(this.descriptionElement.lastChild);
     }
 
-    backlogAmount = parseInt(this.pluginSettings.getSetting('backlogAmount'), 10);
-    for (i = 0, l = data.length; i < l && i < backlogAmount; i++) {
+    for (i = 0, l = data.length; i < l && i < this.pluginSettings.getSetting('backlogAmount'); i++) {
       this.descriptionElement.appendChild(buildCvLink.call(this, data[i]));
     }
   }
@@ -38,52 +37,59 @@
     this.document = document;
     this.pluginSettings = pluginSettings;
     this.backlogUrl = backlogUrl;
+    this.descriptionElement = document.getElementById('roomdesc');
   };
 
-  CvPlsHelper.CvBacklog.prototype.descriptionElement = null;
   CvPlsHelper.CvBacklog.prototype.originalDescription = null;
   CvPlsHelper.CvBacklog.prototype.timeout = null;
+  CvPlsHelper.CvBacklog.prototype.visible = false;
 
   CvPlsHelper.CvBacklog.prototype.refresh = function() {
-    var xhr, self = this;
+    var xhr,
+        self = this,
+        interval = this.pluginSettings.getSetting('backlogRefreshInterval') * 60 * 1000;
 
     this.timeout = null;
 
     if (!this.pluginSettings.getSetting('backlogEnabled')) {
-      return null;
+      this.hide();
+      return;
     }
+    this.show();
 
     xhr = new XMLHttpRequest();
     xhr.open("GET", this.backlogUrl, true);
     xhr.setRequestHeader('Accept', 'application/json; charset=utf-8');
-
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4 && xhr.status === 200) {
         try {
           processBacklogResponse.call(self, JSON.parse(xhr.responseText));
         } catch(e) { /* probably a JSON parse error occured, ignore it */ }
-
-        if (self.pluginSettings.getSetting('backlogRefresh')) {
-          self.timeout = setTimeout(self.refresh, (self.pluginSettings.getSetting('backlogRefreshInterval') * 60 * 1000));
-        }
       }
     };
-
     xhr.send(null);
+
+    if (this.pluginSettings.getSetting('backlogRefresh')) {
+      this.timeout = setTimeout(function() {
+        self.refresh();
+      }, interval);
+    }
   };
 
   CvPlsHelper.CvBacklog.prototype.show = function() {
-    this.descriptionElement = this.document.getElementById('roomdesc');
-    this.originalDescription = this.descriptionElement.innerHTML;
-    this.refresh();
+    if (!this.visible) {
+      this.visible = true;
+      this.originalDescription = this.descriptionElement.innerHTML;
+    }
   };
 
   CvPlsHelper.CvBacklog.prototype.hide = function() {
-    if (this.timeout !== null) {
-      clearTimeout(this.timeout);
-    }
-    if (this.originalDescription !== null) {
+    if (this.visible) {
+      this.visible = false;
       this.descriptionElement.innerHTML = this.originalDescription;
+      if (this.timeout !== null) {
+        clearTimeout(this.timeout);
+      }
     }
   };
 

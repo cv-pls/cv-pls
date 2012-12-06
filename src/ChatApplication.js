@@ -68,6 +68,7 @@
       // Start background processes
       o.voteRequestListener.start();
       o.questionStatusPoller.schedulePoll();
+      o.cvBacklog.refresh();
 
       // Initialisation callback
       if (typeof onInit === 'function') {

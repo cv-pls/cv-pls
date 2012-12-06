@@ -156,6 +156,7 @@
   function scrollToBottom() {
     var start = this.document.defaultView.scrollY,
         end = this.document.documentElement.scrollHeight - this.document.documentElement.clientHeight;
+    this.animator.cancel();
     this.animator.animate({
       startValue: start,
       endValue: end,
