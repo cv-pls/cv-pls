@@ -125,8 +125,15 @@
     }
   }
 
+  function addAvatarNotification() {
+    if (!this.hasHadNotification) {
+      this.avatarNotificationManager.enqueue(this);
+      this.hasHadNotification = true;
+    }
+  }
+
   function initQuestionData() {
-    this.avatarNotificationManager.enqueue(this);
+    addAvatarNotification.call(this);
     if (this.pluginSettings.getSetting('oneBox') && !this.oneBox) {
       this.addOneBox();
     }
@@ -153,7 +160,7 @@
     this.isOutstandingRequest = false;
     if (this.questionStatus === this.questionStatuses.UNKNOWN) {
       if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
-        this.avatarNotificationManager.enqueue(this);
+        addAvatarNotification.call(this);
         this.hasPendingNotification = true;
       }
       if (this.questionData && this.pluginSettings.getSetting('oneBox') && !this.pluginSettings.getSetting('removeCompletedOneboxes')) {
@@ -220,6 +227,7 @@
 
   CvPlsHelper.Post.prototype.voteType = null;
   CvPlsHelper.Post.prototype.postType = 0;
+
   CvPlsHelper.Post.prototype.isVoteRequest = false;
   CvPlsHelper.Post.prototype.isOutstandingRequest = true;
   CvPlsHelper.Post.prototype.isOwnPost = false;
@@ -227,6 +235,7 @@
 
   CvPlsHelper.Post.prototype.hasPendingNotification = false;
   CvPlsHelper.Post.prototype.hasAvatarNotification = false;
+  CvPlsHelper.Post.prototype.hasHadNotification = false;
 
   // Public methods
 
