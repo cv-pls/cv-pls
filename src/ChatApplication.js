@@ -47,8 +47,9 @@
     // Vote request listening
     o.mutationListenerFactory = new DOMChildListMutationListenerFactory();
     o.animatorFactory = new CvPlsHelper.AnimatorFactory();
+    o.grippieFactory = new CvPlsHelper.GrippieFactory();
     o.chatRoom = new CvPlsHelper.ChatRoom(document, o.mutationListenerFactory);
-    o.oneBoxFactory = new CvPlsHelper.OneBoxFactory(document, o.pluginSettings, o.avatarNotificationManager, o.animatorFactory);
+    o.oneBoxFactory = new CvPlsHelper.OneBoxFactory(document, o.pluginSettings, o.avatarNotificationManager, o.animatorFactory, o.grippieFactory);
     o.postFactory = new CvPlsHelper.PostFactory(document, o.pluginSettings, o.chatRoom, o.oneBoxFactory, o.avatarNotificationManager, o.animatorFactory);
     o.voteRemoveProcessor = new CvPlsHelper.VoteRemoveProcessor(o.pluginSettings, o.avatarNotificationManager);
     o.voteRequestListener = new CvPlsHelper.VoteRequestListener(o.chatRoom, o.mutationListenerFactory, o.postFactory, o.postsOnScreen, o.voteRemoveProcessor, o.questionStatusPoller);

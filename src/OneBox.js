@@ -97,11 +97,6 @@
     this.grippieElement.setAttribute('style', style);
     return this.grippieElement;
   }
-  function getClearDiv() {
-    var clearDiv = this.document.createElement('div');
-    clearDiv.setAttribute('class', 'clear-both');
-    return clearDiv;
-  }
 
   function createElement() {
     this.oneBoxElement = this.document.createElement('div');
@@ -123,7 +118,7 @@
   }
 
   function processHeight() {
-    var totalWidth, grippieX, currentY;
+    var totalWidth, grippieX, currentY, self = this;
 
     this.grippieElement.style.width = getCurrentStyle(this.oneBoxElement, 'width');
 
@@ -131,9 +126,10 @@
       this.oneBoxElement.style.height = this.pluginSettings.getSetting('oneBoxHeight') + 'px';
       this.oneBoxElement.style.paddingBottom = '10px';
 
-      $(this.oneBoxElement).gripHandler({
-        cursor: 'n-resize',
-        gripClass: 'grippie'
+      this.grippieFactory.create({
+        target: self.oneBoxElement,
+        grippie: self.grippieElement,
+        cursor: 'n-resize'
       });
 
       // grippie width = 27px
@@ -171,11 +167,12 @@
     });
   }
 
-  CvPlsHelper.OneBox = function(document, pluginSettings, avatarNotification, animator, post) {
+  CvPlsHelper.OneBox = function(document, pluginSettings, avatarNotification, animator, grippieFactory, post) {
     this.document = document;
     this.pluginSettings = pluginSettings;
     this.avatarNotification = avatarNotification;
     this.animator = animator;
+    this.grippieFactory = grippieFactory;
     this.post = post;
     createElement.call(this);
   };
