@@ -86,7 +86,7 @@
     questionLinks = this.contentElement.querySelectorAll('a[href^="http://stackoverflow.com/questions/"], a[href^="http://stackoverflow.com/q/"]');
 
     for (i = 0, l = questionLinks.length; i < l; i++) {
-      parts = questionLinks[i].getAttribute('href').match(/^http:\/\/stackoverflow\.com\/questions\/(\d+)/);
+      parts = questionLinks[i].getAttribute('href').match(/^http:\/\/stackoverflow\.com\/q(?:uestions)?\/(\d+)/);
       if (parts) {
         this.questionId = parseInt(parts[1], 10);
         this.questionLinkElement = questionLinks[i];
