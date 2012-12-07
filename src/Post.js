@@ -57,7 +57,7 @@
   }
 
   function setIsVoteRequest() {
-    this.isVoteRequest = Boolean(this.matchTag(/^(cv|delv)-(pls|maybe)$/));
+    this.isVoteRequest = Boolean(this.matchTag(/^(cv|delv|killv)-(pls|maybe)$/));
     if (this.isVoteRequest) {
       addClass(this.contentElement, 'cvhelper-vote-request');
     }
@@ -67,7 +67,7 @@
   function setVoteType() {
     var i, l;
 
-    this.voteType = this.voteTypes[this.matchTag(/^(cv|delv)-(pls|maybe)$/).split('-').shift().toUpperCase()];
+    this.voteType = this.voteTypes[this.matchTag(/^(cv|delv|killv)-(pls|maybe)$/).split('-').shift().toUpperCase()];
 
     if (!this.contentElement.querySelector('span.cvhelper-vote-request-text')) { // Required for strikethrough to work
       this.contentWrapperElement = this.document.createElement('span');
@@ -142,7 +142,9 @@
 
   function updateOneBoxDisplay() {
     if (this.oneBox) {
-      this.oneBox.setScore(this.questionData.score);
+      if (this.questionData) {
+        this.oneBox.setScore(this.questionData.score);
+      }
       if (this.pluginSettings.getSetting('showCloseStatus')) {
         switch (this.questionStatus) {
           case this.questionStatuses.CLOSED:
@@ -199,7 +201,8 @@
   // Status Enums
   CvPlsHelper.Post.voteTypes = CvPlsHelper.Post.prototype.voteTypes = {
     CV: 1,
-    DELV: 2
+    DELV: 2,
+    KILLV: 3
   };
   CvPlsHelper.Post.questionStatuses = CvPlsHelper.Post.prototype.questionStatuses = {
     UNKNOWN: 0,
@@ -281,7 +284,7 @@
       markCompleted.call(this);
       this.questionStatus = this.questionStatuses.DELETED;
     } else if (data.closed_date !== undefined) { // Question is closed
-      if (this.voteType === this.voteTypes.DELV) {
+      if (this.voteType & this.voteTypes.DELV) {
         if (this.questionStatus === this.questionStatuses.UNKNOWN) {
           initQuestionData.call(this);
         }
