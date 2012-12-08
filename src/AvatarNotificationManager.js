@@ -15,12 +15,14 @@
   // Adds a post to the queue
   CvPlsHelper.AvatarNotificationManager.prototype.enqueue = function(post) {
     var self = this;
-    if (!post.isOwnPost && !this.notificationStack.contains(post)) {
-      this.notificationStack.push(post);
-      post.questionLinkElement.addEventListener('click', function() {
-        self.notificationStack.remove(post);
-      });
-      this.updateNotificationDisplay();
+    if (this.pluginSettings.getSetting('avatarNotification')) {
+      if (!post.isOwnPost && !this.notificationStack.contains(post)) {
+        this.notificationStack.push(post);
+        post.questionLinkElement.addEventListener('click', function() {
+          self.notificationStack.remove(post);
+        });
+        this.updateNotificationDisplay();
+      }
     }
   };
 
