@@ -57,7 +57,7 @@
   }
 
   function setIsVoteRequest() {
-    this.isVoteRequest = Boolean(this.matchTag(/^(cv|delv|killv)-(pls|maybe)$/));
+    this.isVoteRequest = Boolean(this.matchTag(/^(cv|delv)-(pls|maybe)$/));
     if (this.isVoteRequest) {
       addClass(this.contentElement, 'cvhelper-vote-request');
     }
@@ -67,7 +67,7 @@
   function setVoteType() {
     var i, l;
 
-    this.voteType = this.voteTypes[this.matchTag(/^(cv|delv|killv)-(pls|maybe)$/).split('-').shift().toUpperCase()];
+    this.voteType = this.voteTypes[this.matchTag(/^(cv|delv)-(pls|maybe)$/).split('-').shift().toUpperCase()];
 
     if (!this.contentElement.querySelector('span.cvhelper-vote-request-text')) { // Required for strikethrough to work
       this.contentWrapperElement = this.document.createElement('span');
@@ -125,19 +125,17 @@
     }
   }
 
-  function addAvatarNotification() {
+  function notify() {
     if (!this.hasHadNotification) {
       this.avatarNotificationManager.enqueue(this);
       this.hasHadNotification = true;
     }
+    this.hasPendingNotification = true;
   }
 
   function initQuestionData() {
-    addAvatarNotification.call(this);
-    if (this.pluginSettings.getSetting('oneBox') && !this.oneBox) {
-      this.addOneBox();
-    }
-    this.hasPendingNotification = true;
+    this.addOneBox();
+    notify.call(this);
   }
 
   function updateOneBoxDisplay() {
@@ -162,8 +160,7 @@
     this.isOutstandingRequest = false;
     if (this.questionStatus === this.questionStatuses.UNKNOWN) {
       if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
-        addAvatarNotification.call(this);
-        this.hasPendingNotification = true;
+        notify.call(this);
       }
       if (this.questionData && this.pluginSettings.getSetting('oneBox') && !this.pluginSettings.getSetting('removeCompletedOneboxes')) {
         this.addOneBox();
@@ -237,7 +234,8 @@
   CvPlsHelper.Post.prototype.isOnScreen = true;
 
   CvPlsHelper.Post.prototype.hasPendingNotification = false;
-  CvPlsHelper.Post.prototype.hasAvatarNotification = false;
+  CvPlsHelper.Post.prototype.hasHadCvNotification = false;
+  CvPlsHelper.Post.prototype.hasHadDelvNotification = false;
   CvPlsHelper.Post.prototype.hasHadNotification = false;
 
   // Public methods
@@ -284,10 +282,8 @@
       markCompleted.call(this);
       this.questionStatus = this.questionStatuses.DELETED;
     } else if (data.closed_date !== undefined) { // Question is closed
-      if (this.voteType & this.voteTypes.DELV) {
-        if (this.questionStatus === this.questionStatuses.UNKNOWN) {
-          initQuestionData.call(this);
-        }
+      if (this.voteType === this.voteTypes.DELV) {
+        initQuestionData.call(this);
       } else {
         markCompleted.call(this);
       }
@@ -306,7 +302,7 @@
   };
 
   CvPlsHelper.Post.prototype.addOneBox = function() {
-    if (!this.isOwnPost && !this.oneBox && this.questionData) {
+    if (!this.oneBox && !this.isOwnPost && this.questionData && this.pluginSettings.getSetting('oneBox')) {
       this.oneBox = this.oneBoxFactory.create(this);
       this.oneBox.show();
     }
