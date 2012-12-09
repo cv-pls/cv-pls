@@ -1,6 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
   <app appid='bcbifciedokdgkokbbfippkbecnkpclj'>
+<<<<<<< HEAD
     <updatecheck codebase='https://cvbacklog.herokuapp.com/cv-pls.0.18.6.crx' version='0.18.6' />
+=======
+    <updatecheck codebase='https://cloud.github.com/downloads/PeeHaa/cv-pls/cv-pls.0.19.0.crx' version='0.19.0' />
+>>>>>>> d39234bfe56a10a69dd082211570456ad283049a
   </app>
 </gupdate>
