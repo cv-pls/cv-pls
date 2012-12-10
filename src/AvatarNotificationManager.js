@@ -14,11 +14,14 @@
 
   // Adds a post to the queue
   CvPlsHelper.AvatarNotificationManager.prototype.enqueue = function(post) {
-    var self = this;
+    var existingPost, self = this;
     if (this.pluginSettings.getSetting('avatarNotification') && !post.isOwnPost) {
+      existingPost = this.notificationStack.match('postId', post.postId);
       if (this.notificationStack.contains(post)) {
         this.notificationStack.remove(post); // move notification to head of queue
         this.notificationStack.push(post);
+      } else if (existingPost) {
+        this.notificationStack.replace(existingPost, post);
       } else {
         this.notificationStack.push(post);
         post.questionLinkElement.addEventListener('click', function() {
