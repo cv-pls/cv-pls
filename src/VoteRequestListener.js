@@ -38,7 +38,9 @@
   }
 
   function getMessageId(node) {
-    return parseInt(node.getAttribute('id').match(/^message-(\d+)$/i)[1], 10);
+    var result, id = node.getAttribute('id').match(/^message-(\d+)$/i);
+    result = id ? parseInt(id[1], 10) : 0;
+    return result;
   }
 
   // Process the postsOnScreen
