@@ -27,6 +27,12 @@
     return classes.indexOf('message') > -1 && classes.indexOf('neworedit') > -1;
   }
 
+  // Check if element is a new or edited post
+  function isMonologue(element) {
+    var classes = getClassNameArray(element);
+    return classes.indexOf('monologue') > -1;
+  }
+
   // Check if element is a message being removed from the DOM
   function isRemovedMessage(element) {
     var classes = getClassNameArray(element);
@@ -129,7 +135,16 @@
     var listener = this.mutationListenerFactory.getListener(this.chatRoom.chatContainer);
     listener.on('NodeAdded', nodeAddedListener.bind(this));
     listener.on('FilterAdded', function(node) {
-      return isNewOrEditedMessage(node);
+      var messages;
+      if (isNewOrEditedMessage(node)) {
+        return true;
+      } else if (isMonologue(node)) {
+        messages = node.querySelectorAll('.messages .message');
+        if (messages.length) {
+          return messages;
+        }
+      }
+      return false;
     });
     listener.on('NodeRemoved', nodeRemovedListener.bind(this));
     listener.on('FilterRemoved', function(node) {
