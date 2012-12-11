@@ -135,13 +135,18 @@
     var listener = this.mutationListenerFactory.getListener(this.chatRoom.chatContainer);
     listener.on('NodeAdded', nodeAddedListener.bind(this));
     listener.on('FilterAdded', function(node) {
-      var messages;
+      var messages, i, l, result = [];
       if (isNewOrEditedMessage(node)) {
         return true;
       } else if (isMonologue(node)) {
         messages = node.querySelectorAll('.messages .message');
-        if (messages.length) {
-          return messages;
+        for (i = 0, l = messages.length; i < l; i++) {
+          if (messages[i].className.split(/\s+/).indexOf('neworedit') < 0) {
+            result.push(messages[i]);
+          }
+        }
+        if (result.length > 0) {
+          return result;
         }
       }
       return false;

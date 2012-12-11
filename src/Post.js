@@ -109,13 +109,15 @@
   }
 
   function initPost() {
-    loadTags.call(this);
-    setIsVoteRequest.call(this);
-    if (this.isVoteRequest) {
-      setVoteType.call(this);
-      setQuestionId.call(this);
+    if (this.contentElement) {
+      loadTags.call(this);
+      setIsVoteRequest.call(this);
+      if (this.isVoteRequest) {
+        setVoteType.call(this);
+        setQuestionId.call(this);
+      }
+      markProcessed.call(this);
     }
-    markProcessed.call(this);
   }
 
   function setPostElements(messageElement) {
