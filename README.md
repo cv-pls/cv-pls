@@ -16,12 +16,12 @@ This repository holds the core application code, in order to use it you will nee
   <tr>
     <td><a href="https://github.com/cv-pls/chrome-cv-pls">Google Chrome</a></td>
     <td><a href="https://github.com/downloads/cv-pls/chrome-cv-pls/cv-pls_0.19.0.crx">0.19.0</a></td>
-    <td><a href="https://github.com/downloads/cv-pls/chrome-cv-pls/cv-pls_0.20-beta1.crx">0.20-beta1</a></td>
+    <td><a href="http://download.networkm.net/code/cv-pls_0.20-beta2.crx">0.20-beta2</a></td>
   </tr>
   <tr>
     <td><a href="https://github.com/cv-pls/ff-cv-pls">Mozilla Firefox</a></td>
     <td><i>None</i></td>
-    <td><a href="https://github.com/downloads/cv-pls/ff-cv-pls/cv-pls_0.20-beta1.xpi">0.20-beta1</a></td>
+    <td><a href="http://download.networkm.net/code/cv-pls_0.20-beta2.xpi">0.20-beta2</a></td>
   </tr>
 </table>
 
