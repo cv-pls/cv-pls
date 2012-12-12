@@ -139,20 +139,11 @@
 
   function markCompleted() {
     this.isOutstandingRequest = false;
-    if (this.hasQuestionData) {
-      if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
-        notify.call(this, this.voteType);
-      }
-      if (this.questionData && this.pluginSettings.getSetting('oneBox') && !this.pluginSettings.getSetting('removeCompletedOneboxes')) {
-        this.addOneBox();
-      }
-    } else {
-      if (this.pluginSettings.getSetting('removeCompletedNotifications')) {
-        this.avatarNotificationManager.dequeue(this);
-      }
-      if (this.pluginSettings.getSetting('removeCompletedOneboxes')) {
-        this.removeOneBox();
-      }
+    if (this.pluginSettings.getSetting('removeCompletedNotifications')) {
+      this.avatarNotificationManager.dequeue(this);
+    }
+    if (this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+      this.removeOneBox();
     }
     if (this.pluginSettings.getSetting('strikethroughCompleted')) {
       this.strikethrough();
@@ -160,6 +151,7 @@
   }
 
   function enterStateOpen() {
+    this.questionStatus = this.questionStatuses.OPEN;
     if (this.voteType === this.voteTypes.DELV) {
       this.voteTagElement.firstChild.data = this.voteTagElement.firstChild.data.replace('delv-', 'cv-');
     }
@@ -168,6 +160,7 @@
   }
 
   function enterStateClosed() {
+    this.questionStatus = this.questionStatuses.CLOSED;
     if (this.voteType === this.voteTypes.DELV) {
       this.addOneBox();
       this.voteTagElement.firstChild.data = this.voteTagElement.firstChild.data.replace('cv-', 'delv-');
@@ -178,6 +171,15 @@
   }
 
   function enterStateDeleted() {
+    this.questionStatus = this.questionStatuses.DELETED;
+    if (!this.hasQuestionData) {
+      if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
+        notify.call(this, this.voteType);
+      }
+      if (!this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+        this.addOneBox();
+      }
+    }
     markCompleted.call(this);
   }
 
@@ -301,17 +303,14 @@
 
     if (!data) {
       if (this.questionStatus !== this.questionStatuses.DELETED) {
-        this.questionStatus = this.questionStatuses.DELETED;
         enterStateDeleted.call(this);
       }
     } else if (data.closed_date !== undefined) {
       if (this.questionStatus !== this.questionStatuses.CLOSED) {
-        this.questionStatus = this.questionStatuses.CLOSED;
         enterStateClosed.call(this);
       }
     } else {
       if (this.questionStatus !== this.questionStatuses.OPEN) {
-        this.questionStatus = this.questionStatuses.OPEN;
         enterStateOpen.call(this);
       }
     }
