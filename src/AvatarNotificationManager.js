@@ -25,7 +25,7 @@
       } else {
         this.notificationStack.push(post);
         post.questionLinkElement.addEventListener('click', function() {
-          self.notificationStack.remove(post);
+          self.dequeue(post);
         });
         this.updateNotificationDisplay();
       }
