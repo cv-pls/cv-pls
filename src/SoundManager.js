@@ -6,7 +6,7 @@
   'use strict';
 
   function insertToggleLink(document, popup, status) {
-    var hr, ul, li, a;
+    var hr, ul, li, a, self = this;
 
     hr = document.createElement('hr');
     ul = document.createElement('ul');
@@ -16,10 +16,12 @@
     a.setAttribute('href', '#');
     a.appendChild(document.createTextNode('cv-pls (' + status + ')'));
     a.addEventListener('click', function(event) {
-      var value = this.pluginSettings.getSetting('soundNotification');
-      event.preventDefault();
-      this.pluginSettings.saveSetting('soundNotification', !value);
+      var value = self.pluginSettings.getSetting('soundNotification');
+      self.pluginSettings.saveSetting('soundNotification', !value);
+
       this.firstChild.data = value ? 'cv-pls (disabled)' : 'cv-pls (enabled)';
+
+      event.preventDefault();
     });
 
     popup.appendChild(hr);

@@ -31,8 +31,10 @@
     postTitleAnchor.setAttribute('href', this.post.questionData.link);
     postTitleAnchor.setAttribute('class', 'cvhelper-question-link');
     postTitleAnchor.setAttribute('style', 'color: #0077CC;');
-    postTitleAnchor.addEventListener('click', function() {
-      avatarNotification.dequeue(post);
+    postTitleAnchor.addEventListener('mousedown', function(e) {
+      if (e.button === 0 || e.button === 1) {
+        avatarNotification.dequeue(post);
+      }
     });
     postTitleAnchor.innerHTML = this.post.questionData.title;
     this.statusTextNode = this.document.createTextNode('');
