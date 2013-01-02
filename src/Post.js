@@ -37,7 +37,10 @@
 
   // Sets the message ID of the post
   function setPostId() {
-    this.postId = parseInt((this.messageElement.getAttribute('id') || '').match(/message-(\d+)/)[1], 10);
+    var messageIdClass = (this.messageElement.getAttribute('id') || '').match(/message-(\d+)/);
+    if (messageIdClass) {
+      this.postId = parseInt(messageIdClass[1], 10);
+    }
   }
 
   // Determines whether the post was added by the active user
@@ -152,7 +155,7 @@
 
   function enterStateOpen() {
     this.questionStatus = this.questionStatuses.OPEN;
-    if (this.voteType === this.voteTypes.DELV) {
+    if (this.voteType === this.voteTypes.DELV && !this.isOwnPost) {
       this.voteTagElement.firstChild.data = this.voteTagElement.firstChild.data.replace('delv-', 'cv-');
     }
     this.addOneBox();
