@@ -2,5 +2,6 @@
 
 var CvPlsHelper = {
   chrome: {},
-  firefox: {}
+  firefox: {},
+  opera: {}
 };

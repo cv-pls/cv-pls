@@ -5,6 +5,25 @@
 
   'use strict';
 
+  function makeDefaultSettingsObject(overrides) {
+    var key, result = {};
+    overrides = overrides || {};
+
+    for (key in CvPlsHelper.DefaultSettings) {
+      if (CvPlsHelper.DefaultSettings.hasOwnProperty(key)) {
+        result[key] = CvPlsHelper.DefaultSettings[key];
+      }
+    }
+
+    for (key in overrides) {
+      if (overrides.hasOwnProperty(key)) {
+        result[key] = overrides[key];
+      }
+    }
+
+    return result;
+  }
+
   CvPlsHelper.ChatApplication = function(document, constructors, onInit) {
     this.document = document;
     this.constructors = constructors;
@@ -23,7 +42,7 @@
         document = this.document;
 
     // Settings accessors
-    o.pluginSettings = new constructors.SettingsDataAccessor(new constructors.SettingsDataStore(), constructors.DefaultSettings);
+    o.pluginSettings = new constructors.SettingsDataAccessor(new constructors.SettingsDataStore(), makeDefaultSettingsObject(constructors.DefaultSettings));
 
     o.collectionFactory = new CvPlsHelper.CollectionFactory();
     o.postsOnScreen = o.collectionFactory.create();
