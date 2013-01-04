@@ -240,7 +240,7 @@
   CvPlsHelper.Post.prototype.contentElement = null;
   CvPlsHelper.Post.prototype.contentWrapperElement = null;
   CvPlsHelper.Post.prototype.questionLinkElement = null;
-  CvPlsHelper.Post.prototype.voteTagElement = null; 
+  CvPlsHelper.Post.prototype.voteTagElement = null;
 
   CvPlsHelper.Post.prototype.oneBox = null;
   CvPlsHelper.Post.prototype.animator = null;
