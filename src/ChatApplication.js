@@ -99,12 +99,20 @@
   };
 
   CvPlsHelper.ChatApplication.prototype.shutdown = function() {
-    this.objects.voteRequestListener.stop();
-    this.objects.statusPolling.stop();
+    // This may need further improvement, need to check codebase for circular references that may cause memory leaks.
 
-    // Destroy objects.
-    // This probably needs improvement, need to check codebase for circular references that may cause memory leaks.
-    this.objects = null;
+    var o = this.objects;
+
+    // Stop persistent processes that insert themselves into the event queue
+    o.voteRequestListener.stop();
+    o.questionStatusPoller.clearSchedule();
+
+    // Trash post collections
+    o.postsOnScreen.truncate();
+    o.avatarNotificationStack.truncate();
+
+    // Destroy objects
+    o = this.objects = null;
   };
 
 }());
