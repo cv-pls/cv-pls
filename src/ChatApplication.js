@@ -5,51 +5,27 @@
 
   'use strict';
 
-  function makeDefaultSettingsObject(overrides) {
-    var key, result = {};
-    overrides = overrides || {};
-
-    for (key in CvPlsHelper.DefaultSettings) {
-      if (CvPlsHelper.DefaultSettings.hasOwnProperty(key)) {
-        result[key] = CvPlsHelper.DefaultSettings[key];
-      }
-    }
-
-    for (key in overrides) {
-      if (overrides.hasOwnProperty(key)) {
-        result[key] = overrides[key];
-      }
-    }
-
-    return result;
-  }
-
-  CvPlsHelper.ChatApplication = function(document, constructors, onInit) {
+  CvPlsHelper.ChatApplication = function(document, moduleLoader) {
     this.document = document;
-    this.constructors = constructors;
-    this.onInit = onInit;
+    this.moduleLoader = moduleLoader;
+    this.objects = {};
   };
 
   CvPlsHelper.ChatApplication.prototype.objects = null;
 
-  CvPlsHelper.ChatApplication.prototype.start = function() {
-
-    this.objects = {};
-
+  CvPlsHelper.ChatApplication.prototype.start = function(callBack) {
     var o = this.objects,
-        constructors = this.constructors,
-        onInit = this.onInit,
         document = this.document;
 
     // Settings accessors
-    o.pluginSettings = new constructors.SettingsDataAccessor(new constructors.SettingsDataStore(), makeDefaultSettingsObject(constructors.DefaultSettings));
+    o.pluginSettings = this.moduleLoader.loadModule('settings', CvPlsHelper.DefaultSettings);
 
     o.collectionFactory = new CvPlsHelper.CollectionFactory();
     o.postsOnScreen = o.collectionFactory.create();
 
     // Vote request processing
     o.audioPlayer = new CvPlsHelper.AudioPlayer(document, 'http://or.cdn.sstatic.net/chat/so.mp3');
-    o.desktopNotificationDispatcher = new constructors.DesktopNotificationDispatcher();
+    o.desktopNotificationDispatcher = this.moduleLoader.loadModule('notifications');
     o.desktopNotification = new CvPlsHelper.DesktopNotification(o.pluginSettings, o.desktopNotificationDispatcher);
     o.stackApi = new CvPlsHelper.StackApi(o.collectionFactory);
 
@@ -90,10 +66,9 @@
       o.cvBacklog.refresh();
 
       // Initialisation callback
-      if (typeof onInit === 'function') {
-        onInit(o.pluginSettings);
+      if (typeof callBack === 'function') {
+        callBack(o.pluginSettings);
       }
-      document = constructors = onInit = null;
     });
 
   };
@@ -112,7 +87,7 @@
     o.avatarNotificationStack.truncate();
 
     // Destroy objects
-    o = this.objects = null;
+    this.objects = {};
   };
 
 }());
