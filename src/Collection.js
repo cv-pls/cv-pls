@@ -39,6 +39,23 @@
     return item;
   };
 
+  CvPlsHelper.Collection.prototype.truncate = function() {
+    var items = this.items;
+    this.items = [];
+    return items;
+  };
+
+  CvPlsHelper.Collection.prototype.replace = function(oldItem, newItem) {
+    var i, l;
+    for (i = 0, l = this.items.length; i < l; i++) {
+      if (this.items[i] === oldItem) {
+        this.items.splice(i, 1, newItem);
+        break;
+      }
+    }
+    return oldItem;
+  };
+
   CvPlsHelper.Collection.prototype.length = function() {
     return this.items.length;
   };

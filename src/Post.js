@@ -37,7 +37,10 @@
 
   // Sets the message ID of the post
   function setPostId() {
-    this.postId = parseInt((this.messageElement.getAttribute('id') || '').match(/message-(\d+)/)[1], 10);
+    var messageIdClass = (this.messageElement.getAttribute('id') || '').match(/message-(\d+)/);
+    if (messageIdClass) {
+      this.postId = parseInt(messageIdClass[1], 10);
+    }
   }
 
   // Determines whether the post was added by the active user
@@ -50,9 +53,9 @@
   // Parses all tags into an array
   function loadTags() {
     var i, tagElements = this.contentElement.querySelectorAll('a span.ob-post-tag');
-    this.tags = [];
+    this.tags = {};
     for (i = 0; i < tagElements.length; i++) {
-      this.tags.push(tagElements[i].firstChild.data.toLowerCase());
+      this.tags[tagElements[i].firstChild.data.toLowerCase()] = tagElements[i];
     }
   }
 
@@ -65,9 +68,11 @@
 
   // Sets the vote type of the post and manipulates vote post structure for easy reference later on
   function setVoteType() {
-    var i, l;
+    var i, l, voteTag;
 
-    this.voteType = this.voteTypes[this.matchTag(/^(cv|delv)-(pls|maybe)$/).split('-').shift().toUpperCase()];
+    voteTag = this.matchTag(/^(cv|delv)-(pls|maybe)$/);
+    this.voteType = this.voteTypes[voteTag.split('-').shift().toUpperCase()];
+    this.voteTagElement = this.tags[voteTag];
 
     if (!this.contentElement.querySelector('span.cvhelper-vote-request-text')) { // Required for strikethrough to work
       this.contentWrapperElement = this.document.createElement('span');
@@ -86,7 +91,7 @@
     questionLinks = this.contentElement.querySelectorAll('a[href^="http://stackoverflow.com/questions/"], a[href^="http://stackoverflow.com/q/"]');
 
     for (i = 0, l = questionLinks.length; i < l; i++) {
-      parts = questionLinks[i].getAttribute('href').match(/^http:\/\/stackoverflow\.com\/questions\/(\d+)/);
+      parts = questionLinks[i].getAttribute('href').match(/^http:\/\/stackoverflow\.com\/q(?:uestions)?\/(\d+)/);
       if (parts) {
         this.questionId = parseInt(parts[1], 10);
         this.questionLinkElement = questionLinks[i];
@@ -107,13 +112,15 @@
   }
 
   function initPost() {
-    loadTags.call(this);
-    setIsVoteRequest.call(this);
-    if (this.isVoteRequest) {
-      setVoteType.call(this);
-      setQuestionId.call(this);
+    if (this.contentElement) {
+      loadTags.call(this);
+      setIsVoteRequest.call(this);
+      if (this.isVoteRequest) {
+        setVoteType.call(this);
+        setQuestionId.call(this);
+      }
+      markProcessed.call(this);
     }
-    markProcessed.call(this);
   }
 
   function setPostElements(messageElement) {
@@ -125,24 +132,65 @@
     }
   }
 
-  function addAvatarNotification() {
-    if (!this.hasHadNotification) {
+  function notify(type) {
+    if (!(this.notificationHistory & type)) {
       this.avatarNotificationManager.enqueue(this);
-      this.hasHadNotification = true;
+      this.notificationHistory |= type;
+      this.hasPendingNotification = true;
     }
   }
 
-  function initQuestionData() {
-    addAvatarNotification.call(this);
-    if (this.pluginSettings.getSetting('oneBox') && !this.oneBox) {
-      this.addOneBox();
+  function markCompleted() {
+    this.isOutstandingRequest = false;
+    if (this.pluginSettings.getSetting('removeCompletedNotifications')) {
+      this.avatarNotificationManager.dequeue(this);
     }
-    this.hasPendingNotification = true;
+    if (this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+      this.removeOneBox();
+    }
+    if (this.pluginSettings.getSetting('strikethroughCompleted')) {
+      this.strikethrough();
+    }
+  }
+
+  function enterStateOpen() {
+    this.questionStatus = this.questionStatuses.OPEN;
+    if (this.voteType === this.voteTypes.DELV && !this.isOwnPost) {
+      this.voteTagElement.firstChild.data = this.voteTagElement.firstChild.data.replace('delv-', 'cv-');
+    }
+    this.addOneBox();
+    notify.call(this, this.voteTypes.CV);
+  }
+
+  function enterStateClosed() {
+    this.questionStatus = this.questionStatuses.CLOSED;
+    if (this.voteType === this.voteTypes.DELV) {
+      this.addOneBox();
+      this.voteTagElement.firstChild.data = this.voteTagElement.firstChild.data.replace('cv-', 'delv-');
+      notify.call(this, this.voteTypes.DELV);
+    } else {
+      markCompleted.call(this);
+    }
+  }
+
+  function enterStateDeleted() {
+    this.questionStatus = this.questionStatuses.DELETED;
+    if (!this.hasQuestionData) {
+      if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
+        notify.call(this, this.voteType);
+      }
+      if (!this.pluginSettings.getSetting('removeCompletedOneboxes')) {
+        this.addOneBox();
+      }
+    }
+    markCompleted.call(this);
   }
 
   function updateOneBoxDisplay() {
     if (this.oneBox) {
-      this.oneBox.setScore(this.questionData.score);
+      if (this.questionData) {
+        this.oneBox.setScore(this.questionData.score);
+      }
       if (this.pluginSettings.getSetting('showCloseStatus')) {
         switch (this.questionStatus) {
           case this.questionStatuses.CLOSED:
@@ -153,29 +201,6 @@
             break;
         }
       }
-    }
-  }
-
-  function markCompleted() {
-    this.isOutstandingRequest = false;
-    if (this.questionStatus === this.questionStatuses.UNKNOWN) {
-      if (!this.pluginSettings.getSetting('removeCompletedNotifications')) {
-        addAvatarNotification.call(this);
-        this.hasPendingNotification = true;
-      }
-      if (this.questionData && this.pluginSettings.getSetting('oneBox') && !this.pluginSettings.getSetting('removeCompletedOneboxes')) {
-        this.addOneBox();
-      }
-    } else {
-      if (this.pluginSettings.getSetting('removeCompletedNotifications')) {
-        this.avatarNotificationManager.dequeue(this);
-      }
-      if (this.pluginSettings.getSetting('removeCompletedOneboxes')) {
-        this.removeOneBox();
-      }
-    }
-    if (this.pluginSettings.getSetting('strikethroughCompleted')) {
-      this.strikethrough();
     }
   }
 
@@ -198,14 +223,15 @@
 
   // Status Enums
   CvPlsHelper.Post.voteTypes = CvPlsHelper.Post.prototype.voteTypes = {
-    CV: 1,
-    DELV: 2
+    ROV:  1,
+    CV:   2,
+    DELV: 4
   };
   CvPlsHelper.Post.questionStatuses = CvPlsHelper.Post.prototype.questionStatuses = {
     UNKNOWN: 0,
-    OPEN: 1,
-    CLOSED: 2,
-    DELETED: 3
+    OPEN:    1,
+    CLOSED:  2,
+    DELETED: 4
   };
 
   // Public properties
@@ -214,6 +240,7 @@
   CvPlsHelper.Post.prototype.contentElement = null;
   CvPlsHelper.Post.prototype.contentWrapperElement = null;
   CvPlsHelper.Post.prototype.questionLinkElement = null;
+  CvPlsHelper.Post.prototype.voteTagElement = null;
 
   CvPlsHelper.Post.prototype.oneBox = null;
   CvPlsHelper.Post.prototype.animator = null;
@@ -233,23 +260,24 @@
   CvPlsHelper.Post.prototype.isOwnPost = false;
   CvPlsHelper.Post.prototype.isOnScreen = true;
 
+  CvPlsHelper.Post.prototype.notificationHistory = 0;
   CvPlsHelper.Post.prototype.hasPendingNotification = false;
-  CvPlsHelper.Post.prototype.hasAvatarNotification = false;
-  CvPlsHelper.Post.prototype.hasHadNotification = false;
 
   // Public methods
 
   // Matches tags against the given expr (string or RegExp) and returns the first match
   CvPlsHelper.Post.prototype.matchTag = function(expr) {
-    var i, l, matches, result = null;
-    if (typeof expr === 'string' && this.tags.indexOf(String(expr).toLowerCase()) >= 0) {
+    var propName, matches, result = null;
+    if (typeof expr === 'string' && this.tags[String(expr).toLowerCase()] !== undefined) {
       result = expr;
     } else if (expr instanceof RegExp) {
-      for (i = 0, l = this.tags.length; i < l; i++) {
-        matches = this.tags[i].match(expr);
-        if (matches) {
-          result = matches[0];
-          break;
+      for (propName in this.tags) {
+        if (this.tags.hasOwnProperty(propName)) {
+          matches = String(propName).match(expr);
+          if (matches) {
+            result = matches[0];
+            break;
+          }
         }
       }
     }
@@ -275,25 +303,22 @@
 
   CvPlsHelper.Post.prototype.setQuestionData = function(data) {
     this.questionData = data;
-    this.hasQuestionData = true;
 
-    if (!data) { // Question is deleted
-      markCompleted.call(this);
-      this.questionStatus = this.questionStatuses.DELETED;
-    } else if (data.closed_date !== undefined) { // Question is closed
-      if (this.voteType === this.voteTypes.DELV) {
-        if (this.questionStatus === this.questionStatuses.UNKNOWN) {
-          initQuestionData.call(this);
-        }
-      } else {
-        markCompleted.call(this);
+    if (!data) {
+      if (this.questionStatus !== this.questionStatuses.DELETED) {
+        enterStateDeleted.call(this);
       }
-      this.questionStatus = this.questionStatuses.CLOSED;
-    } else { // Question is open
-      initQuestionData.call(this);
-      this.questionStatus = this.questionStatuses.OPEN;
+    } else if (data.closed_date !== undefined) {
+      if (this.questionStatus !== this.questionStatuses.CLOSED) {
+        enterStateClosed.call(this);
+      }
+    } else {
+      if (this.questionStatus !== this.questionStatuses.OPEN) {
+        enterStateOpen.call(this);
+      }
     }
 
+    this.hasQuestionData = true;
     updateOneBoxDisplay.call(this);
   };
 
@@ -303,7 +328,7 @@
   };
 
   CvPlsHelper.Post.prototype.addOneBox = function() {
-    if (!this.isOwnPost && !this.oneBox && this.questionData) {
+    if (!this.oneBox && !this.isOwnPost && this.questionData && this.pluginSettings.getSetting('oneBox')) {
       this.oneBox = this.oneBoxFactory.create(this);
       this.oneBox.show();
     }

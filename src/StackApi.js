@@ -48,7 +48,7 @@
 
   CvPlsHelper.StackApi.prototype.makeRequest = function(type, buffer, site, filter, apiResponseProcessor) {
     var questionIds, query, url, xhr, self = this;
-  
+
     questionIds = getQuestionIdsFromBuffer(buffer);
     if (!questionIds.length) {
       return;

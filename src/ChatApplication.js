@@ -5,32 +5,27 @@
 
   'use strict';
 
-  CvPlsHelper.ChatApplication = function(document, constructors, onInit) {
+  CvPlsHelper.ChatApplication = function(document, moduleLoader) {
     this.document = document;
-    this.constructors = constructors;
-    this.onInit = onInit;
+    this.moduleLoader = moduleLoader;
+    this.objects = {};
   };
 
   CvPlsHelper.ChatApplication.prototype.objects = null;
 
-  CvPlsHelper.ChatApplication.prototype.start = function() {
-
-    this.objects = {};
-
+  CvPlsHelper.ChatApplication.prototype.start = function(callBack) {
     var o = this.objects,
-        constructors = this.constructors,
-        onInit = this.onInit,
         document = this.document;
 
     // Settings accessors
-    o.pluginSettings = new constructors.SettingsDataAccessor(new constructors.SettingsDataStore(), constructors.DefaultSettings);
+    o.pluginSettings = this.moduleLoader.loadModule('settings', CvPlsHelper.DefaultSettings);
 
     o.collectionFactory = new CvPlsHelper.CollectionFactory();
     o.postsOnScreen = o.collectionFactory.create();
 
     // Vote request processing
     o.audioPlayer = new CvPlsHelper.AudioPlayer(document, 'http://or.cdn.sstatic.net/chat/so.mp3');
-    o.desktopNotificationDispatcher = new constructors.DesktopNotificationDispatcher();
+    o.desktopNotificationDispatcher = this.moduleLoader.loadModule('notifications');
     o.desktopNotification = new CvPlsHelper.DesktopNotification(o.pluginSettings, o.desktopNotificationDispatcher);
     o.stackApi = new CvPlsHelper.StackApi(o.collectionFactory);
 
@@ -71,21 +66,28 @@
       o.cvBacklog.refresh();
 
       // Initialisation callback
-      if (typeof onInit === 'function') {
-        onInit(o.pluginSettings);
+      if (typeof callBack === 'function') {
+        callBack(o.pluginSettings);
       }
-      document = constructors = onInit = null;
     });
 
   };
 
   CvPlsHelper.ChatApplication.prototype.shutdown = function() {
-    this.objects.voteRequestListener.stop();
-    this.objects.statusPolling.stop();
+    // This may need further improvement, need to check codebase for circular references that may cause memory leaks.
 
-    // Destroy objects.
-    // This probably needs improvement, need to check codebase for circular references that may cause memory leaks.
-    this.objects = null;
+    var o = this.objects;
+
+    // Stop persistent processes that insert themselves into the event queue
+    o.voteRequestListener.stop();
+    o.questionStatusPoller.clearSchedule();
+
+    // Trash post collections
+    o.postsOnScreen.truncate();
+    o.avatarNotificationStack.truncate();
+
+    // Destroy objects
+    this.objects = {};
   };
 
 }());
