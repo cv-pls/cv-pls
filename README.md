@@ -15,13 +15,13 @@ This repository holds the core application code, in order to use it you will nee
   </tr>
   <tr>
     <td><a href="https://github.com/cv-pls/chrome-cv-pls">Google Chrome</a></td>
-    <td><a href="https://github.com/downloads/cv-pls/chrome-cv-pls/cv-pls_0.19.0.crx">0.19.0</a></td>
-    <td><a href="https://github.com/downloads/cv-pls/chrome-cv-pls/cv-pls_0.20-beta1.crx">0.20-beta1</a></td>
+    <td><a href="https://cv-pls.pieterhordijk.com/cv-pls_0.20.0.crx">0.20.0</a></td>
+    <td><i>None</i></td>
   </tr>
   <tr>
     <td><a href="https://github.com/cv-pls/ff-cv-pls">Mozilla Firefox</a></td>
+    <td><a href="https://cv-pls.pieterhordijk.com/cv-pls_0.20.0.xpi">0.20.0</a></td>
     <td><i>None</i></td>
-    <td><a href="https://github.com/downloads/cv-pls/ff-cv-pls/cv-pls_0.20-beta1.xpi">0.20-beta1</a></td>
   </tr>
 </table>
 
