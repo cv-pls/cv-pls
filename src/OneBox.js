@@ -50,14 +50,17 @@
   }
 
   function getPostAvatar() {
-    var postAvatar = this.document.createElement('img');
-    postAvatar.setAttribute('class', 'user-gravatar32');
-    postAvatar.style.width = '32px';
-    postAvatar.style.height = '32px';
-    postAvatar.setAttribute('src', this.post.questionData.owner.profile_image);
-    postAvatar.setAttribute('title', this.post.questionData.owner.display_name);
-    postAvatar.setAttribute('alt', this.post.questionData.owner.display_name);
-    return postAvatar;
+    var postAvatarImg, postAvatarA;
+    postAvatarA = this.document.createElement('a');
+    postAvatarA.setAttribute('href', this.post.questionData.owner.link);
+    postAvatarImg = postAvatarA.appendChild(this.document.createElement('img'));
+    postAvatarImg.setAttribute('class', 'user-gravatar32');
+    postAvatarImg.style.width = '32px';
+    postAvatarImg.style.height = '32px';
+    postAvatarImg.setAttribute('src', this.post.questionData.owner.profile_image);
+    postAvatarImg.setAttribute('title', this.post.questionData.owner.display_name + ' (' + this.post.questionData.owner.reputation + ')');
+    postAvatarImg.setAttribute('alt', this.post.questionData.owner.display_name + ' (' + this.post.questionData.owner.reputation + ')');
+    return postAvatarA;
   }
   function getPostBody() {
     var postBody = this.document.createElement('p');

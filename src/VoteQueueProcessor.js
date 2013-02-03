@@ -6,7 +6,7 @@
   'use strict';
 
   function makeRequest(voteRequestBuffer) {
-    this.stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!6LE4b5o5yvdNA', this.apiResponseProcessor);
+    this.stackApi.makeRequest('questions', voteRequestBuffer, 'stackoverflow.com', '!OkDMNW6hcAehLUdFpwe2cE-)0uHgjXN2D)q2a.mEHHR', this.apiResponseProcessor);
   }
 
   CvPlsHelper.VoteQueueProcessor = function(stackApi, apiResponseProcessor) {

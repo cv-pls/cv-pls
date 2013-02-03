@@ -70,11 +70,10 @@
         try {
           response = self.collectionFactory.create();
           response.items = JSON.parse(xhr.responseText).items;
+          apiResponseProcessor.processResponse(buffer, response);
         } catch(e) {
           // If we get here, something is probably wrong at Stack Exchange and chances are chat won't be working either.
-          return;
         }
-        apiResponseProcessor.processResponse(buffer, response);
       }
     };
     xhr.send(null);
