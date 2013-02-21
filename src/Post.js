@@ -329,7 +329,10 @@
    * Prepend a "visited" label to the post content
    */
   function addVisitedLabel() {
-    addLabelToContent.call(this, 'visited', '#008B00', '#B4EEB4');
+    if (!this.hasVisitedLabel) {
+      addLabelToContent.call(this, 'visited', '#008B00', '#B4EEB4');
+      this.hasVisitedLabel = true;
+    }
   }
 
   /**
@@ -345,7 +348,15 @@
    * Mark the post link as previously visited by the user
    */
   function markVisited() {
+    var self = this;
+
     this.clickTracker.markVisited(this.postId);
+
+    if (this.pluginSettings.getSetting('addVisitedLabelToClickedPosts')) {
+      setTimeout(function() {
+        addVisitedLabel.call(self);
+      }, 1000);
+    }
   };
 
   /**
@@ -562,6 +573,11 @@
   CvPlsHelper.Post.prototype.hasPendingNotification = false;
 
   /**
+   * @var bool Whether the post has a "visited" label
+   */
+  CvPlsHelper.Post.prototype.hasVisitedLabel = false;
+
+  /**
    * Matches tags against the given expr and returns the first match
    *
    * @param string|RegExp expr The expression to match
@@ -617,7 +633,6 @@
    */
   CvPlsHelper.Post.prototype.setQuestionData = function(data) {
     this.questionData = data;
-    console.log(data);
 
     if (!data) {
       if (this.questionStatus !== this.questionStatuses.DELETED) {
@@ -670,8 +685,17 @@
    * @param Event e The event object
    */
   CvPlsHelper.Post.prototype.questionLinkMouseDownHandler = function(e) {
+    var self = this;
+
     if (e.button === 0 || e.button === 1) {
       this.avatarNotificationManager.dequeue(this);
+
+      if (this.pluginSettings.getSetting('removeClickedOneboxes')) {
+        setTimeout(function() {
+          self.removeOneBox();
+        }, 1000);
+      }
+
       markVisited.call(this);
     }
   };

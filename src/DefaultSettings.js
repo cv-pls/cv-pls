@@ -6,6 +6,8 @@ CvPlsHelper.DefaultSettings = {
   oneBox: true,
   oneBoxHeight: 30,
   removeCompletedOneboxes: true,
+  removeClickedOneboxes: true,
+  addVisitedLabelToClickedPosts: true,
 
   // Extra buttons in chat
   cvPlsButton: true,
@@ -28,7 +30,7 @@ CvPlsHelper.DefaultSettings = {
   trackHistory: true,
   ignoreOneboxClickedPosts: true,
   ignoreNotifyClickedPosts: true,
-  addVisitedLabelToClickedPosts: true,
+  addVisitedLabelToPreviouslyClickedPosts: true,
   clickedListLength: 100,
 
   // Backlog
