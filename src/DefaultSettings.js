@@ -24,6 +24,13 @@ CvPlsHelper.DefaultSettings = {
   pollInterval: 5,
   strikethroughCompleted: true,
 
+  // History tracking
+  trackHistory: true,
+  ignoreOneboxClickedPosts: true,
+  ignoreNotifyClickedPosts: true,
+  addVisitedLabelToClickedPosts: true,
+  clickedListLength: 100,
+
   // Backlog
   backlogEnabled: false,
   backlogAmount: 5,

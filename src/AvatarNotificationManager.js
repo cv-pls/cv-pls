@@ -24,11 +24,6 @@
         this.notificationStack.replace(existingPost, post);
       } else {
         this.notificationStack.push(post);
-        post.questionLinkElement.addEventListener('mousedown', function(e) {
-          if (e.button === 0 || e.button === 1) {
-            self.dequeue(post);
-          }
-        });
         this.updateNotificationDisplay();
       }
     }

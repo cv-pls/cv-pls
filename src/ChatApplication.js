@@ -23,6 +23,8 @@
     o.collectionFactory = new CvPlsHelper.CollectionFactory();
     o.postsOnScreen = o.collectionFactory.create();
 
+    o.dataStore = new CvPlsHelper.PersistentDataStore('cv-pls');
+
     // Vote request processing
     o.audioPlayer = new CvPlsHelper.AudioPlayer(document, 'http://or.cdn.sstatic.net/chat/so.mp3');
     o.desktopNotificationDispatcher = this.moduleLoader.loadModule('notifications');
@@ -45,7 +47,8 @@
     o.grippieFactory = new CvPlsHelper.GrippieFactory();
     o.chatRoom = new CvPlsHelper.ChatRoom(document, o.mutationListenerFactory);
     o.oneBoxFactory = new CvPlsHelper.OneBoxFactory(document, o.pluginSettings, o.avatarNotificationManager, o.animatorFactory, o.grippieFactory);
-    o.postFactory = new CvPlsHelper.PostFactory(document, o.pluginSettings, o.chatRoom, o.oneBoxFactory, o.avatarNotificationManager, o.animatorFactory);
+    o.clickTracker = new CvPlsHelper.ClickTracker(o.pluginSettings, o.dataStore);
+    o.postFactory = new CvPlsHelper.PostFactory(document, o.pluginSettings, o.chatRoom, o.oneBoxFactory, o.avatarNotificationManager, o.animatorFactory, o.clickTracker);
     o.voteRemoveProcessor = new CvPlsHelper.VoteRemoveProcessor(o.pluginSettings, o.avatarNotificationManager);
     o.voteRequestListener = new CvPlsHelper.VoteRequestListener(o.chatRoom, o.mutationListenerFactory, o.postFactory, o.postsOnScreen, o.voteRemoveProcessor, o.questionStatusPoller);
 
