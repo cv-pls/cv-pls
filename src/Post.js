@@ -236,6 +236,7 @@
     if (!isNotifyIgnored.call(this)) {
       notify.call(this, this.voteTypes.CV);
     }
+
     if (needsVisitedLabel.call(this)) {
       addVisitedLabel.call(this);
     }
@@ -257,11 +258,12 @@
       if (!isNotifyIgnored.call(this)) {
         notify.call(this, this.voteTypes.DELV);
       }
-      if (needsVisitedLabel.call(this)) {
-        addVisitedLabel.call(this);
-      }
     } else {
       markCompleted.call(this);
+    }
+
+    if (needsVisitedLabel.call(this)) {
+      addVisitedLabel.call(this);
     }
   }
 
@@ -272,6 +274,7 @@
    */
   function enterStateDeleted() {
     this.questionStatus = this.questionStatuses.DELETED;
+
     if (!this.hasQuestionData) {
       if (!this.pluginSettings.getSetting('removeCompletedOneboxes') && !isOneboxIgnored.call(this)) {
         this.addOneBox();
@@ -279,11 +282,13 @@
       if (!this.pluginSettings.getSetting('removeCompletedNotifications') && !isNotifyIgnored.call(this)) {
         notify.call(this, this.voteType);
       }
-      if (needsVisitedLabel.call(this)) {
-        addVisitedLabel.call(this);
-      }
     }
+
     markCompleted.call(this);
+
+    if (needsVisitedLabel.call(this)) {
+      addVisitedLabel.call(this);
+    }
   }
 
   /**
@@ -293,7 +298,7 @@
    */
   function isOneboxIgnored() {
     if (isVisited.call(this)) {
-      return this.pluginSettings.getSetting('trackHistory') && this.pluginSettings.getSetting('ignoreOneboxClickedPosts');
+      return this.pluginSettings.getSetting('ignoreOneboxClickedPosts');
     }
 
     return false;
@@ -306,7 +311,7 @@
    */
   function isNotifyIgnored() {
     if (isVisited.call(this)) {
-      return this.pluginSettings.getSetting('trackHistory') && this.pluginSettings.getSetting('ignoreNotifyClickedPosts');
+      return this.pluginSettings.getSetting('ignoreNotifyClickedPosts');
     }
 
     return false;
@@ -319,7 +324,7 @@
    */
   function needsVisitedLabel() {
     if (isVisited.call(this)) {
-      return this.pluginSettings.getSetting('trackHistory') && this.pluginSettings.getSetting('addVisitedLabelToClickedPosts');
+      return this.pluginSettings.getSetting('addVisitedLabelToClickedPosts');
     }
 
     return false;
