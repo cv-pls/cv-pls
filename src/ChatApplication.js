@@ -15,7 +15,8 @@
 
   CvPlsHelper.ChatApplication.prototype.start = function(callBack) {
     var o = this.objects,
-        document = this.document;
+        document = this.document,
+        window = this.document.defaultView;
 
     // Settings accessors
     o.pluginSettings = this.moduleLoader.loadModule('settings', CvPlsHelper.DefaultSettings);
@@ -23,7 +24,7 @@
     o.collectionFactory = new CvPlsHelper.CollectionFactory();
     o.postsOnScreen = o.collectionFactory.create();
 
-    o.dataStore = new CvPlsHelper.PersistentDataStore('cv-pls');
+    o.dataStore = new CvPlsHelper.PersistentDataStore(window.localStorage, 'cv-pls');
 
     // Vote request processing
     o.audioPlayer = new CvPlsHelper.AudioPlayer(document, 'http://or.cdn.sstatic.net/chat/so.mp3');

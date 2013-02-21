@@ -13,11 +13,17 @@
    *
    * @param string keyPrefix Prefix to use for keys to avoid collisions
    */
-  CvPlsHelper.PersistentDataStore = function(keyPrefix) {
+  CvPlsHelper.PersistentDataStore = function(localStorage, keyPrefix) {
+    this.localStorage = localStorage;
     if (keyPrefix) {
       this.keyPrefix = String(keyPrefix);
     }
   };
+
+  /**
+   * @var Storage Reference to the localStorage instance to use
+   */
+  CvPlsHelper.PersistentDataStore.prototype.localStorage = null;
 
   /**
    * @var string Prefix to use for keys to avoid collisions
@@ -36,7 +42,7 @@
 
     try {
       name = this.keyPrefix + String(name);
-      raw = localStorage.getItem(name);
+      raw = this.localStorage.getItem(name);
 
       result = JSON.parse(raw).value;
     } catch (e) {}
@@ -56,7 +62,7 @@
     name = this.keyPrefix + String(name);
     raw = JSON.stringify({value: value});
 
-    localStorage.setItem(name, raw);
+    this.localStorage.setItem(name, raw);
   };
 
   /**
@@ -67,7 +73,7 @@
   CvPlsHelper.PersistentDataStore.prototype.removeItem = function(name) {
     name = this.keyPrefix + String(name);
 
-    localStorage.removeItem(name);
+    this.localStorage.removeItem(name);
   };
 
 }());
