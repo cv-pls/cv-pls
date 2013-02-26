@@ -26,7 +26,9 @@
     });
 
     replyCountEl = this.document.getElementById('reply-count');
-    replyCountEl.parentNode.insertBefore(this.displayElement, replyCountEl.nextSibling);
+    if (replyCountEl) {
+      replyCountEl.parentNode.insertBefore(this.displayElement, replyCountEl.nextSibling);
+    }
   }
 
   function updateDisplay() {

@@ -186,6 +186,14 @@
     this.animator = this.animatorFactory.create(messageElement);
     if (messageElement.parentNode) {
       this.messagesElement = messageElement.parentNode;
+
+      try { // quick fix for transcript
+        this.tinySignatureElement = this.messagesElement.parentNode.firstChild.firstChild;
+        this.avatar32Element = this.tinySignatureElement.nextSibling;
+        this.usernameElement = this.avatar32Element.nextSibling;
+        this.flairElement = this.usernameElement.nextSibling;
+        this.hasModifyableSignature = true;
+      } catch (e) {}
     }
   }
 
@@ -415,6 +423,36 @@
   }
 
   /**
+   * Show the tiny-style signature
+   */
+  function showSignatureTiny() {
+    this.avatar32Element.style.display = 'none';
+    this.usernameElement.style.display = 'none';
+    this.flairElement.style.display = 'none';
+    this.tinySignatureElement.style.display = 'block';
+  }
+
+  /**
+   * Show the medium-style signature
+   */
+  function showSignatureMedium() {
+    this.avatar32Element.style.display = 'block';
+    this.usernameElement.style.display = 'block';
+    this.flairElement.style.display = 'none';
+    this.tinySignatureElement.style.display = 'none';
+  }
+
+  /**
+   * Show the large-style signature
+   */
+  function showSignatureLarge() {
+    this.avatar32Element.style.display = 'block';
+    this.usernameElement.style.display = 'block';
+    this.flairElement.style.display = 'block';
+    this.tinySignatureElement.style.display = 'none';
+  }
+
+  /**
    * Constructor
    *
    * @param HTMLDocument                          document                  The DOM document upon which the post resides
@@ -466,6 +504,11 @@
   };
 
   /**
+   * @var HTMLElement The post content element
+   */
+  CvPlsHelper.Post.prototype.contentElement = null;
+
+  /**
    * @var HTMLElement The post message container element
    */
   CvPlsHelper.Post.prototype.messageElement = null;
@@ -476,9 +519,24 @@
   CvPlsHelper.Post.prototype.messagesElement = null;
 
   /**
-   * @var HTMLElement The post content element
+   * @var HTMLElement The post tiny signature element
    */
-  CvPlsHelper.Post.prototype.contentElement = null;
+  CvPlsHelper.Post.prototype.tinySignatureElement = null;
+
+  /**
+   * @var HTMLElement The post 32px avatar element
+   */
+  CvPlsHelper.Post.prototype.avatar32Element = null;
+
+  /**
+   * @var HTMLElement The post username element
+   */
+  CvPlsHelper.Post.prototype.usernameElement = null;
+
+  /**
+   * @var HTMLElement The post flair (Rep) element
+   */
+  CvPlsHelper.Post.prototype.flairElement = null;
 
   /**
    * @var HTMLElement The post content wrapper element - created to make strikethrough play nice
@@ -583,6 +641,11 @@
   CvPlsHelper.Post.prototype.hasVisitedLabel = false;
 
   /**
+   * @var bool Whether the post signature can be modified
+   */
+  CvPlsHelper.Post.prototype.hasModifyableSignature = false;
+
+  /**
    * Matches tags against the given expr and returns the first match
    *
    * @param string|RegExp expr The expression to match
@@ -672,6 +735,28 @@
     if (!this.oneBox && !this.isOwnPost && this.questionData && this.pluginSettings.getSetting('oneBox')) {
       this.oneBox = this.oneBoxFactory.create(this);
       this.oneBox.show();
+      this.updateSignatureDisplay();
+    }
+  };
+
+  /**
+   * Update the displayed signature to the appropriate size
+   *
+   * Logic taken from the SE code
+   */
+  CvPlsHelper.Post.prototype.updateSignatureDisplay = function() {
+    var messagesHeight;
+
+    if (this.hasModifyableSignature) {
+      messagesHeight = parseInt(this.document.defaultView.getComputedStyle(this.messagesElement).getPropertyValue('height'));
+
+      if (messagesHeight <= 48) {
+        showSignatureTiny.call(this);
+      } else if (messagesHeight <= 61) {
+        showSignatureMedium.call(this);
+      } else {
+        showSignatureLarge.call(this);
+      }
     }
   };
 
@@ -681,6 +766,7 @@
   CvPlsHelper.Post.prototype.removeOneBox = function() {
     if (this.oneBox) {
       this.oneBox.hide();
+      this.updateSignatureDisplay();
     }
   };
 

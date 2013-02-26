@@ -10,11 +10,26 @@
    */
   function setRoomLoaded() {
     this.loaded = true;
-    this.chatContainer = this.document.getElementById('chat');
-    this.activeUserClass = this.document.getElementById('active-user').className.match(/user-\d+/)[0];
+
+    getActiveUserClass.call(this);
+
     stopListener.call(this);
     while (this.callbacks.length) {
       this.callbacks.shift().call();
+    }
+  }
+
+  function getActiveUserClass() {
+    this.chatContainer = this.document.getElementById('chat');
+    if (this.chatContainer) {
+      this.activeUserClass = this.document.getElementById('active-user').className.match(/user-\d+/)[0];
+    } else {
+      this.chatContainer = this.document.getElementById('transcript');
+      this.activeUserClass = 'user-' + // Ugh, do something about this please
+        this.document.head
+          .children[document.head.children.length - 1]
+            .firstChild.data
+              .match(/initTranscript\s*\([^,]+,\s*(\d+)/)[1];
     }
   }
 
@@ -32,7 +47,7 @@
 
   function stopListener() {
     if (this.mutationListener.isListening()) {
-      this.mutationListener.off('NodeRemoved', mutationListenerCallback.bind(this));
+      this.mutationListener.off('NodeRemoved');
       this.mutationListener = null;
     }
   }
