@@ -199,7 +199,8 @@
     /**
      * Create the main OneBox container element
      */
-    function createElement() {
+    function createElement()
+    {
         this.oneBoxElement = this.document.createElement('div');
 
         this.oneBoxElement.className = 'onebox ob-post cv-request';
@@ -295,7 +296,8 @@
      * @param CvPlsHelper.GrippieFactory            grippieFactory     Factory which makes Grippie objects
      * @param CvPlsHelper.Post                      post               Post object to which this OneBox belongs
      */
-    CvPlsHelper.OneBox = function(document, pluginSettings, avatarNotification, animator, grippieFactory, post) {
+    CvPlsHelper.OneBox = function(document, pluginSettings, avatarNotification, animator, grippieFactory, post)
+    {
         this.document = document;
         this.pluginSettings = pluginSettings;
         this.avatarNotification = avatarNotification;
@@ -331,7 +333,8 @@
      *
      * Useful for moving between edited message nodes
      */
-    CvPlsHelper.OneBox.prototype.refreshDisplay = function() {
+    CvPlsHelper.OneBox.prototype.refreshDisplay = function()
+    {
         this.hide();
         this.show();
     };
@@ -339,7 +342,8 @@
     /**
      * Add the OneBox elements to the DOM
      */
-    CvPlsHelper.OneBox.prototype.show = function() {
+    CvPlsHelper.OneBox.prototype.show = function()
+    {
         this.post.contentElement.appendChild(this.oneBoxElement);
         processFormatting.call(this);
     };
@@ -347,7 +351,8 @@
     /**
      * Remove the OneBox elements from the DOM
      */
-    CvPlsHelper.OneBox.prototype.hide = function() {
+    CvPlsHelper.OneBox.prototype.hide = function()
+    {
         if (this.oneBoxElement.parentNode) {
             this.oneBoxElement.parentNode.removeChild(this.oneBoxElement);
         }
@@ -358,7 +363,8 @@
      *
      * @param string statusText The new status text
      */
-    CvPlsHelper.OneBox.prototype.setStatusText = function(statusText) {
+    CvPlsHelper.OneBox.prototype.setStatusText = function(statusText)
+    {
         this.statusTextNode.data = ' [' + statusText + ']';
     };
 
@@ -367,7 +373,8 @@
      *
      * @param string score The new question score
      */
-    CvPlsHelper.OneBox.prototype.setScore = function(score) {
+    CvPlsHelper.OneBox.prototype.setScore = function(score)
+    {
         this.scoreTextNode.data = String(score);
     };
 }());
