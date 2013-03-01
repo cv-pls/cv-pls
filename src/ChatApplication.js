@@ -56,7 +56,8 @@
     // UI enchancement
     o.buttonsManager = new CvPlsHelper.ButtonsManager(document, o.pluginSettings);
     o.soundManager = new CvPlsHelper.SoundManager(document, o.pluginSettings);
-    o.cvBacklog = new CvPlsHelper.CvBacklog(document, o.pluginSettings, 'http://cvbacklog.gordon-oheim.biz/');
+    o.cvBacklogUrlManager = new CvPlsHelper.CvBacklogUrlManager(o.chatRoom);
+    o.cvBacklog = new CvPlsHelper.CvBacklog(document, o.pluginSettings, o.cvBacklogUrlManager);
 
     // Set everything going
     o.pluginSettings.init(function() {
@@ -67,7 +68,7 @@
       // Start background processes
       o.voteRequestListener.start();
       o.questionStatusPoller.schedulePoll();
-      o.cvBacklog.refresh();
+      o.cvBacklog.init();
 
       // Initialisation callback
       if (typeof callBack === 'function') {
