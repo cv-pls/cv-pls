@@ -33,7 +33,7 @@
      * Adds a class name to a DOM element
      *
      * @param HTMLElement element The DOM element
-     * @param string            string    The class name to add
+     * @param string      string  The class name to add
      */
     function addClass(element, className)
     {
@@ -48,7 +48,7 @@
      * Tests whether an element has a class name
      *
      * @param HTMLElement element The DOM element
-     * @param string            string    The class name to add
+     * @param string      string  The class name to add
      *
      * @return bool True if the element has the class name
      */
@@ -422,7 +422,7 @@
     /**
      * Prepend a label to the post content
      *
-     * @param string text            The label text
+     * @param string text      The label text
      * @param string foreColor Color for text and border
      * @param string backColor Color for background
      */
@@ -483,14 +483,14 @@
     /**
      * Constructor
      *
-     * @param HTMLDocument                                                    document                                    The DOM document upon which the post resides
-     * @param object                                                                pluginSettings                        XBuilder settings module
-     * @param CvPlsHelper.ChatRoom                                    chatRoom                                    The chatroom object to which the post belongs
-     * @param CvPlsHelper.OneBoxFactory                         oneBoxFactory                         Factory for making OneBoxes
+     * @param HTMLDocument                          document                  The DOM document upon which the post resides
+     * @param object                                pluginSettings            XBuilder settings module
+     * @param CvPlsHelper.ChatRoom                  chatRoom                  The chatroom object to which the post belongs
+     * @param CvPlsHelper.OneBoxFactory             oneBoxFactory             Factory for making OneBoxes
      * @param CvPlsHelper.AvatarNotificationManager avatarNotificationManager Avatar notification manager object
-     * @param CvPlsHelper.AnimatorFactory                     animatorFactory                     Factory for making animators
-     * @param CvPlsHelper.ClickTracker                            clickTracker                            Tracks previously visited vote request links
-     * @param HTMLElement                                                     messageElement                        The post message container element
+     * @param CvPlsHelper.AnimatorFactory           animatorFactory           Factory for making animators
+     * @param CvPlsHelper.ClickTracker              clickTracker              Tracks previously visited vote request links
+     * @param HTMLElement                           messageElement            The post message container element
      */
     CvPlsHelper.Post = function(
         document, pluginSettings, chatRoom, oneBoxFactory, avatarNotificationManager,
@@ -703,8 +703,8 @@
      * Replaces the internal element set with different elements
      * Useful for posts that have been edited
      *
-     * @param HTMLElement newNode                    The new message container element
-     * @param bool                isSameQuestionId If true keep the old onebox element
+     * @param HTMLElement newNode          The new message container element
+     * @param bool        isSameQuestionId If true keep the old onebox element
      */
     CvPlsHelper.Post.prototype.replaceElement = function(newNode, isSameQuestionId)
     {
@@ -814,7 +814,9 @@
     {
         var self = this;
 
-        if (e.button === 0 || e.button === 1) {
+        // Temporary fix for right click "bug"
+        // TODO: implement this in a better way
+        //if (e.button === 0 || e.button === 1) {
             this.avatarNotificationManager.dequeue(this);
 
             if (this.pluginSettings.getSetting('removeClickedOneboxes')) {
@@ -824,7 +826,7 @@
             }
 
             markVisited.call(this);
-        }
+        //}
     };
 
     /**
