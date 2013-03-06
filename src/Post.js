@@ -363,9 +363,8 @@
      */
     function addVisitedLabel()
     {
-        if (!this.hasVisitedLabel) {
+        if (!hasLabel.call(this, 'visited')) {
             addLabelToContent.call(this, 'visited', '#008B00', '#B4EEB4');
-            this.hasVisitedLabel = true;
         }
     }
 
@@ -432,7 +431,7 @@
 
         labelEl = this.document.createElement('span');
 
-        labelEl.className = 'ob-post-tag';
+        labelEl.className = 'ob-post-tag cvhelper-label';
         labelEl.setAttribute('style', '-webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px;');
         labelEl.style.color = foreColor;
         labelEl.style.borderColor = foreColor;
@@ -445,6 +444,26 @@
 
         this.contentElement.insertBefore(spacer, this.contentElement.firstChild);
         this.contentElement.insertBefore(labelEl, this.contentElement.firstChild);
+    }
+
+    /**
+     * Test whether the message has the specified label
+     *
+     * @param string label The label to search for
+     *
+     * @return bool True if the post has the specified label
+     */
+    function hasLabel(label)
+    {
+        var i, l, labels = this.messageElement.querySelectorAll('.cvhelper-label');
+
+        for (i = 0, l = labels.length; i < l; i++) {
+            if (labels[i].firstChild.data === label) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -662,11 +681,6 @@
      * @var bool Whether the post has an outstanding notification
      */
     CvPlsHelper.Post.prototype.hasPendingNotification = false;
-
-    /**
-     * @var bool Whether the post has a "visited" label
-     */
-    CvPlsHelper.Post.prototype.hasVisitedLabel = false;
 
     /**
      * @var bool Whether the post signature can be modified
