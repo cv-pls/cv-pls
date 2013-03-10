@@ -32,7 +32,7 @@
             this.chatContainer = this.document.getElementById('transcript');
             this.activeUserClass = 'user-' + // Ugh, do something about this please
                 this.document.head
-                    .children[document.head.children.length - 1]
+                    .children[this.document.head.children.length - 1]
                         .firstChild.data
                             .match(/initTranscript\s*\([^,]+,\s*(\d+)/)[1];
         }
@@ -43,7 +43,7 @@
      */
     function getRoomId()
     {
-        this.roomId = parseInt(document.querySelector('a.button[href^="/transcript/"]').getAttribute('href').match(/transcript\/(\d+)/)[1]);
+        this.roomId = parseInt(this.document.querySelector('a.button[href^="/transcript/"]').getAttribute('href').match(/transcript\/(\d+)/)[1]);
     }
 
     /**
@@ -96,13 +96,13 @@
     /**
      * Constructor
      *
-     * @param HTMLDocument document                The document object on which the room resides
-     * @param object       mutationListenerFactory XBuilder mutation listener module
+     * @param {HTMLDocument} document                The document object on which the room resides
+     * @param {object}       mutationListenerFactory XBuilder mutation listener module
      */
     CvPlsHelper.ChatRoom = function(document, mutationListenerFactory)
     {
         this.document = document;
-        this.mutationListener = mutationListenerFactory.getListener(document.body);
+        this.mutationListener = mutationListenerFactory.getListener(this.document.body);
 
         this.callbacks = [];
     };
