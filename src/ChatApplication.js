@@ -13,7 +13,7 @@
 
   CvPlsHelper.ChatApplication.prototype.objects = null;
 
-  CvPlsHelper.ChatApplication.prototype.start = function(callBack) {
+  CvPlsHelper.ChatApplication.prototype.start = function() {
     var o = this.objects,
         document = this.document,
         window = this.document.defaultView;
@@ -60,22 +60,15 @@
     o.cvBacklog = new CvPlsHelper.CvBacklog(document, o.pluginSettings, o.cvBacklogUrlManager);
 
     // Set everything going
-    o.pluginSettings.init(function() {
-      // Enchance UI
-      o.buttonsManager.init();
-      o.soundManager.init();
 
-      // Start background processes
-      o.voteRequestListener.start();
-      o.questionStatusPoller.schedulePoll();
-      o.cvBacklog.init();
+    // Enchance UI
+    o.buttonsManager.init();
+    o.soundManager.init();
 
-      // Initialisation callback
-      if (typeof callBack === 'function') {
-        callBack(o.pluginSettings);
-      }
-    });
-
+    // Start background processes
+    o.voteRequestListener.start();
+    o.questionStatusPoller.schedulePoll();
+    o.cvBacklog.init();
   };
 
   CvPlsHelper.ChatApplication.prototype.shutdown = function() {
