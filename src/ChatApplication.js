@@ -1,5 +1,5 @@
 /*jslint plusplus: true, white: true, browser: true */
-/*global CvPlsHelper, DOMChildListMutationListenerFactory */
+/*global CvPlsHelper */
 
 (function() {
 
@@ -43,7 +43,7 @@
     o.questionStatusPoller = new CvPlsHelper.QuestionStatusPoller(o.pluginSettings, o.postsOnScreen, o.voteRequestBufferFactory, o.pollQueueProcessor);
 
     // Vote request listening
-    o.mutationListenerFactory = new DOMChildListMutationListenerFactory();
+    o.mutationListenerFactory = this.moduleLoader.loadModule('mutations');
     o.animatorFactory = new CvPlsHelper.AnimatorFactory();
     o.grippieFactory = new CvPlsHelper.GrippieFactory();
     o.chatRoom = new CvPlsHelper.ChatRoom(document, o.mutationListenerFactory);
